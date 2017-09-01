@@ -1,5 +1,5 @@
 *.swp
 *.o
-fcl
+ncd
 tags
 output
