@@ -170,7 +170,7 @@ void Program::parse_args(int argc, char** argv)
 
 void Program::print_usage()
 {
-	printf("Usage: ./fcl [OPTIONS]\n");
+	printf("Usage: ./ncd [OPTIONS]\n");
 	printf("\t-h, --help\t\tPrint this help and exit\n");
 	printf("\t-V, --vascular-path\tPath to vascular data directory\n");
 	printf("\t-N, --neural-path\tPath to neural data directory\n");
