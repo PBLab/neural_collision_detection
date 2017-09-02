@@ -37,7 +37,7 @@ Neural Collision Detection Documentation
 		vascular_path, neuron_path - paths to .obj files, from stage 2
 		output_path - file name of the results file
 		num_of_threads - 36 on stromboli server
-		max_num_of_collisions - 10000, but may change according to results
+		max_num_of_collisions - 30000, but may change according to results
 		main_axis - the neuron rotates around this axis 360 degrees. Default - z
 		x,y,z coordinates - the  location of the center of the neuron
 
@@ -52,7 +52,7 @@ Neural Collision Detection Documentation
 		- The server running ncd
 		- The amount of collisions requested
 	On stromboli server, with the recommended simplification, the running is
-	between 2 minutes and 7 minutes. Take into account that it may vary
+	between 10 minutes and 15 minutes. Take into account that it may vary
 	if the mentioned factors are changed.
 4.3	Output file
 	The outputfile contains the number of collisions, per rotation.
