@@ -68,14 +68,18 @@ class ObjCreator:
 
     
     def write_vertex(self, v):
-        s  = "vn 0.0 0.0 1.0\n"
+        s  = ""
+        #s += "vn 0.0 0.0 1.0\n"
         s += "v %f %f %f\n" % (v[0], v[1], v[2])
         self.out_file.write(s)
 
     def write_triangle(self, t):
-        s = "f %i//%i %i//%i %i//%i\n" % (t[0]+1, t[0]+1,
-                                          t[1]+1, t[1]+1,
-                                          t[2]+1, t[2]+1)
+        s = "f %i %i %i\n" % (t[0]+1,
+                                          t[1]+1,
+                                          t[2]+1)
+        #s = "f %i//%i %i//%i %i//%i\n" % (t[0]+1, t[0]+1,
+                                          #t[1]+1, t[1]+1,
+                                          #t[2]+1, t[2]+1)
 
         self.out_file.write(s)
 
