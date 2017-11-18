@@ -110,8 +110,8 @@ void Model::read_from_file(const std::string& obj_filename)
 				add_triangle(a-1, b-1, c-1);
 				break;
 			default:
-				LOG_ERROR("type = %c %i\n", type, (int)type);
-				throw Exception("Unknown line type");
+				LOG_DEBUG("unknown line type = %c %i\n", type, (int)type);
+				break;
 		}
 	}
 	fclose(f);
