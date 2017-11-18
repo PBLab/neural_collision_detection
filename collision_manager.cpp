@@ -127,6 +127,8 @@ void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, cha
 	int z_range = max_z - min_z + 1;
 	int next_z = min_z;
 	thread_params_t * all_params = new thread_params[_num_of_threads];
+	FclModel* fm1 = m1()->fcl_model();
+	FclModel* fm2 = m2()->fcl_model();
 	for (int i = 0; i < _num_of_threads; ++i)
 	{
 		LOG_TRACE("Preparing thread #%i\n", i);
@@ -134,8 +136,8 @@ void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, cha
 		params->thread_id = i;
 		params->result_object = &res;
 		//params->collision_manager = this;
-		params->fm1 = m1()->fcl_model();
-		params->fm2 = m2()->fcl_model();
+		params->fm1 = fm1;
+		params->fm2 = fm2;
 		params->x_pos = x_pos;
 		params->y_pos = y_pos;
 		params->z_pos = z_pos;

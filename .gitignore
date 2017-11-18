@@ -2,5 +2,6 @@
 *.o
 *.pyc
 ncd
+ncd_*
 tags
 output
