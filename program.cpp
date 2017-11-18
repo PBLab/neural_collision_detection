@@ -74,13 +74,6 @@ void Program::logic()
 
 void Program::verify_args()
 {
-	if (_x <= 0)
-		throw Exception("x must be set");
-	if (_y <= 0)
-		throw Exception("y must be set");
-	if (_z <= 0)
-		throw Exception("z must be set");
-
 	if (strlen(_vascular_path) == 0)
 		throw Exception("Vascular path must be set");
 	if (strlen(_neural_path) == 0)
@@ -178,9 +171,9 @@ void Program::print_usage()
 	printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
 	printf("\t-m, --main-axis\t\tMain axis for rotation [default - z]\n");
 	printf("\t-f, --output-file\t\tOutput filename\n");
-	printf("\t-x\t\t\tx coordinate of the center of the neuron\n");
-	printf("\t-y\t\t\ty coordinate of the center of the neuron\n");
-	printf("\t-z\t\t\tz coordinate of the center of the neuron\n");
+	printf("\t-x\t\t\tx coordinate of the center of the neuron [default - 0]\n");
+	printf("\t-y\t\t\ty coordinate of the center of the neuron [default - 0]\n");
+	printf("\t-z\t\t\tz coordinate of the center of the neuron [default - 0]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 }
