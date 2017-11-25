@@ -43,16 +43,8 @@ void Program::logic()
 {
 	ModelPtr vascular_model;
 	ModelPtr neural_model;
-	if (_use_obj)
-	{
-		vascular_model = create_obj_model(_vascular_path);
-		neural_model = create_obj_model(_neural_path);
-	}
-	else
-	{
-		vascular_model = create_csv_model(_vascular_path);
-		neural_model = create_csv_model(_neural_path);
-	}
+	vascular_model = create_obj_model(_vascular_path);
+	neural_model = create_obj_model(_neural_path);
 
 	//neural_model->adjust_all();
 	//neural_model.adjust_all(-1 * _x, -1 * _y, -1 * _z);
@@ -78,8 +70,14 @@ void Program::verify_args()
 		throw Exception("Vascular path must be set");
 	if (strlen(_neural_path) == 0)
 		throw Exception("Neural path must be set");
-	if (strlen(_output_file) == 0)
-		throw Exception("Output file path must be set");
+	if (!_verify_mode && strlen(_output_file) == 0)
+		throw Exception("Output file path must be set in non verify mode");
+	if (!_verify_mode && strlen(_output_directory) != 0)
+		throw Exception("Output dir path must NOT be set in non verify mode");
+	if (_verify_mode && strlen(_output_file) != 0)
+		throw Exception("Output file path must NOT be set in verify mode");
+	if (_verify_mode && strlen(_output_directory) == 0)
+		throw Exception("Output dir path must be set in verify mode");
 
 	if (_num_of_threads <= 0 or _num_of_threads > 360)
 		throw Exception("Num of threads must be between 1 and 360");
@@ -104,12 +102,13 @@ void Program::parse_args(int argc, char** argv)
 			{"threads", required_argument, 0, 't'},
 			{"collisions", required_argument, 0, 'c'},
 			{"main-axis", required_argument, 0, 'm'},
-			{"use-obj", required_argument, 0, 'o'},
 			{"output-file", required_argument, 0, 'f'},
+			{"rotation", required_argument, 0, 'r'},
+			{"output-directory", required_argument, 0, 'o'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:c:qvx:y:z:m:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:c:qvx:y:z:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -142,15 +141,20 @@ void Program::parse_args(int argc, char** argv)
 		case 'm':
 			_main_axis = optarg[0];
 			break;
-		case 'o':
-			_use_obj = true;
-			break;
 		case 'v':
 			_verbose++;
 			set_verbosity(_verbose);
 			break;
 		case 'q':
 			set_verbosity(0);
+			break;
+		case 'r':
+			_verify_mode = true;
+			parse_rotation(optarg);
+			break;
+		case 'o':
+			_verify_mode = true;
+			strncpy(_output_directory, optarg, PATH_MAX);
 			break;
 		case '?':
 		case 'h':
@@ -159,6 +163,25 @@ void Program::parse_args(int argc, char** argv)
 			throw Exception("Usage");
 		}
 	}
+}
+
+void Program::parse_rotation(char* optarg)
+{
+	char param[128];
+	strcpy(param, optarg);
+	char* first_coma = strchr(param, ',');
+	if (first_coma == NULL)
+		throw Exception("Invalid rotation format");
+	char* second_coma = strchr(first_coma + 1, ',');
+	if (second_coma == NULL)
+		throw Exception("Invalid rotation format");
+
+	*first_coma = '\0';
+	*second_coma = '\0';
+	_r_x = atoi(param);
+	_r_y = atoi(first_coma + 1);
+	_r_z = atoi(second_coma + 1);
+	printf("Checking rotation: %i %i %i\n", _r_x, _r_y, _r_z);
 }
 
 void Program::print_usage()
