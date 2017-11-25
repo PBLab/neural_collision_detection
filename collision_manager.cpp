@@ -63,15 +63,18 @@ static void* thread_main_impl(thread_params_t* params)
 		{
 			for(int z = params->min_z; z <= params->max_z; ++z)
 			{
-				int num_of_collisions = Collision::check_a_collision(fm1,
-																	 fm2,
-																	 params->x_pos,
-																	 params->y_pos,
-																	 params->z_pos,
-																	 x,
-																	 y,
-																	 z,
-																	 params->num_of_col);
+				static PointsVector* IGNORE_COLLISIONS_LOCATIONS = NULL;
+				int num_of_collisions =
+						Collision::check_a_collision(fm1,
+													 fm2,
+													 params->x_pos,
+													 params->y_pos,
+													 params->z_pos,
+													 x,
+													 y,
+													 z,
+													 params->num_of_col,
+													 IGNORE_COLLISIONS_LOCATIONS);
 				if (cnt % 121 == 0) // || num_of_collisions != params->num_of_col)
 					LOG_TRACE("(%i):\t(%i,\t%i,\t%i)\t=\t%i\n", id, x, y, z, num_of_collisions);
 				LOG_DEBUG("(%i):\t(%i,\t%i,\t%i)\t=\t%i\n", id, x, y, z, num_of_collisions);
