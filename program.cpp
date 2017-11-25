@@ -58,8 +58,17 @@ void Program::logic()
 		LOG_INFO("Longest axis: %c\n", _main_axis);
 	}
 
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
-	collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
+	if (_verify_mode)
+	{
+		LOG_INFO("Verify mode - using rotation (%i, %i, %i)", _r_x, _r_y, _r_z);
+		// Check a collision - output with collisions
+		// Output model with rotation
+	}
+	else
+	{
+		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
+		collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
+	}
 
 	LOG_INFO("Total run time: %i minutes\n", (time(NULL) - _start_time) / 60);
 }
@@ -181,7 +190,6 @@ void Program::parse_rotation(char* optarg)
 	_r_x = atoi(param);
 	_r_y = atoi(first_coma + 1);
 	_r_z = atoi(second_coma + 1);
-	printf("Checking rotation: %i %i %i\n", _r_x, _r_y, _r_z);
 }
 
 void Program::print_usage()
