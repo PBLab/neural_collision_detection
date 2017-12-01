@@ -10,6 +10,7 @@ public:
 	CollisionManager(const Model* m1, const Model* m2, int num_of_threads);
 	~CollisionManager();
 	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
+	void check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col, const std::string& output_directory);
 	const Model* m1() const;
 	const Model* m2() const;
 

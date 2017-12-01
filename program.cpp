@@ -60,9 +60,11 @@ void Program::logic()
 
 	if (_verify_mode)
 	{
-		LOG_INFO("Verify mode - using rotation (%i, %i, %i)", _r_x, _r_y, _r_z);
-		// Check a collision - output with collisions
-		// Output model with rotation
+		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
+		// TODO: Check a collision - output with collisions
+		// TODO: Output model with rotation
+		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
+		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions, _output_directory);
 	}
 	else
 	{

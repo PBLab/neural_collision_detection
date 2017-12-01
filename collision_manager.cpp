@@ -117,6 +117,27 @@ void calc_ranges(char main_axis, int* min_x, int* max_x, int* min_y, int* max_y,
 	};
 }
 
+void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col, const std::string& output_directory)
+{
+	// zzzzzzzzzzzzzzzzzz
+	LOG_INFO("Checking single collision...\n");
+	PointsVector res;
+	FclModel* fm1 = m1()->fcl_model();
+	FclModel* fm2 = m2()->fcl_model();
+	int num_of_collisions =
+			Collision::check_a_collision(fm1,
+										 fm2,
+										 x_pos,
+										 y_pos,
+										 z_pos,
+										 x_r,
+										 y_r,
+										 z_r,
+										 num_of_col,
+										 &res);
+	LOG_INFO("Num of collisions is: %i\n", num_of_collisions);
+}
+
 void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename)
 {
 	int min_x, max_x, min_y, max_y, min_z, max_z;
