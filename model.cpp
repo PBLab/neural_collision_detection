@@ -269,7 +269,7 @@ void Model::rotate(const NativeMatrix& mat)
 		double new_z = mat.values[2][0] * vertex[0] + 
 				       mat.values[2][1] * vertex[1] + 
 				       mat.values[2][2] * vertex[2];
-		LOG_INFO("x y z = %f %f %f\n", new_x, new_y, new_z);
+		//LOG_INFO("x y z = %f %f %f\n", new_x, new_y, new_z);
 		vertex[0] = new_x;
 		vertex[1] = new_y;
 		vertex[2] = new_z;
