@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 
 Program::Program(int argc, char** argv)
@@ -61,6 +62,12 @@ void Program::logic()
 	if (_verify_mode)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
+		struct stat st = {0};
+		if (stat(_output_directory, &st) == -1)
+		{
+			LOG_INFO("Creating output directory\n");
+			mkdir(_output_directory, 0700);
+		}
 		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
 		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions, _output_directory);
 	}

@@ -159,6 +159,7 @@ void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, i
 	Model neuron = *_m2;
 	NativeMatrix mat = Collision::calc_native_matrix(x_r, y_r, z_r);
 	neuron.rotate(mat);
+	neuron.adjust_all(x_pos, y_pos, z_pos);
 	std::string output_rotated_neuron = output_directory + "/rotated_neuron.obj";
 	neuron.dump_to_file(output_rotated_neuron);
 }
