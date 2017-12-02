@@ -38,6 +38,23 @@ double Collision::angle_to_rad(double angle)
 	return angle * PI / 180;
 }
 
+NativeMatrix Collision::calc_native_matrix(double x_rot, double y_rot, double z_rot)
+{
+	NativeMatrix res = {0};
+	Matrix3f m = calc_matrix(x_rot, y_rot, z_rot);
+	res.values[0][0] = m(0, 0);
+	res.values[0][1] = m(0, 1);
+	res.values[0][2] = m(0, 2);
+	res.values[1][0] = m(1, 0);
+	res.values[1][1] = m(1, 1);
+	res.values[1][2] = m(1, 2);
+	res.values[2][0] = m(2, 0);
+	res.values[2][1] = m(2, 1);
+	res.values[2][2] = m(2, 2);
+
+	return res;
+}
+
 Matrix3f Collision::calc_matrix(double x_rot, double y_rot, double z_rot)
 {
 	x_rot = angle_to_rad(x_rot);

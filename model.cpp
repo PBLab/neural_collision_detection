@@ -12,6 +12,21 @@ Model::Model(const std::string& vertices_filename, const std::string& triangles_
 	read_from_file(vertices_filename, triangles_filename);
 }
 
+Model::Model(const Model& other)
+{
+	for(int i = 0; i < other._vertices.size(); ++i)
+	{
+		const Vec3f& new_vertex = other._vertices[i];
+		add_ver(new_vertex[0], new_vertex[1], new_vertex[2]);
+	}
+	for(int i = 0; i < other._triangles.size(); ++i)
+	{
+		const Triangle& new_triangle = other._triangles[i];
+		add_triangle(new_triangle[0], new_triangle[1], new_triangle[2]);
+	}
+}
+
+
 Model::~Model()
 {
 }
@@ -159,29 +174,27 @@ void Model::read_from_file(const std::string& vertices_filename, const std::stri
 	fclose(t_f);
 }
 
-void Model::dump_to_file(const std::string& vertices_filename, const std::string& triangles_filename)
+void Model::dump_to_file(const std::string& output_filename) const
 {
-	FILE * v_f = fopen(vertices_filename.c_str(), "w");
+	FILE * file = fopen(output_filename.c_str(), "w");
 
-	const char* vertex_template = "%f,%f,%f\n";
+	const char* vertex_template = "v %f %f %f\n";
 	char buff[1024];
 
 	int i = 0;
 	for(i = 0; i < _vertices.size(); ++i)
 	{
 		int buflen = sprintf(buff, vertex_template, _vertices[i](0), _vertices[i](1), _vertices[i](2));
-		fwrite(buff, buflen, sizeof(char), v_f);
+		fwrite(buff, buflen, sizeof(char), file);
 	}
-	fclose(v_f);
 
-	FILE * t_f = fopen(triangles_filename.c_str(), "w");
-	const char* triangle_template = "%i,%i,%i\n";
+	const char* triangle_template = "f %i %i %i\n";
 	for(i = 0; i < _triangles.size(); ++i)
 	{
-		int buflen = sprintf(buff, triangle_template, _triangles[i][0], _triangles[i][1], _triangles[i][2]);
-		fwrite(buff, buflen, sizeof(char), t_f);
+		int buflen = sprintf(buff, triangle_template, _triangles[i][0] + 1, _triangles[i][1] + 1, _triangles[i][2] + 1);
+		fwrite(buff, buflen, sizeof(char), file);
 	}
-	fclose(t_f);
+	fclose(file);
 }
 
 void Model::print_stats() const
@@ -239,3 +252,27 @@ void Model::calc_min_max(int *min_x, int *max_x, int *min_y, int *max_y, int *mi
 			*min_z = _vertices[i](2);
 	}
 }
+
+void Model::rotate(const NativeMatrix& mat)
+{
+	for(int i = 0; i < _vertices.size(); ++i)
+	{
+		Vec3f& vertex = _vertices[i];
+		double new_x = mat.values[0][0] * vertex[0] + 
+				       mat.values[0][1] * vertex[1] + 
+				       mat.values[0][2] * vertex[2];
+
+		double new_y = mat.values[1][0] * vertex[0] + 
+				       mat.values[1][1] * vertex[1] + 
+				       mat.values[1][2] * vertex[2];
+
+		double new_z = mat.values[2][0] * vertex[0] + 
+				       mat.values[2][1] * vertex[1] + 
+				       mat.values[2][2] * vertex[2];
+		LOG_INFO("x y z = %f %f %f\n", new_x, new_y, new_z);
+		vertex[0] = new_x;
+		vertex[1] = new_y;
+		vertex[2] = new_z;
+	}
+}
+

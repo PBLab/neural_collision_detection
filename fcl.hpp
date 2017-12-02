@@ -13,3 +13,4 @@ typedef OBBRSS<int> OBBRSS_;
 typedef BVHModel< OBBRSS<float> > FclModel;
 //typedef BVHModel< AABB<float> > FclModel;
 typedef Vector3<float> Vec3f;
+typedef struct NativeMatrix {float values[3][3];} NativeMatrix;

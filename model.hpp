@@ -8,14 +8,16 @@ class Model
 public:
 	Model(const std::string& vertices_filename, const std::string& triangles_filename);
 	Model(const std::string& obj_filename);
+	Model(const Model& other);
 	~Model();
 
 	FclModel* fcl_model() const;
-	void dump_to_file(const std::string& vertices_filename, const std::string& triangles_filename);
+	void dump_to_file(const std::string& output_filename) const;
 	void print_stats() const;
 	void adjust_all(float x, float y, float z);
 	void adjust_all();
 	char get_longest_axis() const;
+	void rotate(const NativeMatrix& mat);
 
 private:
 	void read_from_file(const std::string& vertices_filename, const std::string& triangles_filename);
