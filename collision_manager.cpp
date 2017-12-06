@@ -162,6 +162,11 @@ void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, i
 	neuron.adjust_all(x_pos, y_pos, z_pos);
 	std::string output_rotated_neuron = output_directory + "/rotated_neuron.obj";
 	neuron.dump_to_file(output_rotated_neuron);
+
+	BoundingBox bb = neuron.get_bounding_box();
+	Model vascular = _m1->get_sub_model(bb);
+	std::string output_cut_vascular = output_directory + "/cut_vascular.obj";
+	vascular.dump_to_file(output_cut_vascular);
 }
 
 void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename)

@@ -2,6 +2,10 @@
 #include "exception.hpp"
 #include "trace.hpp"
 
+Model::Model()
+{
+}
+
 Model::Model(const std::string& obj_filename)
 {
 	read_from_file(obj_filename);
@@ -203,21 +207,21 @@ void Model::print_stats() const
 	LOG_TRACE("Num of vertices: %lu\n", _vertices.size());
 	LOG_TRACE("Num of triangles: %lu\n", _triangles.size());
 
-	int max_x, max_y, max_z, min_x, min_y, min_z;
+	float max_x, max_y, max_z, min_x, min_y, min_z;
 	calc_min_max(&min_x, &max_x, &min_y, &max_y, &min_x, &max_z);
 
-	LOG_TRACE("Max x: %i, max y: %i, max z: %i\n", max_x, max_y, max_z);
-	LOG_TRACE("Min x: %i, min y: %i, min z: %i\n", min_x, min_y, min_z);
+	LOG_TRACE("Max x: %f, max y: %f, max z: %f\n", max_x, max_y, max_z);
+	LOG_TRACE("Min x: %f, min y: %f, min z: %f\n", min_x, min_y, min_z);
 }
 
 char Model::get_longest_axis() const
 {
-	int max_x, max_y, max_z, min_x, min_y, min_z;
+	float max_x, max_y, max_z, min_x, min_y, min_z;
 	calc_min_max(&min_x, &max_x, &min_y, &max_y, &min_x, &max_z);
 
-	int x_range = max_x - min_x + 1;
-	int y_range = max_y - min_y + 1;
-	int z_range = max_z - min_z + 1;
+	float x_range = max_x - min_x;
+	float y_range = max_y - min_y;
+	float z_range = max_z - min_z;
 
 	if (x_range > y_range && x_range > z_range)
 		return 'x';
@@ -226,7 +230,7 @@ char Model::get_longest_axis() const
 	return 'z';
 }
 
-void Model::calc_min_max(int *min_x, int *max_x, int *min_y, int *max_y, int *min_z, int *max_z) const
+void Model::calc_min_max(float *min_x, float *max_x, float *min_y, float *max_y, float *min_z, float *max_z) const
 {
 	*min_x = _vertices[0](0);
 	*max_x = _vertices[0](0);
@@ -276,3 +280,46 @@ void Model::rotate(const NativeMatrix& mat)
 	}
 }
 
+BoundingBox Model::get_bounding_box() const
+{
+	BoundingBox res;
+	calc_min_max(&res.min_x, &res.max_x, &res.min_y, &res.max_y, &res.min_z, &res.max_z);
+	return res;
+}
+
+Model Model::get_sub_model(const BoundingBox& bb) const
+{
+	Model res;
+	int next_idx = 0;
+	int *new_indices = new int[_vertices.size()];
+	for(int i = 0; i < _vertices.size(); ++i)
+	{
+		float x = _vertices[i](0);
+		float y = _vertices[i](1);
+		float z = _vertices[i](2);
+		if (bb.contains(x, y, z))
+		{
+			new_indices[i] = next_idx;
+			next_idx++;
+			res.add_ver(x, y, z);
+		}
+		else
+		{
+			new_indices[i] = -1;
+		}
+	}
+	for(int i = 0; i < _triangles.size(); ++i)
+	{
+		int a = _triangles[i][0];
+		int b = _triangles[i][1];
+		int c = _triangles[i][2];
+		int new_a = new_indices[a];
+		int new_b = new_indices[b];
+		int new_c = new_indices[c];
+		if (new_a == -1 || new_b == -1 || new_c == -1)
+			continue;
+		res.add_triangle(new_a, new_b, new_c);
+	}
+
+	return res;
+}
