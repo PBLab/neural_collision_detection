@@ -209,6 +209,8 @@ void Program::print_usage()
 	printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
 	printf("\t-m, --main-axis\t\tMain axis for rotation [default - z]\n");
 	printf("\t-f, --output-file\t\tOutput filename\n");
+	printf("\t-o, --output-directory\t\tOutput directory [Verify mode]\n");
+	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
 	printf("\t-x\t\t\tx coordinate of the center of the neuron [default - 0]\n");
 	printf("\t-y\t\t\ty coordinate of the center of the neuron [default - 0]\n");
 	printf("\t-z\t\t\tz coordinate of the center of the neuron [default - 0]\n");
