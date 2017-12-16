@@ -74,7 +74,16 @@ void Program::logic()
 	else
 	{
 		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
-		collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
+		// Ignore ret value
+		unlink(_output_file);
+		if (strlen(_input_file) == 0)
+		{
+			collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
+		}
+		else
+		{
+			collision_manager.check_all_collisions(_input_file, _main_axis, _num_of_collisions, _output_file);
+		}
 	}
 
 	LOG_INFO("Total run time: %i minutes\n", (time(NULL) - _start_time) / 60);
@@ -94,6 +103,10 @@ void Program::verify_args()
 		throw Exception("Output file path must NOT be set in verify mode");
 	if (_verify_mode && strlen(_output_directory) == 0)
 		throw Exception("Output dir path must be set in verify mode");
+	if (_verify_mode && strlen(_input_file) > 0)
+		throw Exception("Currently doesn't support many locations for verify mode");
+	if (strlen(_input_file) > 0 && (_x != 0 || _y != 0 || _z != 0))
+		throw Exception("Can use only one location type - direct of from file");
 
 	if (_num_of_threads <= 0 or _num_of_threads > 360)
 		throw Exception("Num of threads must be between 1 and 360");
@@ -117,6 +130,7 @@ void Program::parse_args(int argc, char** argv)
 			{"neural-path", required_argument, 0, 'N'},
 			{"threads", required_argument, 0, 't'},
 			{"collisions", required_argument, 0, 'c'},
+			{"input-file", required_argument, 0, 'i'},
 			{"main-axis", required_argument, 0, 'm'},
 			{"output-file", required_argument, 0, 'f'},
 			{"rotation", required_argument, 0, 'r'},
@@ -124,7 +138,7 @@ void Program::parse_args(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:c:qvx:y:z:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qvx:y:z:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -144,6 +158,9 @@ void Program::parse_args(int argc, char** argv)
 			break;
 		case 'c':
 			_num_of_collisions = atoi(optarg);
+			break;
+		case 'i':
+			strncpy(_input_file, optarg, PATH_MAX);
 			break;
 		case 'x':
 			_x = atoi(optarg);
@@ -211,6 +228,7 @@ void Program::print_usage()
 	printf("\t-f, --output-file\t\tOutput filename\n");
 	printf("\t-o, --output-directory\t\tOutput directory [Verify mode]\n");
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
+	printf("\t-i, --input-file\t\tInput file of locations\n");
 	printf("\t-x\t\t\tx coordinate of the center of the neuron [default - 0]\n");
 	printf("\t-y\t\t\ty coordinate of the center of the neuron [default - 0]\n");
 	printf("\t-z\t\t\tz coordinate of the center of the neuron [default - 0]\n");

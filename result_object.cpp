@@ -58,12 +58,19 @@ void ResultObject::add_result(int x, int y, int z, int res)
 	_current_elements++; // Not thread safe!
 }
 
-void ResultObject::write_to_file(const std::string& filename)
+void ResultObject::write_to_file(const std::string& filename, const std::string& title)
 {
-	FILE* f = fopen(filename.c_str(), "w");
+	FILE* f = fopen(filename.c_str(), "a");
 	if (f == NULL)
 	{
 		throw Exception("Failed opening output file");
+	}
+
+	if (title.length() != 0)
+	{
+		char str[1024];
+		snprintf(str, 1024, "========== %s ==========\n", title.c_str());
+		fwrite(str, strlen(str), 1, f);
 	}
 
 	for(int x = _x_min; x <= _x_max; ++x)

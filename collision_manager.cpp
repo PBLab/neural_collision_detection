@@ -169,21 +169,19 @@ void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, i
 	vascular.dump_to_file(output_cut_vascular);
 }
 
-void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename)
+void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename,
+										 FclModel* fm1, FclModel* fm2, const std::string& title)
 {
+	LOG_INFO("Checking collisions at (%i, %i, %i), using %i threads\n", x_pos, y_pos, z_pos, _num_of_threads);
 	int min_x, max_x, min_y, max_y, min_z, max_z;
 	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z);
 	//ResultObject res(-5, 5, -5, 5, 0, 359);
 	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z);
 
-	LOG_INFO("Num of threads: %i\n", _num_of_threads);
-
 	pthread_t * thread_ids = new pthread_t[_num_of_threads];
 	int z_range = max_z - min_z + 1;
 	int next_z = min_z;
 	thread_params_t * all_params = new thread_params[_num_of_threads];
-	FclModel* fm1 = m1()->fcl_model();
-	FclModel* fm2 = m2()->fcl_model();
 	for (int i = 0; i < _num_of_threads; ++i)
 	{
 		LOG_TRACE("Preparing thread #%i\n", i);
@@ -235,7 +233,41 @@ void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, cha
 		LOG_TRACE("pthread_join #%i returned\n", i);
 	}
 
-	res.write_to_file(output_filename.c_str());
+	res.write_to_file(output_filename, title);
+}
+
+void CollisionManager::check_all_collisions(const std::string& locations_filename, char main_axis, int num_of_col, const std::string& output_filename)
+{
+	FILE * f = fopen(locations_filename.c_str(), "r");
+	if (f == NULL)
+	{
+		throw Exception("failed opening locations file");
+	}
+
+	const char* line_template = "%i,%i,%i\n";
+	char buff[1024];
+	int x, y, z;
+
+	FclModel* fm1 = m1()->fcl_model();
+	FclModel* fm2 = m2()->fcl_model();
+	for(;;)
+	{
+		int ret = fscanf(f, line_template, &x, &y, &z);
+		if (ret <= 0)
+			break;
+		char str[256];
+		snprintf(str, 256, "(%i, %i, %i)", x, y, z);
+		check_all_collisions_at_location(x, y, z, main_axis, num_of_col, output_filename, fm1, fm2, str);
+	}
+	fclose(f);
+	LOG_INFO("Done!\n");
+}
+
+void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename)
+{
+	FclModel* fm1 = m1()->fcl_model();
+	FclModel* fm2 = m2()->fcl_model();
+	check_all_collisions_at_location(x_pos, y_pos, z_pos, main_axis, num_of_col, output_filename, fm1, fm2, "");
 	LOG_INFO("Done!\n");
 }
 

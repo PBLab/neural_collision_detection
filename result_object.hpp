@@ -9,7 +9,7 @@ class ResultObject
 		~ResultObject();
 
 		void add_result(int x, int y, int z, int res);
-		void write_to_file(const std::string& filename);
+		void write_to_file(const std::string& filename, const std::string& title);
 		float get_percentage() const;
 
 	private:

@@ -23,6 +23,7 @@ private:
 	char _neural_path[PATH_MAX] = {0};
 	char _output_file[PATH_MAX] = {0};
 	char _output_directory[PATH_MAX] = {0};
+	char _input_file[PATH_MAX] = {0};
 	int _x = 0;
 	int _y = 0;
 	int _z = 0;
