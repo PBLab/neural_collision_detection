@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-	LOG_INFO("====  My fcl program  ====\n");
+	LOG_INFO("====  ncd start  ====\n");
 
 	try
 	{

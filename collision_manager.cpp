@@ -44,13 +44,16 @@ static void report_progress(ResultObject* res)
 		return;
 	}
 
-	LOG_INFO("Completed %i%\n", cur_percentage);
+	if (cur_percentage % 10 == 0)
+		LOG_INFO("Completed %i%\n", cur_percentage);
+	else
+		LOG_TRACE("Completed %i%\n", cur_percentage);
 	last_percentage = cur_percentage;
 }
 
 static void* thread_main_impl(thread_params_t* params)
 {
-	LOG_INFO("Thread main #%i! min_x -> max_x: %i -> %i. Creating models...\n",
+	LOG_TRACE("Thread main #%i! min_x -> max_x: %i -> %i. Creating models...\n",
 					params->thread_id, params->min_x, params->max_x);
 	FclModel * fm1 = params->fm1;
 	FclModel * fm2 = params->fm2;
@@ -85,7 +88,7 @@ static void* thread_main_impl(thread_params_t* params)
 			} 
 		}
 	}
-	LOG_INFO("Thread #%i Finished\n", id);
+	LOG_TRACE("Thread #%i Finished\n", id);
 	return NULL;
 }
 
@@ -139,8 +142,12 @@ void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, i
 {
 	LOG_INFO("Checking single collision...\n");
 	PointsVector res;
+	LOG_INFO("Creating model1...\n");
 	FclModel* fm1 = m1()->fcl_model();
+	LOG_INFO("\tDone.\n");
+	LOG_INFO("Creating model2...\n");
 	FclModel* fm2 = m2()->fcl_model();
+	LOG_INFO("\tDone.\n");
 	int num_of_collisions =
 			Collision::check_a_collision(fm1,
 										 fm2,
@@ -248,8 +255,12 @@ void CollisionManager::check_all_collisions(const std::string& locations_filenam
 	char buff[1024];
 	int x, y, z;
 
+	LOG_INFO("Creating model1...\n");
 	FclModel* fm1 = m1()->fcl_model();
+	LOG_INFO("\tDone.\n");
+	LOG_INFO("Creating model2...\n");
 	FclModel* fm2 = m2()->fcl_model();
+	LOG_INFO("\tDone.\n");
 	for(;;)
 	{
 		int ret = fscanf(f, line_template, &x, &y, &z);
@@ -265,8 +276,12 @@ void CollisionManager::check_all_collisions(const std::string& locations_filenam
 
 void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename)
 {
+	LOG_INFO("Creating model1...\n");
 	FclModel* fm1 = m1()->fcl_model();
+	LOG_INFO("\tDone.\n");
+	LOG_INFO("Creating model2...\n");
 	FclModel* fm2 = m2()->fcl_model();
+	LOG_INFO("\tDone.\n");
 	check_all_collisions_at_location(x_pos, y_pos, z_pos, main_axis, num_of_col, output_filename, fm1, fm2, "");
 	LOG_INFO("Done!\n");
 }
