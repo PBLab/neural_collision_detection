@@ -6,11 +6,12 @@
 static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
 
-CollisionManager::CollisionManager(const Model* m1, const Model* m2, int num_of_threads)
+CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads)
 {
 	_m1 = m1;
 	_m2 = m2;
 	_num_of_threads = num_of_threads;
+	_neuron_filename = neuron_filename;
 }
 
 CollisionManager::~CollisionManager()
@@ -183,7 +184,7 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 	int min_x, max_x, min_y, max_y, min_z, max_z;
 	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z);
 	//ResultObject res(-5, 5, -5, 5, 0, 359);
-	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z);
+	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z, x_pos, y_pos, z_pos);
 
 	pthread_t * thread_ids = new pthread_t[_num_of_threads];
 	int z_range = max_z - min_z + 1;
@@ -240,7 +241,7 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		LOG_TRACE("pthread_join #%i returned\n", i);
 	}
 
-	res.write_to_file(output_filename, title);
+	res.write_to_file(output_filename, _neuron_filename);
 }
 
 void CollisionManager::check_all_collisions(const std::string& locations_filename, char main_axis, int num_of_col, const std::string& output_filename)

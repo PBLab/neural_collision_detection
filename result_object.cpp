@@ -3,28 +3,32 @@
 #include "trace.hpp"
 #include <string.h>
 
-ResultObject::ResultObject(int min_x, int max_x, int min_y, int max_y, int min_z, int max_z)
+ResultObject::ResultObject(int min_x, int max_x, int min_y, int max_y, int min_z, int max_z, int x_loc, int y_loc, int z_loc)
 :_x_min(min_x),
 _x_max(max_x),
 _y_min(min_y),
 _y_max(max_y),
 _z_min(min_z),
 _z_max(max_z),
+_x_loc(x_loc),
+_y_loc(y_loc),
+_z_loc(z_loc),
 _current_elements(0)
 {
 	_x_size = _x_max - _x_min + 1;
 	_y_size = _y_max - _y_min + 1;
 	_z_size = _z_max - _z_min + 1;
-	_result_array = new int**[_x_size];
+	_result_array = new SingleResult**[_x_size];
 	for(int i = 0; i < _x_size; ++i)
 	{
-		_result_array[i] = new int*[_y_size];
+		_result_array[i] = new SingleResult*[_y_size];
 		for(int j = 0; j < _y_size; ++j)
 		{
-			_result_array[i][j] = new int[_z_size];
+			_result_array[i][j] = new SingleResult[_z_size];
 			for(int k = 0; k < _z_size; ++k)
 			{
-				_result_array[i][j][k] = -1;
+				_result_array[i][j][k].num_of_collisions = -1;
+				_result_array[i][j][k].is_min = false;
 			}
 		}
 	}
@@ -54,11 +58,11 @@ void ResultObject::add_result(int x, int y, int z, int res)
 		LOG_ERROR("max_x = %i, max_y = %i, max_z = %i\n", _x_max, _y_max, _z_max);		
 		throw Exception("add_result got wrong indices");
 	}
-	_result_array[x - _x_min][y - _y_min][z - _z_min] = res;
+	_result_array[x - _x_min][y - _y_min][z - _z_min].num_of_collisions = res;
 	_current_elements++; // Not thread safe!
 }
 
-void ResultObject::write_to_file(const std::string& filename, const std::string& title)
+void ResultObject::write_to_file(const std::string& filename, const std::string& prefix)
 {
 	FILE* f = fopen(filename.c_str(), "a");
 	if (f == NULL)
@@ -66,12 +70,14 @@ void ResultObject::write_to_file(const std::string& filename, const std::string&
 		throw Exception("Failed opening output file");
 	}
 
+	/*
 	if (title.length() != 0)
 	{
 		char str[1024];
 		snprintf(str, 1024, "========== %s ==========\n", title.c_str());
 		fwrite(str, strlen(str), 1, f);
 	}
+	*/
 
 	for(int x = _x_min; x <= _x_max; ++x)
 	{
@@ -80,8 +86,10 @@ void ResultObject::write_to_file(const std::string& filename, const std::string&
 			for(int z = _z_min; z <= _z_max; ++z)
 			{
 				char str[1024];
-				snprintf(str, 1024, "%i,%i,%i : %i\n", x, y, z,
-											_result_array[x - _x_min][y - _y_min][z - _z_min]);
+				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
+				snprintf(str, 1024, "%s,%i,%i,%i,%i,%i,%i,%i,%i\n", prefix.c_str(), _x_loc, _y_loc, _z_loc,
+											x, y, z,
+											cur_result->num_of_collisions, cur_result->is_min);
 				fwrite(str, strlen(str), 1, f);
 			}
 		}

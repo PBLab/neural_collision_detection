@@ -26,20 +26,6 @@ ModelPtr create_obj_model(char* path)
 	return ModelPtr(new Model(path));
 }
 
-ModelPtr create_csv_model(char* path)
-{
-	char vertices[PATH_MAX];
-	char faces[PATH_MAX];
-
-	strcpy(vertices, path);
-	strcat(vertices, "/vertices.csv");
-
-	strcpy(faces, path);
-	strcat(faces, "/faces.csv");
-
-	return ModelPtr(new Model(vertices, faces));
-}
-
 void Program::logic()
 {
 	ModelPtr vascular_model;
@@ -53,13 +39,7 @@ void Program::logic()
 	vascular_model->print_stats();
 	neural_model->print_stats();
 
-	if (_main_axis == '\0')
-	{
-		_main_axis = neural_model->get_longest_axis();
-		LOG_INFO("Longest axis: %c\n", _main_axis);
-	}
-
-	if (_verify_mode)
+	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
 		struct stat st = {0};
@@ -68,19 +48,19 @@ void Program::logic()
 			LOG_INFO("Creating output directory\n");
 			mkdir(_output_directory, 0700);
 		}
-		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
+		CollisionManager collision_manager(&*vascular_model, &*neural_model, _neural_path, _num_of_threads);
 		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions, _output_directory);
 	}
 	else
 	{
-		CollisionManager collision_manager(&*vascular_model, &*neural_model, _num_of_threads);
+		CollisionManager collision_manager(&*vascular_model, &*neural_model, _neural_path, _num_of_threads);
 		// Ignore ret value
 		unlink(_output_file);
-		if (strlen(_input_file) == 0)
+		if (_mode == MODE__REGULAR)
 		{
 			collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
 		}
-		else
+		else if (_mode == MODE__BATCH)
 		{
 			collision_manager.check_all_collisions(_input_file, _main_axis, _num_of_collisions, _output_file);
 		}
@@ -95,26 +75,42 @@ void Program::verify_args()
 		throw Exception("Vascular path must be set");
 	if (strlen(_neural_path) == 0)
 		throw Exception("Neural path must be set");
-	if (!_verify_mode && strlen(_output_file) == 0)
-		throw Exception("Output file path must be set in non verify mode");
-	if (!_verify_mode && strlen(_output_directory) != 0)
-		throw Exception("Output dir path must NOT be set in non verify mode");
-	if (_verify_mode && strlen(_output_file) != 0)
-		throw Exception("Output file path must NOT be set in verify mode");
-	if (_verify_mode && strlen(_output_directory) == 0)
-		throw Exception("Output dir path must be set in verify mode");
-	if (_verify_mode && strlen(_input_file) > 0)
-		throw Exception("Currently doesn't support many locations for verify mode");
-	if (strlen(_input_file) > 0 && (_x != 0 || _y != 0 || _z != 0))
-		throw Exception("Can use only one location type - direct of from file");
+	switch(_mode)
+	{
+	case MODE__REGULAR:
+		if (strlen(_output_file) == 0)
+			throw Exception("Output file path must be set in regular mode");
+		if (strlen(_input_file) > 0)
+			throw Exception("Can't use input file in regular mode");
+		break;
+
+	case MODE__VERIFY:
+		if (strlen(_output_file) != 0)
+			throw Exception("Output file path must NOT be set in verify mode");
+		if (strlen(_input_file) > 0)
+			throw Exception("Can't use input file in verify mode");
+		break;
+
+	case MODE__BATCH:
+		if (strlen(_output_file) == 0)
+			throw Exception("Output file path must be set in batch mode");
+		break;
+
+	default:
+		throw Exception("Unknown mode");
+	}
+
+	if (strlen(_output_directory) == 0)
+		throw Exception("Output dir path must be set");
+
 
 	if (_num_of_threads <= 0 or _num_of_threads > 360)
 		throw Exception("Num of threads must be between 1 and 360");
 
-	if (_num_of_collisions <= 0)
-		throw Exception("Num of collisions must be positive");
+	//if (_num_of_collisions <= 0)
+		//throw Exception("Num of collisions must be positive");
 
-	if (_main_axis != '\0' && _main_axis != 'x' && _main_axis != 'y' && _main_axis != 'z')
+	if (_main_axis != 'x' && _main_axis != 'y' && _main_axis != 'z')
 		throw Exception("Main axis must be one of x, y, z");
 }
 
@@ -172,6 +168,14 @@ void Program::parse_args(int argc, char** argv)
 			_z = atoi(optarg);
 			break;
 		case 'm':
+			if (strcmp(optarg, "regular") == 0)
+				_mode = MODE__REGULAR;
+			else if (strcmp(optarg, "verify") == 0)
+				_mode = MODE__VERIFY;
+			else if (strcmp(optarg, "batch") == 0)
+				_mode = MODE__BATCH;
+			break;
+		case 'a':
 			_main_axis = optarg[0];
 			break;
 		case 'v':
@@ -182,11 +186,10 @@ void Program::parse_args(int argc, char** argv)
 			set_verbosity(0);
 			break;
 		case 'r':
-			_verify_mode = true;
 			parse_rotation(optarg);
 			break;
 		case 'o':
-			_verify_mode = true;
+			//_verify_mode = true;
 			strncpy(_output_directory, optarg, PATH_MAX);
 			break;
 		case '?':
@@ -220,18 +223,17 @@ void Program::print_usage()
 {
 	printf("Usage: ./ncd [OPTIONS]\n");
 	printf("\t-h, --help\t\tPrint this help and exit\n");
+	printf("\t-m, --mode\t\tRunning mode [regular, verify, batch]\n");
 	printf("\t-V, --vascular-path\tPath to vascular data directory\n");
 	printf("\t-N, --neural-path\tPath to neural data directory\n");
 	printf("\t-t, --threads\t\tNumber of threads to use, between 1-360 [default - 10]\n");
-	printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
-	printf("\t-m, --main-axis\t\tMain axis for rotation [default - z]\n");
-	printf("\t-f, --output-file\tOutput filename\n");
-	printf("\t-o, --output-directory\tOutput directory [Verify mode]\n");
+	printf("\t-a, --main-axis\t\tMain axis for rotation [default - z]\n");
+	printf("\t-o, --output-directory\tOutput directory\n");
+	printf("\t-f, --output-file\tOutput filename [Regular/Batch mode]\n");
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
-	printf("\t-i, --input-file\tInput file of locations\n");
-	printf("\t-x\t\t\tx coordinate of the center of the neuron [default - 0]\n");
-	printf("\t-y\t\t\ty coordinate of the center of the neuron [default - 0]\n");
-	printf("\t-z\t\t\tz coordinate of the center of the neuron [default - 0]\n");
+	printf("\t-i, --input-file\tInput file of locations [Batch mode]\n");
+	printf("\t-l, --location\tLocation of neuron [Regular/Verify mode]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
+	//printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
 }

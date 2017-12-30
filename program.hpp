@@ -4,6 +4,14 @@
 #include <time.h>
 
 
+typedef enum RunningMode_e
+{
+	MODE__REGULAR,
+	MODE__VERIFY,
+	MODE__BATCH,
+	MODE__NOMODE,
+} RunningMode;
+
 class Program
 {
 public:
@@ -34,7 +42,7 @@ private:
 	int _num_of_threads = 10;
 	int _num_of_collisions = 20000;
 	int _verbose = 1;
-	bool _verify_mode = false;
+	RunningMode _mode = MODE__NOMODE;
 
 	time_t _start_time;
 };
