@@ -17,6 +17,10 @@ class ResultObject
 		void add_result(int x, int y, int z, int res);
 		void write_to_file(const std::string& filename, const std::string& prefix);
 		float get_percentage() const;
+		void mark_mins(int amount);
+
+	private:
+		void mark_min();
 
 	private:
 		SingleResult*** _result_array;

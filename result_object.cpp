@@ -101,3 +101,39 @@ float ResultObject::get_percentage() const
 {
 	return (_current_elements*1.0) / _total_elements;
 }
+
+void ResultObject::mark_min()
+{
+	int min_x = 0;
+	int min_y = 0;
+	int min_z = 0;
+	int min_res = _result_array[0][0][0].num_of_collisions;
+
+	for(int x = _x_min; x <= _x_max; ++x)
+	{
+		for(int y = _y_min; y <= _y_max; ++y)
+		{
+			for(int z = _z_min; z <= _z_max; ++z)
+			{
+				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
+				if (!cur_result->is_min && cur_result->num_of_collisions < min_res)
+				{
+					min_res = cur_result->num_of_collisions;
+					min_x = x;
+					min_y = y;
+					min_z = z;
+				}
+			}
+		}
+	}
+
+	_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].is_min = true;
+}
+
+void ResultObject::mark_mins(int amount)
+{
+	for(int i = 0; i < amount; ++i)
+	{
+		mark_min();
+	}
+}

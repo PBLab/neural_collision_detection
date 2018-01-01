@@ -17,7 +17,7 @@ public:
 
 private:
 	void check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
-	void output_collision_points_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
+	std::string output_collision_points_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
 
 private:
 	const Model * _m1;
