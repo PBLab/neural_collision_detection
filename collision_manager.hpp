@@ -7,22 +7,26 @@
 class CollisionManager
 {
 public:
-	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads);
+	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, const std::string& output_directory);
 	~CollisionManager();
 	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
 	void check_all_collisions(const std::string& locations_filename, char main_axis, int num_of_col, const std::string& output_filename);
-	void check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col, const std::string& output_directory);
+	void check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
 	const Model* m1() const;
 	const Model* m2() const;
 
 private:
-	void check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename,
-										 FclModel* fm1, FclModel* fm2, const std::string& title);
+	void check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
+	void output_collision_points_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
 
 private:
 	const Model * _m1;
 	const Model * _m2;
+
+	const FclModel * _fm1;
+	const FclModel * _fm2;
 	std::string _neuron_filename;
+	std::string _output_directory;;
 	int _num_of_threads;
 };
 
@@ -31,8 +35,8 @@ typedef struct thread_params
 {
 	ResultObject* result_object;
 	CollisionManager* collision_manager;
-	FclModel* fm1;
-	FclModel* fm2;
+	const FclModel* fm1;
+	const FclModel* fm2;
 	int x_pos;
 	int y_pos;
 	int z_pos;

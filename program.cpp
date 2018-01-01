@@ -26,6 +26,16 @@ ModelPtr create_obj_model(char* path)
 	return ModelPtr(new Model(path));
 }
 
+std::string get_file_name_from_path(const std::string& path)
+{
+	size_t i = path.rfind('/', path.length());
+	if (i != string::npos)
+		return(path.substr(i+1, path.length() - i));
+
+	return "";
+}
+
+
 void Program::logic()
 {
 	ModelPtr vascular_model;
@@ -39,6 +49,7 @@ void Program::logic()
 	vascular_model->print_stats();
 	neural_model->print_stats();
 
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _output_directory);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
@@ -48,12 +59,10 @@ void Program::logic()
 			LOG_INFO("Creating output directory\n");
 			mkdir(_output_directory, 0700);
 		}
-		CollisionManager collision_manager(&*vascular_model, &*neural_model, _neural_path, _num_of_threads);
-		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions, _output_directory);
+		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions);
 	}
 	else
 	{
-		CollisionManager collision_manager(&*vascular_model, &*neural_model, _neural_path, _num_of_threads);
 		// Ignore ret value
 		unlink(_output_file);
 		if (_mode == MODE__REGULAR)
@@ -94,6 +103,10 @@ void Program::verify_args()
 	case MODE__BATCH:
 		if (strlen(_output_file) == 0)
 			throw Exception("Output file path must be set in batch mode");
+		if (strlen(_input_file) == 0)
+			throw Exception("Input file path must be set in batch mode");
+		if (_x != 0 || _y != 0 || _z != 0)
+			throw Exception("-l can't be used in batch mode");
 		break;
 
 	default:
@@ -131,10 +144,11 @@ void Program::parse_args(int argc, char** argv)
 			{"output-file", required_argument, 0, 'f'},
 			{"rotation", required_argument, 0, 'r'},
 			{"output-directory", required_argument, 0, 'o'},
+			{"location", required_argument, 0, 'l'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:i:c:qvx:y:z:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qvl:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -158,14 +172,8 @@ void Program::parse_args(int argc, char** argv)
 		case 'i':
 			strncpy(_input_file, optarg, PATH_MAX);
 			break;
-		case 'x':
-			_x = atoi(optarg);
-			break;
-		case 'y':
-			_y = atoi(optarg);
-			break;
-		case 'z':
-			_z = atoi(optarg);
+		case 'l':
+			parse_triplet(optarg, &_x, &_y, &_z);
 			break;
 		case 'm':
 			if (strcmp(optarg, "regular") == 0)
@@ -186,7 +194,7 @@ void Program::parse_args(int argc, char** argv)
 			set_verbosity(0);
 			break;
 		case 'r':
-			parse_rotation(optarg);
+			parse_triplet(optarg, &_r_x, &_r_y, &_r_z);
 			break;
 		case 'o':
 			//_verify_mode = true;
@@ -201,22 +209,22 @@ void Program::parse_args(int argc, char** argv)
 	}
 }
 
-void Program::parse_rotation(char* optarg)
+void Program::parse_triplet(char* optarg, int* a, int* b, int* c)
 {
 	char param[128];
 	strcpy(param, optarg);
 	char* first_coma = strchr(param, ',');
 	if (first_coma == NULL)
-		throw Exception("Invalid rotation format");
+		throw Exception("Invalid triplet format");
 	char* second_coma = strchr(first_coma + 1, ',');
 	if (second_coma == NULL)
-		throw Exception("Invalid rotation format");
+		throw Exception("Invalid triplet format");
 
 	*first_coma = '\0';
 	*second_coma = '\0';
-	_r_x = atoi(param);
-	_r_y = atoi(first_coma + 1);
-	_r_z = atoi(second_coma + 1);
+	*a = atoi(param);
+	*b = atoi(first_coma + 1);
+	*c = atoi(second_coma + 1);
 }
 
 void Program::print_usage()
@@ -232,7 +240,7 @@ void Program::print_usage()
 	printf("\t-f, --output-file\tOutput filename [Regular/Batch mode]\n");
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
 	printf("\t-i, --input-file\tInput file of locations [Batch mode]\n");
-	printf("\t-l, --location\tLocation of neuron [Regular/Verify mode]\n");
+	printf("\t-l, --location\t\tLocation of neuron [Regular/Verify mode]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 	//printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");

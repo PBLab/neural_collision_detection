@@ -24,7 +24,7 @@ private:
 	void parse_args(int argc, char** argv);
 	void verify_args();
 	void print_usage();
-	void parse_rotation(char* optarg);
+	void parse_triplet(char* optarg, int* a, int* b, int* c);
 
 private:
 	char _vascular_path[PATH_MAX] = {0};
