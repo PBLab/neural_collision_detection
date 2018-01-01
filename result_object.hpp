@@ -2,11 +2,27 @@
 
 #include <string>
 
+#define OUTPUT_FILENAME_LENGTH 256
+
 typedef struct SingleResult_s
 {
 	int num_of_collisions;
 	bool is_min;
+	char output_filename[OUTPUT_FILENAME_LENGTH];
 } SingleResult;
+
+typedef struct SingleResultCallbackParam_s
+{
+	int x;
+	int y;
+	int z;
+	int r_x;
+	int r_y;
+	int r_z;
+	SingleResult* single_result;
+}SingleResultCallbackParam;
+
+typedef void (*result_callback_t)(void* arg, SingleResultCallbackParam * params);
 
 class ResultObject
 {
@@ -18,6 +34,7 @@ class ResultObject
 		void write_to_file(const std::string& filename, const std::string& prefix);
 		float get_percentage() const;
 		void mark_mins(int amount);
+		void for_each_result(result_callback_t callback, void* arg);
 
 	private:
 		void mark_min();

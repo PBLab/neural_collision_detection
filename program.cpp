@@ -49,17 +49,17 @@ void Program::logic()
 	vascular_model->print_stats();
 	neural_model->print_stats();
 
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _output_directory);
+	struct stat st = {0};
+	if (stat(_output_directory, &st) == -1)
+	{
+		LOG_INFO("Creating output directory\n");
+		mkdir(_output_directory, 0700);
+	}
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
-		struct stat st = {0};
-		if (stat(_output_directory, &st) == -1)
-		{
-			LOG_INFO("Creating output directory\n");
-			mkdir(_output_directory, 0700);
-		}
-		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z, _num_of_collisions);
+		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z);
 	}
 	else
 	{
@@ -67,11 +67,11 @@ void Program::logic()
 		unlink(_output_file);
 		if (_mode == MODE__REGULAR)
 		{
-			collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _num_of_collisions, _output_file);
+			collision_manager.check_all_collisions(_x, _y, _z, _main_axis, _output_file);
 		}
 		else if (_mode == MODE__BATCH)
 		{
-			collision_manager.check_all_collisions(_input_file, _main_axis, _num_of_collisions, _output_file);
+			collision_manager.check_all_collisions(_input_file, _main_axis, _output_file);
 		}
 	}
 

@@ -29,6 +29,7 @@ _current_elements(0)
 			{
 				_result_array[i][j][k].num_of_collisions = -1;
 				_result_array[i][j][k].is_min = false;
+				_result_array[i][j][k].output_filename[0] = '\0';
 			}
 		}
 	}
@@ -87,9 +88,9 @@ void ResultObject::write_to_file(const std::string& filename, const std::string&
 			{
 				char str[1024];
 				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
-				snprintf(str, 1024, "%s,%i,%i,%i,%i,%i,%i,%i,%i\n", prefix.c_str(), _x_loc, _y_loc, _z_loc,
+				snprintf(str, 1024, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%s\n", prefix.c_str(), _x_loc, _y_loc, _z_loc,
 											x, y, z,
-											cur_result->num_of_collisions, cur_result->is_min);
+											cur_result->num_of_collisions, cur_result->is_min, cur_result->output_filename);
 				fwrite(str, strlen(str), 1, f);
 			}
 		}
@@ -135,5 +136,29 @@ void ResultObject::mark_mins(int amount)
 	for(int i = 0; i < amount; ++i)
 	{
 		mark_min();
+	}
+}
+
+void ResultObject::for_each_result(result_callback_t callback, void* arg)
+{
+	for(int x = _x_min; x <= _x_max; ++x)
+	{
+		for(int y = _y_min; y <= _y_max; ++y)
+		{
+			for(int z = _z_min; z <= _z_max; ++z)
+			{
+				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
+
+				SingleResultCallbackParam params;
+				params.x = _x_loc;
+				params.y = _y_loc;
+				params.z = _z_loc;
+				params.r_x = x;
+				params.r_y = y;
+				params.r_z = z;
+				params.single_result = cur_result;
+				callback(arg, &params);
+			}
+		}
 	}
 }

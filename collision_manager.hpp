@@ -7,17 +7,18 @@
 class CollisionManager
 {
 public:
-	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, const std::string& output_directory);
+	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
+				   	 const std::string& output_directory);
 	~CollisionManager();
-	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
-	void check_all_collisions(const std::string& locations_filename, char main_axis, int num_of_col, const std::string& output_filename);
-	void check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
+	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename);
+	void check_all_collisions(const std::string& locations_filename, char main_axis, const std::string& output_filename);
+	void check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r);
 	const Model* m1() const;
 	const Model* m2() const;
+	std::string output_collision_points_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r);
 
 private:
-	void check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, int num_of_col, const std::string& output_filename);
-	std::string output_collision_points_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r, int num_of_col);
+	void check_all_collisions_at_location(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename);
 
 private:
 	const Model * _m1;
@@ -28,6 +29,7 @@ private:
 	std::string _neuron_filename;
 	std::string _output_directory;;
 	int _num_of_threads;
+	int _max_num_of_collisions;;
 };
 
 
