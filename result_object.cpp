@@ -108,7 +108,7 @@ void ResultObject::mark_min()
 	int min_x = 0;
 	int min_y = 0;
 	int min_z = 0;
-	int min_res = _result_array[0][0][0].num_of_collisions;
+	int min_res = _result_array[0][0][0].num_of_collisions + 100000;
 
 	for(int x = _x_min; x <= _x_max; ++x)
 	{
