@@ -32,7 +32,7 @@ std::string get_file_name_from_path(const std::string& path)
 	if (i != string::npos)
 		return(path.substr(i+1, path.length() - i));
 
-	return "";
+	return path;
 }
 
 
