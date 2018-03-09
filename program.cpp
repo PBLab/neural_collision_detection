@@ -55,7 +55,7 @@ void Program::logic()
 		LOG_INFO("Creating output directory\n");
 		mkdir(_output_directory, 0700);
 	}
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory);
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
@@ -98,6 +98,8 @@ void Program::verify_args()
 			throw Exception("Output file path must NOT be set in verify mode");
 		if (strlen(_input_file) > 0)
 			throw Exception("Can't use input file in verify mode");
+		if (_minimal_only)
+			throw Exception("Can't use minimal only in verify mode");
 		break;
 
 	case MODE__BATCH:
@@ -145,10 +147,11 @@ void Program::parse_args(int argc, char** argv)
 			{"rotation", required_argument, 0, 'r'},
 			{"output-directory", required_argument, 0, 'o'},
 			{"location", required_argument, 0, 'l'},
+			{"minimal-only", required_argument, 0, 'z'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:i:c:qvl:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzvl:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -200,6 +203,9 @@ void Program::parse_args(int argc, char** argv)
 			//_verify_mode = true;
 			strncpy(_output_directory, optarg, PATH_MAX);
 			break;
+		case 'z':
+			_minimal_only = true;
+			break;
 		case '?':
 		case 'h':
 		default:
@@ -241,6 +247,7 @@ void Program::print_usage()
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
 	printf("\t-i, --input-file\tInput file of locations [Batch mode]\n");
 	printf("\t-l, --location\t\tLocation of neuron [Regular/Verify mode]\n");
+	printf("\t-z, --minimal-only\t\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 	//printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");

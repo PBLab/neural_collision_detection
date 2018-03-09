@@ -7,7 +7,7 @@ static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
 
 CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-									const std::string& output_directory)
+									const std::string& output_directory, bool minimal_only)
 {
 	_m1 = m1;
 	_m2 = m2;
@@ -15,6 +15,7 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 	_max_num_of_collisions = max_num_of_collisions;
 	_neuron_filename = neuron_filename;
 	_output_directory = output_directory;
+	_minimal_only = minimal_only;
 
 	LOG_INFO("Creating model1...\n");
 	_fm1 = _m1->fcl_model();
@@ -264,7 +265,7 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 
 	res.for_each_result(single_result_callback, (void*)this);
 
-	res.write_to_file(output_filename, _neuron_filename);
+	res.write_to_file(output_filename, _neuron_filename, _minimal_only);
 }
 
 

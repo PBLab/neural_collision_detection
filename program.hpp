@@ -42,6 +42,7 @@ private:
 	int _num_of_threads = 10;
 	int _num_of_collisions = 20000;
 	int _verbose = 1;
+	bool _minimal_only = false;
 	RunningMode _mode = MODE__NOMODE;
 
 	time_t _start_time;

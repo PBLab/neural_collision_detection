@@ -8,7 +8,7 @@ class CollisionManager
 {
 public:
 	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-				   	 const std::string& output_directory);
+				   	 const std::string& output_directory, bool minimal_only);
 	~CollisionManager();
 	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename);
 	void check_all_collisions(const std::string& locations_filename, char main_axis, const std::string& output_filename);
@@ -30,6 +30,7 @@ private:
 	std::string _output_directory;;
 	int _num_of_threads;
 	int _max_num_of_collisions;;
+	bool _minimal_only = false;
 };
 
 

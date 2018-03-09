@@ -63,7 +63,7 @@ void ResultObject::add_result(int x, int y, int z, int res)
 	_current_elements++; // Not thread safe!
 }
 
-void ResultObject::write_to_file(const std::string& filename, const std::string& prefix)
+void ResultObject::write_to_file(const std::string& filename, const std::string& prefix, bool minimal_only)
 {
 	FILE* f = fopen(filename.c_str(), "a");
 	if (f == NULL)
@@ -88,6 +88,8 @@ void ResultObject::write_to_file(const std::string& filename, const std::string&
 			{
 				char str[1024];
 				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
+				if (minimal_only && !cur_result->is_min)
+					continue;
 				snprintf(str, 1024, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%s\n", prefix.c_str(), _x_loc, _y_loc, _z_loc,
 											x, y, z,
 											cur_result->num_of_collisions, cur_result->is_min, cur_result->output_filename);
