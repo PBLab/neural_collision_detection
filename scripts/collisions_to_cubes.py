@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import os, sys
 
 def main(argv):
@@ -16,7 +17,7 @@ def main(argv):
 	output_idx = 0
 	for l in lines:
 		output = os.path.join(output_dir, "collision_{0}.obj".format(output_idx))
-		os.system("python ~/cg/tests/create_cube.py {output} 0.1 {l}".format(**locals()))
+		os.system("python ~/cg/tests/create_cube.py {output} 2 {l}".format(**locals()))
 		output_idx += 1
 
 

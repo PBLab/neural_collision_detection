@@ -1,6 +1,7 @@
 import sys, os
 import math
 import numpy as np
+import time
 
 
 def read_balls(fname):
@@ -112,25 +113,36 @@ def distance(n, v):
 	xv, yv, zv, rv = v
 
 	d = (xn-xv)**2 + (yn-yv)**2 + (zn-zv)**2
-	#d = d ** 0.5
+	d = d ** 0.5
 	return d
 
 def find_nearest_points(vascular, neuron):
 	i = 0
+	collisions = []
 	print "len(neuron): ", len(neuron)
+
 	for n in neuron:
 		i += 1
-		if i % 100 == 0:
-			print i
+		if i % 500 == 0:
+			#print i
+			pass
 		for v in vascular:
-			if abs(n[0] - v[0]) > 3:
+			rsum = n[3] + v[3]
+			if abs(n[0] - v[0]) > rsum:
 				continue
-			if abs(n[1] - v[1]) > 3:
+			if abs(n[1] - v[1]) > rsum:
 				continue
-			if abs(n[2] - v[2]) > 3:
+			if abs(n[2] - v[2]) > rsum:
 				continue
-			if distance(n, v) < 1:
-				print n, v
+			if distance(n, v) <= rsum:
+				#print n, v
+				#cnt += 1
+				#collisions.append(n)
+				collisions.append(v)
+				break
+
+	#print "cnt = ", cnt
+	return collisions
 
 def main(argv):
 	if len(argv) != 6:
@@ -163,10 +175,18 @@ def main(argv):
 	vascular = cut_vascular(vascular, neuron)
 
 	print "Find nearest points..."
-	find_nearest_points(vascular, neuron)
+	collisions = find_nearest_points(vascular, neuron)
+
+	with open(results_filename, "wb") as f:
+		#f.write(str(len(collisions)) + "\n")
+		for col in collisions:
+			f.write("%i,%i,%i\n" % (col[0], col[1], col[2]))
 
 	print "Done!"
 	return 0
 
 if __name__ == "__main__":
-	sys.exit(main(sys.argv))
+	start_time = time.time()
+	main(sys.argv)
+	end_time = time.time()
+	print "Total time: %i seconds" % int(end_time - start_time)
