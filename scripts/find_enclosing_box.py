@@ -7,19 +7,19 @@ def find_bounding_box(obj):
 	min_z = max_z = obj[0][2]
 
 	for i in xrange(len(obj)):
-		x, y, z = obj[i][:3]
-		if x < min_x:
-			min_x = x
-		if x > max_x:
-			max_x = x
-		if y < min_y:
-			min_y = y
-		if y > max_y:
-			max_y = y
-		if z < min_z:
-			min_z = z
-		if z > max_z:
-			max_z = z
+		x, y, z, r = obj[i]
+		if x-r < min_x:
+			min_x = x-r
+		if x+r > max_x:
+			max_x = x+r
+		if y-r < min_y:
+			min_y = y-r
+		if y+r > max_y:
+			max_y = y+r
+		if z-r < min_z:
+			min_z = z-r
+		if z+r > max_z:
+			max_z = z+r
 
 	return min_x, max_x, min_y, max_y, min_z, max_z
 
@@ -29,7 +29,7 @@ def handle_obj_file(fname):
 		if not line.startswith("v "):
 			continue
 		point = line.split(" ")[1:4]
-		point = [float(x) for x in point]
+		point = [float(x) for x in point] + [0]
 		obj.append(point)
 
 	return find_bounding_box(obj)
@@ -37,7 +37,7 @@ def handle_obj_file(fname):
 def handle_csv_file(fname):
 	obj = []
 	for line in open(fname, "rb"):
-		point = line.split(",")[:3]
+		point = line.split(",")
 		point = [float(x) for x in point]
 		obj.append(point)
 

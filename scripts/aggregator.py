@@ -166,6 +166,7 @@ def main(argv):
 
 	print "Swap x y..."
 	swap_x_y(neuron)
+	swap_x_y(vascular)
 	print "Rotate neuron..."
 	rotate(neuron, rotation)
 	print "Translate neuron..."
