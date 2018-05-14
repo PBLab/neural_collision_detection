@@ -8,6 +8,7 @@ def find_bounding_box(obj):
 
 	for i in xrange(len(obj)):
 		x, y, z, r = obj[i]
+		#r = 0
 		if x-r < min_x:
 			min_x = x-r
 		if x+r > max_x:
@@ -58,9 +59,9 @@ def main(argv):
 		print "Unknown file extension"
 		return 1
 
-	print "X: {0}\t-\t{1}".format(bb[0], bb[1])
-	print "Y: {0}\t-\t{1}".format(bb[2], bb[3])
-	print "Z: {0}\t-\t{1}".format(bb[4], bb[5])
+	print "X: {0}\t-\t{1}\t[{2}]".format(bb[0], bb[1], bb[1]-bb[0])
+	print "Y: {0}\t-\t{1}\t[{2}]".format(bb[2], bb[3], bb[3]-bb[2])
+	print "Z: {0}\t-\t{1}\t[{2}]".format(bb[4], bb[5], bb[5]-bb[4])
 
 if __name__ == "__main__":
 	main(sys.argv)

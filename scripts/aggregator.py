@@ -163,10 +163,11 @@ def main(argv):
 
 	#print find_bounding_box(vascular)
 	#print find_bounding_box(neuron)
+	translate(vascular, [1, -15, 19])
+	swap_x_y(vascular)
 
 	print "Swap x y..."
 	swap_x_y(neuron)
-	swap_x_y(vascular)
 	print "Rotate neuron..."
 	rotate(neuron, rotation)
 	print "Translate neuron..."
