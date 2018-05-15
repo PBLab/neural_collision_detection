@@ -8,6 +8,8 @@ def main(argv):
 	
 	input_filename = argv[1]
 	output_dir = argv[2]
+	if len(argv) > 3:
+		r = float(argv[3])
 
 	with open(input_filename, "r") as f:
 		lines = f.read().split("\n")
@@ -17,7 +19,7 @@ def main(argv):
 	output_idx = 0
 	for l in lines:
 		output = os.path.join(output_dir, "collision_{0}.obj".format(output_idx))
-		os.system("python ~/cg/tests/create_cube.py {output} 2 {l}".format(**locals()))
+		os.system("python ~/cg/tests/create_cube.py {output} {r} {l}".format(**locals()))
 		output_idx += 1
 
 
