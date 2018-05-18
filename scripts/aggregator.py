@@ -1,9 +1,12 @@
+#!/state/partition1/apps/python/anaconda2/bin/python
 import sys, os
 import math
 import numpy as np
 import time
 import bisect
 
+
+WANTED_DISTANCE = 5
 
 def read_balls(fname):
 	res = []
@@ -121,7 +124,7 @@ def sort_vascular(vascular):
 	vascular.sort(key = lambda v:v[0])
 
 def collide(n, v):
-		rsum = n[3] + v[3]
+		rsum = n[3] + v[3] + WANTED_DISTANCE
 		if abs(n[0] - v[0]) > rsum:
 			return False
 		if abs(n[1] - v[1]) > rsum:
@@ -139,7 +142,7 @@ def find_nearest_points(vascular, neuron):
 
 	for n in neuron:
 		base_idx = bisect.bisect(vascular, n)
-		max_x_distance = 25 + n[3]
+		max_x_distance = 25 + n[3] + WANTED_DISTANCE
 		cur_idx = base_idx
 		found = False
 		while cur_idx < len(vascular) and abs(vascular[cur_idx][0]-n[0]) < max_x_distance:
