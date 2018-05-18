@@ -30,7 +30,7 @@ def main(argv):
 		rotation = [m.group(5), m.group(6), m.group(7)]
 		#print neuron_name, location, rotation
 
-		run_id = input_dir
+		run_id = os.path.basename(input_dir)
 		neuron_id = neuron_name
 		vascular_id = "vascular1"
 		neuron_location = "{0} {1} {2}".format(*location)
