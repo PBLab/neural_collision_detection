@@ -3,6 +3,9 @@
 import os, sys
 import numpy as np
 import math
+import find_enclosing_box
+
+SHRINK_FACTOR = 5
 
 def get_rotation_matrix(rotation):
 	x_deg, y_deg, z_deg = rotation
@@ -60,6 +63,7 @@ class Result:
 		rotated_v = m * v
 		return rotated_v.transpose().tolist()[0]
 
+	# This returns on .obj, not .csv
 	def get_collisions_on_neuron(self):
 		cols = []
 		for collision in self.collisions:
@@ -129,10 +133,75 @@ class ResultsParser:
 			if f(r):
 				results.append(r)
 		return ResultsParser(results)
+
+	def get_neurons(self):
+		n = []
+		for res in self.results:
+			n.append(res.neuron_id)
+
+		return list(set(n))
 		
 	def __str__(self):
 		return "\n".join([str(x) for x in self.results])
 
+def create_res_arr(bb):
+	xmin, xmax, ymin, ymax, zmin, zmax = [int(x) for x in bb]
+	x_size = (xmax - xmin) / SHRINK_FACTOR + 2
+	y_size = (ymax - ymin) / SHRINK_FACTOR + 2
+	z_size = (zmax - zmin) / SHRINK_FACTOR + 2
+
+	res = []
+	for i in xrange(x_size):
+		res.append([])
+		for j in xrange(y_size):
+			res[i].append([])
+			for k in xrange(z_size):
+				res[i][j].append(0)
+	print x_size * y_size * z_size
+	return res, xmin / SHRINK_FACTOR, ymin / SHRINK_FACTOR, zmin / SHRINK_FACTOR
+
+
+def parse_neuron(parser, neuron_id):
+	full_path = "/state/partition1/home/yoavj/neurons/{neuron_id}_balls.csv".format(**locals())
+
+	print full_path
+
+	bb = find_enclosing_box.get_bb(full_path)
+	print bb
+
+	arr, xmin, ymin, zmin = create_res_arr(bb)
+
+	rp = parser.where(lambda x : x.neuron_id == neuron_id)
+	for r in rp:
+		cols = r.get_collisions_on_neuron()
+		for c in cols:
+			# SWAP X Y
+			x, y, z = c[1], c[0], c[2]
+			shrinked_x = int(x) / SHRINK_FACTOR
+			shrinked_y = int(y) / SHRINK_FACTOR
+			shrinked_z = int(z) / SHRINK_FACTOR
+			arr_x_idx = shrinked_x - xmin
+			arr_y_idx = shrinked_y - ymin
+			arr_z_idx = shrinked_z - zmin
+			#print shrinked_x, shrinked_y, shrinked_z
+			#print arr_x_idx, arr_y_idx, arr_z_idx
+			arr[arr_x_idx][arr_y_idx][arr_z_idx] += 1
+
+	max_col = arr[0][0][0]
+	cnt = 0
+	total_col = 0
+
+	for i in xrange(len(arr)):
+		for j in xrange(len(arr[0])):
+			for k in xrange(len(arr[0][0])):
+				cur_col = arr[i][j][k]
+				if max_col < cur_col:
+					max_col = cur_col
+				if cur_col > 0:
+					cnt += 1
+				total_col += cur_col
+	avg = total_col / cnt
+	print "max: {max_col}, avg: {avg}, total: {total_col}, cnt: {cnt}".format(**locals())
 
 def main(argv):
 	if len(argv) < 2:
@@ -144,12 +213,15 @@ def main(argv):
 	parser = ResultsParser(open(input_filename).readlines())
 	print len(parser)
 
-	rp = parser.where(lambda x: x.run_id == "agg_distance_0").where(lambda x : len(x.collisions) < 4)
-	for r in rp:
-		print r
-		print r.get_collisions_on_neuron()
+	for neuron_id in parser.get_neurons():
+		parse_neuron(parser, neuron_id)
+
+	#rp = parser.where(lambda x: x.run_id == "agg_distance_0").where(lambda x : len(x.collisions) < 4)
+	#for r in rp:
+		#print r
+		#print r.get_collisions_on_neuron()
 	#print "\n".join(parser.where(lambda x: x.run_id == "agg_distance_0").where(lambda x : len(x.collisions) < 6))
-	#print "\n".join(parser.where(lambda x: x.startswith("agg_distance_0,")).where(lambda x : len(x.split(",")[COL_COLLISIONS].split("|")) <= 10).lines)
+	#print "\n".join(parser.where(lambda x: x.startswith("agg_distance_0,")).where(lambda x : len(x.split(",")[COL_COLLISIONS].split("|")) <= 11).lines)
 	
 if __name__ == "__main__":
 	main(sys.argv)

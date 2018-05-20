@@ -24,7 +24,7 @@ def find_bounding_box(obj):
 
 	return min_x, max_x, min_y, max_y, min_z, max_z
 
-def handle_obj_file(fname):
+def get_bb_obj_file(fname):
 	obj = []
 	for line in open(fname, "rb"):
 		if not line.startswith("v "):
@@ -35,7 +35,7 @@ def handle_obj_file(fname):
 
 	return find_bounding_box(obj)
 
-def handle_csv_file(fname):
+def get_bb_csv_file(fname):
 	obj = []
 	for line in open(fname, "rb"):
 		point = line.split(",")
@@ -44,6 +44,15 @@ def handle_csv_file(fname):
 
 	return find_bounding_box(obj)
 
+def get_bb(fname):
+	if fname.endswith(".obj"):
+		bb = get_bb_obj_file(fname)
+	elif fname.endswith(".csv"):
+		bb = get_bb_csv_file(fname)
+	else:
+		raise Exception("Unknown file extension")
+	return bb
+
 def main(argv):
 	if len(argv) != 2:
 		print "Usage: %s <object>" % argv[0]
@@ -51,13 +60,7 @@ def main(argv):
 
 	fname = argv[1]
 
-	if fname.endswith(".obj"):
-		bb = handle_obj_file(fname)
-	elif fname.endswith(".csv"):
-		bb = handle_csv_file(fname)
-	else:
-		print "Unknown file extension"
-		return 1
+	bb = get_bb(fname)
 
 	print "X: {0}\t-\t{1}\t[{2}]".format(bb[0], bb[1], bb[1]-bb[0])
 	print "Y: {0}\t-\t{1}\t[{2}]".format(bb[2], bb[3], bb[3]-bb[2])

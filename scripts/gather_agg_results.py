@@ -25,7 +25,7 @@ def main(argv):
 	for fname in os.listdir(input_dir):
 		m = re.search(re_exp, fname)
 		#print m.group(0)
-		neuron_name = m.group(1).split(".obj")[0]
+		neuron_name = m.group(1).replace(".obj","").replace("out_","")
 		location = [m.group(2), m.group(3), m.group(4)]
 		rotation = [m.group(5), m.group(6), m.group(7)]
 		#print neuron_name, location, rotation
