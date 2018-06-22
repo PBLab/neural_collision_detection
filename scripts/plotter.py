@@ -1,11 +1,12 @@
 import matplotlib
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 import random
 
-def plot_2d(value_array, colormap = 'Reds'):
+def plot_2d(value_array, output_filename, colormap = 'Reds'):
 	dx, dy = 1, 1
 	x_size = len(value_array)
 	y_size = len(value_array[0])
@@ -45,7 +46,7 @@ def plot_2d(value_array, colormap = 'Reds'):
 	fig.tight_layout()
 
 	#plt.show()
-	plt.savefig("try.png")
+	plt.savefig(output_filename)
 	
 
 if __name__ == "__main__":
@@ -58,8 +59,6 @@ if __name__ == "__main__":
 				val = random.randint(20, 200)
 			z[i].append(val)
 			
-	plot_2d(z)
-	
-	
+	plot_2d(z, "try.png")
 	
 	
