@@ -47,6 +47,8 @@ def plot_2d(value_array, output_filename, colormap = 'Reds'):
 
 	#plt.show()
 	plt.savefig(output_filename)
+
+	plt.close()
 	
 
 if __name__ == "__main__":
