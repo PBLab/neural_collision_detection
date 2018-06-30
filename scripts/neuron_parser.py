@@ -15,13 +15,7 @@ def create_res_arr(bb):
 	y_size = (ymax - ymin) / SHRINK_FACTOR + 2
 	z_size = (zmax - zmin) / SHRINK_FACTOR + 2
 
-	res = []
-	for i in xrange(x_size):
-		res.append([])
-		for j in xrange(y_size):
-			res[i].append([])
-			for k in xrange(z_size):
-				res[i][j].append(0)
+	res = np.zeros((x_size, y_size, z_size), np.int32)
 	print "Result array size:", x_size, y_size, z_size, " Total: ",  x_size * y_size * z_size
 	return res, xmin / SHRINK_FACTOR, ymin / SHRINK_FACTOR, zmin / SHRINK_FACTOR
 
@@ -87,6 +81,8 @@ def parse_neuron(parser, neuron_id, output_dir):
 			arr_z_idx = shrinked_z - zmin
 			arr[arr_x_idx][arr_y_idx][arr_z_idx] += 1
 
+	output_npy = os.path.join(output_dir, "collisions_array_{neuron_id}.npy".format(**locals()))
+	np.save(output_npy, arr)
 	GRAPH_RESOLUTION = 5
 	output_csv = os.path.join(output_dir, "collisions_chart.csv")
 
