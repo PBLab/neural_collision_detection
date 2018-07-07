@@ -6,7 +6,7 @@ import time
 import bisect
 
 
-WANTED_DISTANCE = 5
+WANTED_DISTANCE = 0
 
 def read_balls(fname):
 	res = []
@@ -165,18 +165,8 @@ def find_nearest_points(vascular, neuron):
 	#print "cnt = ", cnt
 	return collisions
 
-def main(argv):
-	if len(argv) != 6:
-		print "Usage: %s <vascular data> <neuron data> <location> <rotation> <results file>" % argv[0]
-		return 1
 	
-	vascular_filename = argv[1]
-	neuron_filename = argv[2]
-	location = [int(a) for a in argv[3].split(",")]
-	rotation = [int(a) for a in argv[4].split(",")]
-	results_filename = argv[5]
-
-	
+def aggregate(vascular_filename, neuron_filename, location, rotation, results_filename):
 	print "Read vascular data..."
 	vascular = read_balls(vascular_filename)
 	max_r = max(vascular, key=lambda x : x[3])
@@ -209,6 +199,19 @@ def main(argv):
 
 	print "Done!"
 	return 0
+
+def main(argv):
+	if len(argv) != 6:
+		print "Usage: %s <vascular data> <neuron data> <location> <rotation> <results file>" % argv[0]
+		return 1
+	
+	vascular_filename = argv[1]
+	neuron_filename = argv[2]
+	location = [int(a) for a in argv[3].split(",")]
+	rotation = [int(a) for a in argv[4].split(",")]
+	results_filename = argv[5]
+
+	aggregate(vascular_filename, neuron_filename, location, rotation, results_filename)
 
 if __name__ == "__main__":
 	start_time = time.time()

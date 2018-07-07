@@ -86,4 +86,6 @@ This file explains the pipeline, the usage of each script file in this directory
 2. Run ncd on each neuron. An example for one neuron is:
 	./ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120410_s1c1.obj -t 24 -o ncd_results/out1 -f ncd_results/out1.txt -i ../Centers.csv -z
 	For the next steps, make sure the output of all neurons is in the same root directory (ncd_results in this case)
-3. 
+3. Run aggregator:
+	python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0
+	Note that currently, the desired distance is hard coded in aggregator.py
