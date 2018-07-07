@@ -31,12 +31,12 @@ This file explains the pipeline, the usage of each script file in this directory
 === Scripts Usage ===
 	Main scripts:
 		aggregator.py
-			Usage: aggregator.py <vascular data> <neuron data> <location> <rotation> <results file>
+			Usage: aggregator.py <vascular data> <neuron data> <location> <rotation> <results file> [threshold distance]
 			Receives vascular and neural data, and calculates manually the collisions/proximity sites for the given position.
 			Outputs the results to 'results file'.
 
 		run_aggregator.py
-			Usage: run_aggregator.py <base dir> <out dir>
+			Usage: run_aggregator.py <base dir> <out dir> <threshold distance>
 			Runs aggregator.py for every position with zero collisions, found by ncd
 
 		gather_agg_results.py
@@ -89,9 +89,8 @@ This file explains the pipeline, the usage of each script file in this directory
 	For the next steps, make sure the output of all neurons is in the same root directory (ncd_results in this case)
 
 3. Run aggregator and create aggregator_db.csv:
-	For each desired threshold, run:
-	1. python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0
-		[Note that currently, the threshold (desired distance) is hard coded in aggregator.py]
+	For each desired threshold XXX, run:
+	1. python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0 XXX
 
 	2. python gather_agg_results.py ../../results/agg_results_0 ../../results/aggregator_db.csv
 		Note that the results are appended to agregator_db.csv, so it will store all of the results together
