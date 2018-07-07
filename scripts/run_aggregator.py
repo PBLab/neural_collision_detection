@@ -23,12 +23,13 @@ def create_cmd(out_dir, neuron_name, location, rotation):
 	return "./aggregator.py ../../vascular/vascular_balls.csv ../../neurons/{0} {2} {3} {1}".format(neuron_name, out_file, l, r)
 
 def main(argv):
-	if len(argv) < 3:
-		print "Usage: %s <base dir> <out dir>" % argv[0]
+	if len(argv) < 4:
+		print "Usage: %s <base dir> <out dir> <threshold distance>" % argv[0]
 		return 1
 
 	base_dir = argv[1]
 	out_dir = argv[2]
+	threshold_distance = int(argv[3])
 
 	os.system("mkdir {0}".format(out_dir))
 
@@ -57,13 +58,9 @@ def main(argv):
 		neuron_fname = "../../neurons/" + neuron_name
 		vascular_fname = "../../vascular/vascular_balls.csv"
 
-		aggregate(vascular_fname, neuron_fname, location, rotation, out_file)
+		aggregate(vascular_fname, neuron_fname, location, rotation, out_file, threshold_distance)
 
 		cnt += 1
-		#cmd = create_cmd(out_dir, neuron_name, location, rotation)
-		#print cmd
-		#os.system(cmd)
-
 
 if __name__ == "__main__":
 	sys.exit(main(sys.argv))
