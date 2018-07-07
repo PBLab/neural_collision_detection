@@ -83,9 +83,18 @@ This file explains the pipeline, the usage of each script file in this directory
 
 === Step By Step ===
 1. Convert original representaions to .obj representations, using Matlab (TODO)
+
 2. Run ncd on each neuron. An example for one neuron is:
 	./ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120410_s1c1.obj -t 24 -o ncd_results/out1 -f ncd_results/out1.txt -i ../Centers.csv -z
 	For the next steps, make sure the output of all neurons is in the same root directory (ncd_results in this case)
-3. Run aggregator:
-	python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0
-	Note that currently, the desired distance is hard coded in aggregator.py
+
+3. Run aggregator and create aggregator_db.csv:
+	For each desired threshold, run:
+	1. python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0
+		[Note that currently, the threshold (desired distance) is hard coded in aggregator.py]
+
+	2. python gather_agg_results.py ../../results/agg_results_0 ../../results/aggregator_db.csv
+		Note that the results are appended to agregator_db.csv, so it will store all of the results together
+
+4. Parse the DB:
+	python neuron_parser.py ../../results/aggregator_db.csv ../../results/parser_results
