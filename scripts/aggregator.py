@@ -6,8 +6,6 @@ import time
 import bisect
 
 
-WANTED_DISTANCE = 5
-
 def read_balls(fname):
 	res = []
 
@@ -123,8 +121,8 @@ def distance(n, v):
 def sort_vascular(vascular):
 	vascular.sort(key = lambda v:v[0])
 
-def collide(n, v):
-		rsum = n[3] + v[3] + WANTED_DISTANCE
+def collide(n, v, threshold_distance):
+		rsum = n[3] + v[3] + threshold_distance
 		if abs(n[0] - v[0]) > rsum:
 			return False
 		if abs(n[1] - v[1]) > rsum:
@@ -134,7 +132,7 @@ def collide(n, v):
 		if distance(n, v) <= rsum:
 			return True
 
-def find_nearest_points(vascular, neuron):
+def find_nearest_points(vascular, neuron, threshold_distance):
 	collisions = []
 	print "len(neuron): ", len(neuron)
 
@@ -142,12 +140,12 @@ def find_nearest_points(vascular, neuron):
 
 	for n in neuron:
 		base_idx = bisect.bisect(vascular, n)
-		max_x_distance = 25 + n[3] + WANTED_DISTANCE
+		max_x_distance = 25 + n[3] + threshold_distance
 		cur_idx = base_idx
 		found = False
 		while cur_idx < len(vascular) and abs(vascular[cur_idx][0]-n[0]) < max_x_distance:
 			v = vascular[cur_idx]
-			if collide(n, v):
+			if collide(n, v, threshold_distance):
 				collisions.append(n)
 				found = True
 				break
@@ -157,7 +155,7 @@ def find_nearest_points(vascular, neuron):
 		cur_idx = base_idx - 1
 		while cur_idx >= 0 and abs(vascular[cur_idx][0] - n[0]) < max_x_distance:
 			v = vascular[cur_idx]
-			if collide(n, v):
+			if collide(n, v, threshold_distance):
 				collisions.append(n)
 				break
 			cur_idx -= 1
@@ -165,18 +163,8 @@ def find_nearest_points(vascular, neuron):
 	#print "cnt = ", cnt
 	return collisions
 
-def main(argv):
-	if len(argv) != 6:
-		print "Usage: %s <vascular data> <neuron data> <location> <rotation> <results file>" % argv[0]
-		return 1
 	
-	vascular_filename = argv[1]
-	neuron_filename = argv[2]
-	location = [int(a) for a in argv[3].split(",")]
-	rotation = [int(a) for a in argv[4].split(",")]
-	results_filename = argv[5]
-
-	
+def aggregate(vascular_filename, neuron_filename, location, rotation, results_filename, threshold_distance):
 	print "Read vascular data..."
 	vascular = read_balls(vascular_filename)
 	max_r = max(vascular, key=lambda x : x[3])
@@ -200,7 +188,7 @@ def main(argv):
 	vascular = cut_vascular(vascular, neuron)
 
 	print "Find nearest points..."
-	collisions = find_nearest_points(vascular, neuron)
+	collisions = find_nearest_points(vascular, neuron, threshold_distance)
 
 	with open(results_filename, "wb") as f:
 		#f.write(str(len(collisions)) + "\n")
@@ -209,6 +197,24 @@ def main(argv):
 
 	print "Done!"
 	return 0
+
+def main(argv):
+	if len(argv) < 6:
+		print "Usage: %s <vascular data> <neuron data> <location> <rotation> <results file> [threshold distance]" % argv[0]
+		return 1
+	
+	vascular_filename = argv[1]
+	neuron_filename = argv[2]
+	location = [int(a) for a in argv[3].split(",")]
+	rotation = [int(a) for a in argv[4].split(",")]
+	results_filename = argv[5]
+
+	threshold_distance = 0
+	if len(argv) >= 7:
+		threshold_distance = int(argv[6])
+
+
+	aggregate(vascular_filename, neuron_filename, location, rotation, results_filename, threshold_distance)
 
 if __name__ == "__main__":
 	start_time = time.time()

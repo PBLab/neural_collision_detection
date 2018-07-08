@@ -108,6 +108,8 @@ def main(argv):
 	input_filename = argv[1]
 	output_dir = argv[2]
 
+	os.system("mkdir {0}".format(output_dir))
+
 	parser = ResultsParser(open(input_filename).readlines())
 	print "Total results: ", len(parser)
 
