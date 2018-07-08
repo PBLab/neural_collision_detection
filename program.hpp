@@ -43,6 +43,7 @@ private:
 	int _num_of_collisions = 20000;
 	int _verbose = 1;
 	bool _minimal_only = false;
+	bool _bound_checks = true;
 	RunningMode _mode = MODE__NOMODE;
 
 	time_t _start_time;

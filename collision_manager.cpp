@@ -7,7 +7,7 @@ static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
 
 CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-									const std::string& output_directory, bool minimal_only)
+									const std::string& output_directory, bool minimal_only, bool bound_checks)
 {
 	_m1 = m1;
 	_m2 = m2;
@@ -16,6 +16,7 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 	_neuron_filename = neuron_filename;
 	_output_directory = output_directory;
 	_minimal_only = minimal_only;
+	_bound_checks = bound_checks;
 
 	LOG_INFO("Creating model1...\n");
 	_fm1 = _m1->fcl_model();
@@ -86,9 +87,13 @@ static void* thread_main_impl(thread_params_t* params)
 				static PointsVector* IGNORE_COLLISIONS_LOCATIONS = NULL;
 				int num_of_collisions = 0;
 
-				NativeMatrix mat = Collision::calc_native_matrix(x, y, z);
-				Cube c = fm2_cube->rotate_and_transform(mat, params->x_pos, params->y_pos, params->z_pos);
-				bool is_contained = c.is_contained(fm1_bounding_box);
+				bool is_contained = true;
+				if (fm1_bounding_box != NULL && fm2_cube != NULL)
+				{
+					NativeMatrix mat = Collision::calc_native_matrix(x, y, z);
+					Cube c = fm2_cube->rotate_and_transform(mat, params->x_pos, params->y_pos, params->z_pos);
+					is_contained = c.is_contained(fm1_bounding_box);
+				}
 				if (!is_contained)
 				{
 					num_of_collisions = 3333333; // should be big enough
@@ -235,9 +240,17 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		params->result_object = &res;
 		//params->collision_manager = this;
 		params->fm1 = _fm1;
-		params->fm1_bounding_box = &_fm1_bounding_box;
 		params->fm2 = _fm2;
-		params->fm2_cube = &_fm2_cube;
+		if (_bound_checks)
+		{
+			params->fm1_bounding_box = &_fm1_bounding_box;
+			params->fm2_cube = &_fm2_cube;
+		}
+		else
+		{
+			params->fm1_bounding_box = NULL;
+			params->fm2_cube = NULL;
+		}
 		params->x_pos = x_pos;
 		params->y_pos = y_pos;
 		params->z_pos = z_pos;

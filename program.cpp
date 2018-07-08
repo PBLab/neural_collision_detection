@@ -55,7 +55,7 @@ void Program::logic()
 		LOG_INFO("Creating output directory\n");
 		mkdir(_output_directory, 0700);
 	}
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only);
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
@@ -148,10 +148,11 @@ void Program::parse_args(int argc, char** argv)
 			{"output-directory", required_argument, 0, 'o'},
 			{"location", required_argument, 0, 'l'},
 			{"minimal-only", required_argument, 0, 'z'},
+			{"bound-checks", required_argument, 0, 'b'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzvl:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzbvl:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -206,6 +207,9 @@ void Program::parse_args(int argc, char** argv)
 		case 'z':
 			_minimal_only = true;
 			break;
+		case 'b':
+			_bound_checks = false;
+			break;
 		case '?':
 		case 'h':
 		default:
@@ -247,7 +251,8 @@ void Program::print_usage()
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
 	printf("\t-i, --input-file\tInput file of locations [Batch mode]\n");
 	printf("\t-l, --location\t\tLocation of neuron [Regular/Verify mode]\n");
-	printf("\t-z, --minimal-only\t\tStore only minimal rotations in output file [Regular/Batch mode]\n");
+	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
+	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 	//printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
