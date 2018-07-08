@@ -21,6 +21,7 @@ public:
 	char get_longest_axis() const;
 	void rotate(const NativeMatrix& mat);
 	BoundingBox get_bounding_box() const;
+	Model get_bounding_cube() const;
 	Model get_sub_model(const BoundingBox& bb) const;
 
 private:

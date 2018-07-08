@@ -130,7 +130,8 @@ void ResultObject::mark_min()
 		}
 	}
 
-	_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].is_min = true;
+	if (_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].num_of_collisions < 100000)
+		_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].is_min = true;
 }
 
 void ResultObject::mark_mins(int amount)

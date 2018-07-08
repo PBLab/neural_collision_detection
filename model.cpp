@@ -280,6 +280,36 @@ void Model::rotate(const NativeMatrix& mat)
 	}
 }
 
+Model Model::get_bounding_cube() const
+{
+	Model cube;
+	BoundingBox bb = get_bounding_box();
+	cube.add_ver(bb.min_x, bb.min_y, bb.min_z);
+	cube.add_ver(bb.max_x, bb.min_y, bb.min_z);
+	cube.add_ver(bb.max_x, bb.max_y, bb.min_z);
+	cube.add_ver(bb.min_x, bb.max_y, bb.min_z);
+
+	cube.add_ver(bb.min_x, bb.min_y, bb.max_z);
+	cube.add_ver(bb.max_x, bb.min_y, bb.max_z);
+	cube.add_ver(bb.max_x, bb.max_y, bb.max_z);
+	cube.add_ver(bb.min_x, bb.max_y, bb.max_z);
+
+	cube.add_triangle(1, 5, 6);
+	cube.add_triangle(1, 6, 2);
+	cube.add_triangle(2, 6, 7);
+	cube.add_triangle(2, 7, 3);
+	cube.add_triangle(3, 7, 8);
+	cube.add_triangle(3, 8, 4);
+	cube.add_triangle(4, 8, 5);
+	cube.add_triangle(4, 5, 1);
+	cube.add_triangle(6, 8, 7);
+	cube.add_triangle(6, 5, 8);
+	cube.add_triangle(4, 2, 3);
+	cube.add_triangle(4, 1, 2);
+
+	return cube;
+}
+
 BoundingBox Model::get_bounding_box() const
 {
 	BoundingBox res;

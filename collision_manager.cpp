@@ -19,9 +19,11 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 
 	LOG_INFO("Creating model1...\n");
 	_fm1 = _m1->fcl_model();
+	_fm1_bounding_box = _m1->get_bounding_box();
 	LOG_INFO("\tDone.\n");
 	LOG_INFO("Creating model2...\n");
 	_fm2 = _m2->fcl_model();
+	_fm2_cube = Cube(_m2->get_bounding_box());
 	LOG_INFO("\tDone.\n");
 }
 
@@ -70,7 +72,9 @@ static void* thread_main_impl(thread_params_t* params)
 	LOG_TRACE("Thread main #%i! min_x -> max_x: %i -> %i. Creating models...\n",
 					params->thread_id, params->min_x, params->max_x);
 	const FclModel * fm1 = params->fm1;
+	const BoundingBox * fm1_bounding_box = params->fm1_bounding_box;
 	const FclModel * fm2 = params->fm2;
+	const Cube * fm2_cube = params->fm2_cube;
 	int id = params->thread_id;
 	
 	for(int x = params->min_x; x <= params->max_x; ++x)
@@ -80,7 +84,18 @@ static void* thread_main_impl(thread_params_t* params)
 			for(int z = params->min_z; z <= params->max_z; ++z)
 			{
 				static PointsVector* IGNORE_COLLISIONS_LOCATIONS = NULL;
-				int num_of_collisions =
+				int num_of_collisions = 0;
+
+				NativeMatrix mat = Collision::calc_native_matrix(x, y, z);
+				Cube c = fm2_cube->rotate_and_transform(mat, params->x_pos, params->y_pos, params->z_pos);
+				bool is_contained = c.is_contained(fm1_bounding_box);
+				if (!is_contained)
+				{
+					num_of_collisions = 3333333; // should be big enough
+				}
+				else
+				{
+					num_of_collisions = 
 						Collision::check_a_collision(fm1,
 													 fm2,
 													 params->x_pos,
@@ -91,6 +106,8 @@ static void* thread_main_impl(thread_params_t* params)
 													 z,
 													 params->num_of_col,
 													 IGNORE_COLLISIONS_LOCATIONS);
+				}
+
 				LOG_DEBUG("(%i):\t(%i,\t%i,\t%i)\t=\t%i\n", id, x, y, z, num_of_collisions);
 				params->result_object->add_result(x, y, z, num_of_collisions);
 				if (id == 0)
@@ -218,7 +235,9 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		params->result_object = &res;
 		//params->collision_manager = this;
 		params->fm1 = _fm1;
+		params->fm1_bounding_box = &_fm1_bounding_box;
 		params->fm2 = _fm2;
+		params->fm2_cube = &_fm2_cube;
 		params->x_pos = x_pos;
 		params->y_pos = y_pos;
 		params->z_pos = z_pos;

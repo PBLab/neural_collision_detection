@@ -1,5 +1,5 @@
 
-SOURCES=main.cpp model.cpp collision.cpp collision_manager.cpp program.cpp result_object.cpp trace.cpp bounding_box.cpp
+SOURCES=main.cpp model.cpp collision.cpp collision_manager.cpp program.cpp result_object.cpp trace.cpp bounding_box.cpp cube.cpp
 OBJS = $(SOURCES:.cpp=.o)
 CFLAGS += -O2 -std=c++11 -I/usr/include/eigen3/ -static
 LDFLAGS += -static -L/home/yoav/cg/fcl/build/src/CMakeFiles/fcl.dir
