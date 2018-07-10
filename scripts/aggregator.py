@@ -163,19 +163,25 @@ def find_nearest_points(vascular, neuron, threshold_distance):
 	#print "cnt = ", cnt
 	return collisions
 
-	
-def aggregate(vascular_filename, neuron_filename, location, rotation, results_filename, threshold_distance):
+
+def get_vascular(vascular_filename):
 	print "Read vascular data..."
 	vascular = read_balls(vascular_filename)
-	max_r = max(vascular, key=lambda x : x[3])
-	print max_r
+	translate(vascular, [1, -15, 19])
+	swap_x_y(vascular)
+
+	return vascular
+
+def aggregate(vascular_filename, neuron_filename, location, rotation, results_filename, threshold_distance, vascular = None):
+	if vascular is None:
+		vascular = get_vascular(vascular_filename)
+	#max_r = max(vascular, key=lambda x : x[3])
+	#print max_r
 	print "Read neuron data..."
 	neuron = read_balls(neuron_filename)
 
 	#print find_bounding_box(vascular)
 	#print find_bounding_box(neuron)
-	translate(vascular, [1, -15, 19])
-	swap_x_y(vascular)
 
 	print "Swap x y..."
 	swap_x_y(neuron)
