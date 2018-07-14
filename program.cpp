@@ -251,9 +251,9 @@ void Program::print_usage()
 	printf("\t-r, --rotation\t\tRotation [x,y,z] [Verify mode]\n");
 	printf("\t-i, --input-file\tInput file of locations [Batch mode]\n");
 	printf("\t-l, --location\t\tLocation of neuron [Regular/Verify mode]\n");
+	printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 2000]\n");
 	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
-	//printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 20000]\n");
 }

@@ -40,7 +40,7 @@ private:
 	int _r_z = 0;
 	char _main_axis = 'z';
 	int _num_of_threads = 10;
-	int _num_of_collisions = 20000;
+	int _num_of_collisions = 2000;
 	int _verbose = 1;
 	bool _minimal_only = false;
 	bool _bound_checks = true;

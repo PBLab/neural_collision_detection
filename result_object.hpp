@@ -33,11 +33,11 @@ class ResultObject
 		void add_result(int x, int y, int z, int res);
 		void write_to_file(const std::string& filename, const std::string& prefix, bool minimal_only = false);
 		float get_percentage() const;
-		void mark_mins(int amount);
+		void mark_mins(int amount, int max_col);
 		void for_each_result(result_callback_t callback, void* arg);
 
 	private:
-		void mark_min();
+		void mark_min(int max_col);
 
 	private:
 		SingleResult*** _result_array;

@@ -105,12 +105,12 @@ float ResultObject::get_percentage() const
 	return (_current_elements*1.0) / _total_elements;
 }
 
-void ResultObject::mark_min()
+void ResultObject::mark_min(int max_col)
 {
 	int min_x = 0;
 	int min_y = 0;
 	int min_z = 0;
-	int min_res = _result_array[0][0][0].num_of_collisions + 100000;
+	int min_res = max_col + 10;
 
 	for(int x = _x_min; x <= _x_max; ++x)
 	{
@@ -130,15 +130,15 @@ void ResultObject::mark_min()
 		}
 	}
 
-	if (_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].num_of_collisions < 100000)
+	if (_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].num_of_collisions < max_col)
 		_result_array[min_x - _x_min][min_y - _y_min][min_z - _z_min].is_min = true;
 }
 
-void ResultObject::mark_mins(int amount)
+void ResultObject::mark_mins(int amount, int max_col)
 {
 	for(int i = 0; i < amount; ++i)
 	{
-		mark_min();
+		mark_min(max_col);
 	}
 }
 
