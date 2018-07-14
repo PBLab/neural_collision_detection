@@ -18,6 +18,8 @@ def main(argv):
 		return 1
 	
 	input_dir, output_file = argv[1:3]
+	if input_dir.endswith("/"):
+		input_dir = input_dir[:-1]
 
 	out = open(output_file, "ab")
 	
