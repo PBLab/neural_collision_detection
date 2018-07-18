@@ -92,7 +92,8 @@ class Result:
 		self.rotation = [float(x) for x in splitted[4].split(" ")]
 		self.collisions = []
 		for col in splitted[5].split("|"):
-			self.collisions.append([float(x) for x in col.split(" ")])
+			if len(col.split(" ")) == 3:
+				self.collisions.append([float(x) for x in col.split(" ")])
 
 	def _get_collision_string(self):
 		res = ""

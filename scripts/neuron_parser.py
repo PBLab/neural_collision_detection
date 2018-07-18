@@ -68,7 +68,7 @@ def parse_neuron(parser, neuron_id, output_dir):
 	arr, xmin, ymin, zmin = create_res_arr(bb)
 
 	#rp = parser.where(lambda x: x.run_id == "agg_distance_5").where(lambda x : x.neuron_id == neuron_id)
-	rp = parser..where(lambda x : x.neuron_id == neuron_id)
+	rp = parser.where(lambda x : x.neuron_id == neuron_id)
 	for r in rp:
 		cols = r.get_collisions_on_neuron()
 		for c in cols:
