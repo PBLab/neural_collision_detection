@@ -36,8 +36,8 @@ This file explains the pipeline, the usage of each script file in this directory
 			Outputs the results to 'results file'.
 
 		run_aggregator.py
-			Usage: run_aggregator.py <base dir> <out dir> <threshold distance>
-			Runs aggregator.py for every position with zero collisions, found by ncd
+			Usage: run_aggregator.py <base dir> <max collisions> <threshold distance> <out dir>
+			Runs aggregator.py for every position with <max collisions> collisions, found by ncd
 
 		gather_agg_results.py
 			Usage: gather_agg_results.py <input directory> <output file>
@@ -89,10 +89,10 @@ This file explains the pipeline, the usage of each script file in this directory
 	For the next steps, make sure the output of all neurons is in the same root directory (ncd_results in this case)
 
 3. Run aggregator and create aggregator_db.csv:
-	For each desired threshold XXX, run:
-	1. python run_aggregator.py ../../results/ncd_results/ ../../results/agg_results_0 XXX
+	For each desired threshold and max collision count, run (in this example, max 30 collisions and threshold of 2 microns):
+	1. python run_aggregator.py ../../results/ncd_results/ 30 2 ../../results/agg_results_30_2
 
-	2. python gather_agg_results.py ../../results/agg_results_0 ../../results/aggregator_db.csv
+	2. python gather_agg_results.py ../../results/agg_results_30_2 ../../results/aggregator_db.csv
 		Note that the results are appended to agregator_db.csv, so it will store all of the results together
 
 4. Parse the DB:
