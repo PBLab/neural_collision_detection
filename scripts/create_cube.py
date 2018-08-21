@@ -1,8 +1,10 @@
+from __future__ import print_function
 import os, sys
+
 
 def main(argv):
 	if len(argv) < 4:
-		print "Usage: %s <output file> <radius> <location>" % argv[0]
+		print("Usage: %s <output file> <radius> <location>" % argv[0])
 		return 1
 	
 	filename = argv[1]

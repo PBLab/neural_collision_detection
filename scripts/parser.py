@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+from __future__ import print_function
 import os, sys
 import numpy as np
 import math
@@ -120,9 +120,9 @@ class ResultsParser:
 
 	def __iter__(self):
 		self.idx = 0
-		return self
+		return self.results
 
-	def next(self):
+	def __next__(self):
 		if self.idx >= self.total_len:
 			raise StopIteration
 		self.idx += 1

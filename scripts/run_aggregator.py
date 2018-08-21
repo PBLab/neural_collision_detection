@@ -48,7 +48,7 @@ def process_main(fnames, out_dir, threshold_distance, vascular):
 
 def main(argv):
 	if len(argv) < 4:
-		print "Usage: %s <base dir> <max collisions> <threshold distance> <out dir>" % argv[0]
+		print("Usage: %s <base dir> <max collisions> <threshold distance> <out dir>" % argv[0])
 		return 1
 
 	base_dir = argv[1]
@@ -60,7 +60,7 @@ def main(argv):
 
 	small_files = get_small_files(base_dir, number_of_lines)
 	total_files = len(small_files)
-	print "Running over {0} files".format(total_files)
+	print("Running over {0} files".format(total_files))
 
 	process_count = 10
 	fnames_per_process = 1.0 * len(small_files) / process_count
@@ -69,20 +69,20 @@ def main(argv):
 	vascular_fname = "../../vascular/vascular_balls.csv"
 	vascular = get_vascular(vascular_fname)
 
-	for i in xrange(process_count):
+	for i in range(process_count):
 		next_idx = int(fnames_per_process * (i + 1))
 		if i == process_count - 1:
 			next_idx = len(small_files)
 
 		params = (small_files[last_idx : next_idx], out_dir, threshold_distance, vascular)
-		print len(params[0])
+		print(len(params[0]))
 
 		p = multiprocessing.Process(target=process_main, args = params)
 		processes.append(p)
 		p.start()
 		last_idx = next_idx
 
-	for i in xrange(process_count):
+	for i in range(process_count):
 		processes[i].join()
 
 if __name__ == "__main__":
