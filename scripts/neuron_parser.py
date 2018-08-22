@@ -1,11 +1,11 @@
 #!/usr/bin/python
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import os, sys
 import numpy as np
 import math
 import find_enclosing_box
-from parser import ResultsParser
-from plotter import plot_2d
+from scripts.parser import ResultsParser
+from scripts.plotter import plot_2d
 
 SHRINK_FACTOR = 5
 
@@ -82,8 +82,8 @@ def parse_neuron(parser, neuron_id, output_dir):
 			arr_z_idx = shrinked_z - zmin
 			arr[arr_x_idx][arr_y_idx][arr_z_idx] += 1
 
-	output_npy = os.path.join(output_dir, "collisions_array_{neuron_id}.npy".format(**locals()))
-	np.save(output_npy, arr)
+	output_npy = os.path.join(output_dir, "collisions_array_{neuron_id}.npz".format(**locals()))
+	np.savez(output_npy, {0: arr})
 	GRAPH_RESOLUTION = 5
 	output_csv = os.path.join(output_dir, "collisions_chart.csv")
 

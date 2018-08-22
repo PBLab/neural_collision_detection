@@ -136,11 +136,11 @@ class ResultsParser:
 		return ResultsParser(results)
 
 	def get_neurons(self):
-		n = []
+		name = []
 		for res in self.results:
-			n.append(res.neuron_id)
+			name.append(res.neuron_id)
 
-		return list(set(n))
+		return list(set(name))
 		
 	def __str__(self):
 		return "\n".join([str(x) for x in self.results])

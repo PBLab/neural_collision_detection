@@ -116,6 +116,7 @@ def draw_collisions(cols, l, bins, maxp, minp, OPS_LAYER=0):
 
 
 if __name__ == '__main__':
+    # Should only be run under Blender
     l = Coor(5, 5, 5)  # in um
     bins, maxp, minp = get_border_box(neuron[0], l)
     print(bins)
