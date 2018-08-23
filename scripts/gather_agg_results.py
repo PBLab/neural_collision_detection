@@ -9,7 +9,6 @@ def get_collision_string(fname):
 		col = " ".join([x, y, z])
 		res += col + "|"
 	return res[:-1]
-		
 
 
 def main(argv):
