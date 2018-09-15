@@ -1,0 +1,10 @@
+Grid:
+		-60 -> 60, STEP = 2, WIDTH = 1, ROTATION = (0, 0, 45)
+Empty:
+		Corner: (10, 18, 1), Size: (14, 40, 14)
+
+		After Rotation: Corner: [-5.65685424949238, 19.79898987322333, 1.0], Center: [-14.849242404917494, 38.890872965260115, 8.0]
+Box:
+		Center: (0, 0, 0), Size: (7, 33, 7)
+Centers:
+		100000 with 10 margin

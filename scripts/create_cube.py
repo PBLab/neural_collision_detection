@@ -2,22 +2,7 @@ from __future__ import print_function
 import os, sys
 
 
-def main(argv):
-	if len(argv) < 4:
-		print("Usage: %s <output file> <radius> <location>" % argv[0])
-		return 1
-	
-	filename = argv[1]
-	r = float(argv[2])
-	x,y,z = [float(x) for x in argv[3].split(",")]
-
-	x_low = x - r
-	x_high = x + r
-	y_low = y - r
-	y_high = y + r
-	z_low = z - r
-	z_high = z + r
-
+def create_box_obj(x_low, x_high, y_low, y_high, z_low, z_high, filename):
 	cube = """
 v {x_low} {y_low} {z_low}
 v {x_high} {y_low} {z_low}
@@ -43,6 +28,29 @@ f 4 1 2
 
 	with open(filename, "w") as f:
 		f.write(cube)
+
+
+def create_cube(center, r, filename):
+	x, y, z = center
+	x_low = x - r
+	x_high = x + r
+	y_low = y - r
+	y_high = y + r
+	z_low = z - r
+	z_high = z + r
+
+	create_box(x_low, x_high, y_low, y_high, z_low, z_high, filename)
+
+def main(argv):
+	if len(argv) < 4:
+		print("Usage: %s <output file> <radius> <location>" % argv[0])
+		return 1
+
+	filename = argv[1]
+	r = float(argv[2])
+	x,y,z = [float(x) for x in argv[3].split(",")]
+
+	create_cube((x, y, z), r, filename)
 
 
 if __name__ == "__main__":
