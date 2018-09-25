@@ -6,6 +6,42 @@ from create_cube import *
 import numpy as np
 import random
 
+def parse_results(res_fname):
+	cnt_location = 0
+	cnt_rotation = 0
+	avg_location = [0.0,0.0,0.0]
+	avg_rotation = [0.0,0.0,0.0]
+	with open(res_fname, "rb") as f:
+		for l in f:
+			els = l.split(",")
+			if len(els) < 7:
+				continue
+			location = [int(x) for x in els[1:4]]
+			rotation = [int(x) for x in els[4:7]]
+			cnt_location += 1
+			avg_location[0] += location[0]
+			avg_location[1] += location[1]
+			avg_location[2] += location[2]
+
+			if (rotation[2] > 170):
+				continue
+			cnt_rotation += 1
+			avg_rotation[0] += rotation[0]
+			avg_rotation[1] += rotation[1]
+			avg_rotation[2] += rotation[2]
+
+	avg_location[0] /= cnt_location
+	avg_location[1] /= cnt_location
+	avg_location[2] /= cnt_location
+
+	avg_rotation[0] /= cnt_rotation
+	avg_rotation[1] /= cnt_rotation
+	avg_rotation[2] /= cnt_rotation
+
+	print "Average location: {avg_location}".format(**locals())
+	print "Average rotation: {avg_rotation}".format(**locals())
+
+
 def generate_grid(start, end, step, width, empty, rotation, fname):
 	o = ObjData()
 
@@ -29,7 +65,7 @@ def generate_grid(start, end, step, width, empty, rotation, fname):
 				continue
 			b = create_box(start, end, y, y + width, z, z + width)
 			o.add_shape(b)
-		
+
 	o.rotate(rotation)
 	o.dump_to_file(fname)
 
@@ -47,35 +83,42 @@ def generate_centers(start, end, amount, rotation, fname):
 		for c in centers:
 			f.write("%i,%i,%i\n" % (c[0], c[1], c[2]))
 
-def run_ncd(grid_fname, box_fname, centers_fname):
+def run_ncd(grid_fname, box_fname, centers_fname, results_fname):
 	ncd_path = "~/ncd"
 	output_dir = "out"
-	output_file = "res.txt"
+	output_file = results_fname
 	cmd_delete = "rm -rf {output_dir} {output_file}".format(**locals())
 	cmd = "{ncd_path} -m batch -V {grid_fname} -N {box_fname} -o {output_dir} -f {output_file} -i {centers_fname} -z -t 12 -c 1".format(**locals())
-	cmd_check = "ls -l {output_dir}".format(**locals())
+	#cmd_check = "ls -l {output_dir}".format(**locals())
 	print cmd_delete
 	print cmd
-	print cmd_check
+	#print cmd_check
 
 	input_text = raw_input("Run? [Y/n]")
 	if len(input_text) > 0 and input_text.lower()[0] == 'n':
 		return
 
-	
+
 	os.system(cmd_delete)
 	os.system(cmd)
-	os.system(cmd_check)
+	#os.system(cmd_check)
+
+def generate_random_rotation():
+	x = random.randrange(-5, 5)
+	y = random.randrange(-5, 5)
+	z = random.randrange(20, 160)
+
+	return (x, y, z)
 
 def generate_random_corner(start, end, empty_size):
-	x_start = start + empty_size[0]
-	x_end = end - empty_size[0]
+	x_start = start + 2
+	x_end = end - empty_size[0] - 2
 
-	y_start = start + empty_size[0]
-	y_end = end - empty_size[0]
+	y_start = start + 2
+	y_end = end - empty_size[1] - 2
 
-	z_start = start + empty_size[0]
-	z_end = end - empty_size[0]
+	z_start = start + 2
+	z_end = end - empty_size[2] - 2
 
 	x = random.randrange(x_start, x_end)
 	y = random.randrange(y_start, y_end)
@@ -84,27 +127,29 @@ def generate_random_corner(start, end, empty_size):
 	return x, y, z
 
 def main():
-	GRID_SIZE = 120
+	GRID_SIZE = 160
 	START = 0 - GRID_SIZE/2
 	END = 0 + GRID_SIZE/2
 	STEP = 2
 	WIDTH = 1
-	EMPTY_SIZE   = (14, 40, 14)
+	# Needs to be multiple of 7
+	EMPTY_SIZE   = (21, 126, 56)
 	#EMPTY_CORNER = (30, 40, 50)
-	GRID_ROTATION = (0, 0, 45)
-	#GRID_ROTATION = generate_random_rotation()
+	#GRID_ROTATION = (0, 0, 45)
+	GRID_ROTATION = generate_random_rotation()
 	EMPTY_CORNER = generate_random_corner(START, END, EMPTY_SIZE)
-	BOX_MARGIN   = 7
+	BOX_MARGIN   = [EMPTY_SIZE[0] / 7, EMPTY_SIZE[1] / 7, EMPTY_SIZE[2] / 7]
 	BOX_CENTER   = (0, 0, 0)
-	BOX_SIZE     = (EMPTY_SIZE[0] - BOX_MARGIN, EMPTY_SIZE[1] - BOX_MARGIN, EMPTY_SIZE[2] - BOX_MARGIN)
-	CENTERS_MARGIN = 10
-	CENTERS_AMOUNT = 100000
+	BOX_SIZE     = (EMPTY_SIZE[0] - BOX_MARGIN[0], EMPTY_SIZE[1] - BOX_MARGIN[1], EMPTY_SIZE[2] - BOX_MARGIN[2])
+	CENTERS_MARGIN = min(EMPTY_SIZE)
+	CENTERS_AMOUNT = 500000
 	EMPTY = (EMPTY_CORNER[0], EMPTY_CORNER[0] + EMPTY_SIZE[0],
 			 EMPTY_CORNER[1], EMPTY_CORNER[1] + EMPTY_SIZE[1],
 			 EMPTY_CORNER[2], EMPTY_CORNER[2] + EMPTY_SIZE[2])
 	GRID_FNAME = "grid.obj"
 	BOX_FNAME = "box.obj"
 	CENTERS_FNAME = "centers.csv"
+	RESULTS_FNAME = "res.txt"
 	PARAMS_FNAME = "params.txt"
 
 	generate_grid(START, END, STEP, WIDTH, EMPTY, GRID_ROTATION, GRID_FNAME)
@@ -130,8 +175,10 @@ Centers:\n\t\t{CENTERS_AMOUNT} with {CENTERS_MARGIN} margin\n\
 	with open(PARAMS_FNAME, "wb") as f:
 		f.write(params)
 
-	run_ncd(GRID_FNAME, BOX_FNAME, CENTERS_FNAME)
+	run_ncd(GRID_FNAME, BOX_FNAME, CENTERS_FNAME, RESULTS_FNAME)
 	print params
+
+	parse_results(RESULTS_FNAME)
 
 
 if __name__ == "__main__":
