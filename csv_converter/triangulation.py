@@ -13,23 +13,23 @@ class Triangulation(object):
         #sys.exit(0)
 
         vertices, num_of_vertices = Utils.read_csv_file(vertices_fname, float)
-        print "Reading vertices ..."
+        print("Reading vertices ...")
         self.np_vertices = Triangulation.list_to_np_array(vertices, num_of_vertices, float)
         #Utils.memory_usage()
 
-        print "Reading faces ..."
+        print("Reading faces ...")
         self.np_faces = Triangulation.list_to_np_array(faces, num_of_faces, int)
 
         
-        print "Num of vertices:\t", len(self.np_vertices)
-        print "Num of triangles:\t", len(self.np_faces)
+        print("Num of vertices:\t", len(self.np_vertices))
+        print("Num of triangles:\t", len(self.np_faces))
 
 
     @staticmethod
     def list_to_np_array(lst, lst_len, dtype=float):
         np_array = numpy.empty([lst_len, 3], dtype=dtype)
         percent = 0
-        print "%2i%%" % percent + "\r",
+        print("%2i%%" % percent + "\r",)
         sys.stdout.flush()
         for i, el in enumerate(lst):
             np_array[i, 0] = el[0]
@@ -37,22 +37,21 @@ class Triangulation(object):
             np_array[i, 2] = el[2]
             if (100 * i) / lst_len > percent:
                 percent = (100 * i) / lst_len
-                print "%2i%%" % percent + "\r",
+                print("%2i%%" % percent + "\r")
                 sys.stdout.flush()
 
         return np_array
 
     def print_stats(self):
-        print "\n~~~   STATS   ~~~\n"
-        print "Num of vertices:\t", len(self.np_vertices)
-        print "Num of triangles:\t", len(self.np_faces)
-
-        print "\n===\tVertices\t==="
-        print self.np_vertices
+        print("\n~~~   STATS   ~~~\n")
+        print("Num of vertices:\t", len(self.np_vertices))
+        print("Num of triangles:\t", len(self.np_faces))
+        print("\n===\tVertices\t===")
+        print(self.np_vertices)
         Utils.get_min_max(self.np_vertices)
 
-        print "\n===\tFaces\t==="
-        print self.np_faces
+        print("\n===\tFaces\t===")
+        print(self.np_faces)
         Utils.get_min_max(self.np_faces)
 
     def get_obj_creator(self):
