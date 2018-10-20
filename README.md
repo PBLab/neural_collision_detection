@@ -49,20 +49,38 @@ The mesh is translated to the more commonly used .obj format:
 
 3	Usage of ncd
 ================
-The command line is as follows:
+There are three possible modes to run ncd:
+	- regular: Test a neuron in a specific location, with all rotations
+	- batch: Test a neuron in multiple locations, with all rotations
+	- verify: Test a neuron in a specific location and rotation, and get .obj files for visualization
 
-    ./ncd -V <vascular_path> -N <neuron_path> -f <output_path>
-         [-t num_of_threads] [-c max_num_of_collisions] [-m main_axis]
-         -x <x_coordinate> -y <y_coordinate> -z <z_coordinate>
+The base command line is as follows:
+
+	./ncd -m <mode> -V <vascular_path> -N <neuron_path> -o <output_directory>
+		 [-t num_of_threads] [-c max_num_of_collisions] [-a main_axis]
+		 [mode parameters]
+
+mode parameters:
+	regular:
+		-f <output_file> -l <x,y,z> [-z] [-b]
+	batch:
+		-f <output_file> -i <input_location_file> [-z] [-b]
+	verify:
+		-r <x,y,z> -l <x,y,z>
 
 Recommended params:
 
 	vascular_path, neuron_path - paths to .obj files, from stage 2
-	output_path - file name of the results file
+	output_directory - directory name to store the results
+	output_file - file name of the results file
 	num_of_threads - 36 on stromboli server
-	max_num_of_collisions - 30000, but may change according to results
+	max_num_of_collisions - 200, but may change according to results
 	main_axis - the neuron rotates around this axis 360 degrees. Default - z
-	x,y,z coordinates - the  location of the center of the neuron
+	-l - the location of the center of the neuron, in format of x,y,z
+	-r - the rotation of the neuron, in format of x,y,z
+	-i - input file with the locations of the neuron
+	-z - store only 10 minimal positions for each location [Recommended]
+	-b - DON'T eliminate results with bound violation [NOT Recommended]
 
 4	Characteristics of ncd
 ==========================
