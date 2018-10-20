@@ -82,9 +82,10 @@ class ObjCreator:
 
         self.out_file.write(s)
 
-    def create_obj_file(self, fname):
+    def create_obj_file(self, fname, x_expand_ratio = 1, y_expand_ratio = 1, z_expand_ratio = 1):
         self.out_file = open(fname, "w")
         for v in self.np_verts:
+            v = v[0] * x_expand_ratio, v[1] * y_expand_ratio, v[2] * z_expand_ratio
             self.write_vertex(v)
 
         for t in self.np_triangles:
