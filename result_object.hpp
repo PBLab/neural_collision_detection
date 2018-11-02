@@ -37,7 +37,7 @@ class ResultObject
 		void for_each_result(result_callback_t callback, void* arg);
 
 	private:
-		void mark_min(int max_col);
+		bool mark_min(int max_col);
 
 	private:
 		SingleResult*** _result_array;
