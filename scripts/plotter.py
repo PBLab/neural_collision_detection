@@ -15,11 +15,11 @@ def plot_2d(value_array, output_filename, colormap = 'Reds'):
 	y, x = np.mgrid[slice(1, x_size + dy, dy),
 					slice(1, y_size + dx, dx)]
 
-	print x_size, y_size
+	print (x_size, y_size)
 	z = np.zeros((x_size, y_size))
 
-	for i in xrange(x_size):
-		for j in xrange(y_size):
+	for i in range(x_size):
+		for j in range(y_size):
 			z[i,j] = value_array[i][j]
 
 	# x and y are bounds, so z should be the value *inside* those bounds.
@@ -53,9 +53,9 @@ def plot_2d(value_array, output_filename, colormap = 'Reds'):
 
 if __name__ == "__main__":
 	z = []
-	for i in xrange(20):
+	for i in range(20):
 		z.append([])
-		for j in xrange(30):
+		for j in range(30):
 			val = -60
 			if random.randint(0, 100) > 90:
 				val = random.randint(20, 200)

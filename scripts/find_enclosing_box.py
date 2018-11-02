@@ -1,12 +1,15 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import os, sys
+
 
 def find_bounding_box(obj):
 	min_x = max_x = obj[0][0]
 	min_y = max_y = obj[0][1]
 	min_z = max_z = obj[0][2]
 
-	for i in xrange(len(obj)):
+	for i in range(len(obj)):
 		x, y, z, r = obj[i]
 		#r = 0
 		if x-r < min_x:
@@ -55,16 +58,16 @@ def get_bb(fname):
 
 def main(argv):
 	if len(argv) != 2:
-		print "Usage: %s <object>" % argv[0]
+		print("Usage: %s <object>" % argv[0])
 		return 1
 
 	fname = argv[1]
 
 	bb = get_bb(fname)
 
-	print "X: {0}\t-\t{1}\t[{2}]".format(bb[0], bb[1], bb[1]-bb[0])
-	print "Y: {0}\t-\t{1}\t[{2}]".format(bb[2], bb[3], bb[3]-bb[2])
-	print "Z: {0}\t-\t{1}\t[{2}]".format(bb[4], bb[5], bb[5]-bb[4])
+	print("X: {0}\t-\t{1}\t[{2}]".format(bb[0], bb[1], bb[1]-bb[0]))
+	print("Y: {0}\t-\t{1}\t[{2}]".format(bb[2], bb[3], bb[3]-bb[2]))
+	print("Z: {0}\t-\t{1}\t[{2}]".format(bb[4], bb[5], bb[5]-bb[4]))
 
 if __name__ == "__main__":
 	main(sys.argv)

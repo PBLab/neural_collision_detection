@@ -1,7 +1,15 @@
 *.swp
 *.o
 *.pyc
+*.code-workspace
 ncd
 ncd_*
 tags
 output
+.idea/
+.vscode/
+*.ASC
+*.mat
+*.csv
+Eigen
+*.obj

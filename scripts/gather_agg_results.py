@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+from __future__ import print_function
 import sys, os, re
 
 def get_collision_string(fname):
@@ -9,19 +9,20 @@ def get_collision_string(fname):
 		col = " ".join([x, y, z])
 		res += col + "|"
 	return res[:-1]
-		
 
 
 def main(argv):
 	if len(argv) != 3:
-		print "Usage: %s <input directory> <output file>" % argv[0]
+		print("Usage: %s <input directory> <output file>" % argv[0])
 		return 1
 	
 	input_dir, output_file = argv[1:3]
+	if input_dir.endswith("/"):
+		input_dir = input_dir[:-1]
 
 	out = open(output_file, "ab")
 	
-	re_exp = "(\w+.obj)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+).txt"
+	re_exp = r"(\w+.obj)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+)_([0-9-]+).txt"
 	for fname in os.listdir(input_dir):
 		m = re.search(re_exp, fname)
 		#print m.group(0)

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import os, sys, re, threading
+import os, sys, re
+import multiprocessing
 from aggregator import aggregate, get_vascular
 
 def get_file_size(fname):
@@ -22,7 +23,7 @@ def get_small_files(root, max_line_count):
 	return l
 	
 
-def thread_main(fnames, out_dir, threshold_distance, vascular):
+def process_main(fnames, out_dir, threshold_distance, vascular):
 	for fname in fnames:
 		re_exp = "/(\w+.obj)_([0-9-]+)_([0-9-]+)_([0-9-]+)__([0-9-]+)_([0-9-]+)_([0-9-]+)_collision.txt"
 		m = re.search(re_exp, fname)
@@ -47,7 +48,7 @@ def thread_main(fnames, out_dir, threshold_distance, vascular):
 
 def main(argv):
 	if len(argv) < 4:
-		print "Usage: %s <base dir> <max collisions> <threshold distance> <out dir>" % argv[0]
+		print("Usage: %s <base dir> <max collisions> <threshold distance> <out dir>" % argv[0])
 		return 1
 
 	base_dir = argv[1]
@@ -59,30 +60,30 @@ def main(argv):
 
 	small_files = get_small_files(base_dir, number_of_lines)
 	total_files = len(small_files)
-	print "Running over {0} files".format(total_files)
+	print("Running over {0} files".format(total_files))
 
-	thread_count = 24
-	#thread_count = 24
-	fnames_per_thread = 1.0 * len(small_files) / thread_count
-	threads = []
+	process_count = 10
+	fnames_per_process = 1.0 * len(small_files) / process_count
+	processes = []
 	last_idx = 0
 	vascular_fname = "../../vascular/vascular_balls.csv"
 	vascular = get_vascular(vascular_fname)
-	for i in xrange(thread_count):
-		next_idx = int(fnames_per_thread * (i + 1))
-		if i == thread_count - 1:
+
+	for i in range(process_count):
+		next_idx = int(fnames_per_process * (i + 1))
+		if i == process_count - 1:
 			next_idx = len(small_files)
 
 		params = (small_files[last_idx : next_idx], out_dir, threshold_distance, vascular)
-		print len(params[0])
+		print(len(params[0]))
 
-		t = threading.Thread(target=thread_main, args = params)
-		threads.append(t)
-		t.start()
+		p = multiprocessing.Process(target=process_main, args = params)
+		processes.append(p)
+		p.start()
 		last_idx = next_idx
 
-	for i in xrange(thread_count):
-		threads[i].join()
+	for i in range(process_count):
+		processes[i].join()
 
 if __name__ == "__main__":
 	sys.exit(main(sys.argv))

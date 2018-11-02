@@ -1,9 +1,10 @@
 #!/usr/bin/python
+from __future__ import print_function
 import os, sys
 
 def main(argv):
 	if len(argv) < 3:
-		print "Usage: %s <input file> <output dir>" % argv[0]
+		print("Usage: %s <input file> <output dir>" % argv[0])
 		return 1
 	
 	input_filename = argv[1]

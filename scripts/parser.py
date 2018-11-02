@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+from __future__ import print_function
 import os, sys
 import numpy as np
 import math
@@ -92,7 +92,8 @@ class Result:
 		self.rotation = [float(x) for x in splitted[4].split(" ")]
 		self.collisions = []
 		for col in splitted[5].split("|"):
-			self.collisions.append([float(x) for x in col.split(" ")])
+			if len(col.split(" ")) == 3:
+				self.collisions.append([float(x) for x in col.split(" ")])
 
 	def _get_collision_string(self):
 		res = ""
@@ -119,9 +120,9 @@ class ResultsParser:
 
 	def __iter__(self):
 		self.idx = 0
-		return self
+		return self.results
 
-	def next(self):
+	def __next__(self):
 		if self.idx >= self.total_len:
 			raise StopIteration
 		self.idx += 1
@@ -135,11 +136,11 @@ class ResultsParser:
 		return ResultsParser(results)
 
 	def get_neurons(self):
-		n = []
+		name = []
 		for res in self.results:
-			n.append(res.neuron_id)
+			name.append(res.neuron_id)
 
-		return list(set(n))
+		return list(set(name))
 		
 	def __str__(self):
 		return "\n".join([str(x) for x in self.results])

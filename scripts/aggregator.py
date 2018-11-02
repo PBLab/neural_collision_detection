@@ -1,4 +1,5 @@
 #!/state/partition1/apps/python/anaconda2/bin/python
+from __future__ import print_function
 import sys, os
 import math
 import numpy as np
@@ -17,7 +18,7 @@ def read_balls(fname):
 	return res
 
 def swap_x_y(obj):
-	for i in xrange(len(obj)):
+	for i in range(len(obj)):
 		x, y, z, r = obj[i]
 		obj[i] = [y, x, z, r]
 
@@ -52,7 +53,7 @@ def rotate(neuron, rotation):
 
 	m = mx * my * mz
 	#print m
-	for i in xrange(len(neuron)):
+	for i in range(len(neuron)):
 		x, y, z, r = neuron[i]
 		v = np.matrix([x, y, z]).transpose()
 		rotated_v = m * v
@@ -62,7 +63,7 @@ def rotate(neuron, rotation):
 
 def translate(obj, location):
 	x_l, y_l, z_l = location
-	for i in xrange(len(obj)):
+	for i in range(len(obj)):
 		x, y, z, r = obj[i]
 		obj[i] = [x + x_l, y + y_l, z + z_l, r]
 		
@@ -71,7 +72,7 @@ def find_bounding_box(obj):
 	min_y = max_y = obj[0][1]
 	min_z = max_z = obj[0][2]
 
-	for i in xrange(len(obj)):
+	for i in range(len(obj)):
 		x, y, z = obj[i][:3]
 		if x < min_x:
 			min_x = x
@@ -134,7 +135,7 @@ def collide(n, v, threshold_distance):
 
 def find_nearest_points(vascular, neuron, threshold_distance):
 	collisions = []
-	print "len(neuron): ", len(neuron)
+	print("len(neuron): ", len(neuron))
 
 	sort_vascular(vascular)
 
@@ -165,7 +166,7 @@ def find_nearest_points(vascular, neuron, threshold_distance):
 
 
 def get_vascular(vascular_filename):
-	print "Read vascular data..."
+	print("Read vascular data...")
 	vascular = read_balls(vascular_filename)
 	translate(vascular, [1, -15, 19])
 	swap_x_y(vascular)
@@ -177,23 +178,23 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 		vascular = get_vascular(vascular_filename)
 	#max_r = max(vascular, key=lambda x : x[3])
 	#print max_r
-	print "Read neuron data..."
+	print("Read neuron data...")
 	neuron = read_balls(neuron_filename)
 
 	#print find_bounding_box(vascular)
 	#print find_bounding_box(neuron)
 
-	print "Swap x y..."
+	print("Swap x y...")
 	swap_x_y(neuron)
-	print "Rotate neuron..."
+	print("Rotate neuron...")
 	rotate(neuron, rotation)
-	print "Translate neuron..."
+	print("Translate neuron...")
 	translate(neuron, location)
 
-	print "Cut vascular data..."
+	print("Cut vascular data...")
 	vascular = cut_vascular(vascular, neuron)
 
-	print "Find nearest points..."
+	print("Find nearest points...")
 	collisions = find_nearest_points(vascular, neuron, threshold_distance)
 
 	with open(results_filename, "wb") as f:
@@ -201,12 +202,12 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 		for col in collisions:
 			f.write("%f,%f,%f\n" % (col[0], col[1], col[2]))
 
-	print "Done!"
+	print("Done!")
 	return 0
 
 def main(argv):
 	if len(argv) < 6:
-		print "Usage: %s <vascular data> <neuron data> <location> <rotation> <results file> [threshold distance]" % argv[0]
+		print("Usage: %s <vascular data> <neuron data> <location> <rotation> <results file> [threshold distance]" % argv[0])
 		return 1
 	
 	vascular_filename = argv[1]
@@ -226,4 +227,4 @@ if __name__ == "__main__":
 	start_time = time.time()
 	main(sys.argv)
 	end_time = time.time()
-	print "Total time: %i seconds" % int(end_time - start_time)
+	print("Total time: %i seconds" % int(end_time - start_time))

@@ -23,7 +23,7 @@ def create_cmd(neuron_name, location, rotation):
 
 def main(argv):
 	if len(argv) < 2:
-		print "Usage: %s <base dir>" % argv[0]
+		print("Usage: %s <base dir>" % argv[0])
 		return 1
 
 	base_dir = argv[1]
@@ -40,7 +40,7 @@ def main(argv):
 		location = [m.group(2), m.group(3), m.group(4)]
 		rotation = [m.group(5), m.group(6), m.group(7)]
 		cmd = create_cmd(neuron_name, location, rotation)
-		print cmd
+		print(cmd)
 		os.system(cmd)
 	#print "\n".join(get_zero_files("."))
 	

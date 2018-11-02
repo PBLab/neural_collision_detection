@@ -6,7 +6,7 @@ import numpy
 class Utils(object):
     @staticmethod
     def memory_usage():
-        print "Memory usage:"
+        print("Memory usage:")
         os.system("ps aux | grep %i | grep -v grep | awk '{sum=sum+$6}; END {print sum/1024 \" MB\"}'" % os.getpid() )
 
     @staticmethod
@@ -42,9 +42,9 @@ class Utils(object):
             if z < minZ:
                 minZ = z
 
-        print "x: %i - %i" % (minX, maxX)
-        print "y: %i - %i" % (minY, maxY)
-        print "z: %i - %i" % (minZ, maxZ)
+        print("x: %i - %i" % (minX, maxX))
+        print("y: %i - %i" % (minY, maxY))
+        print("z: %i - %i" % (minZ, maxZ))
 
         return maxX, maxY, maxZ, minX, minY, minZ
 

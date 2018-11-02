@@ -1,9 +1,11 @@
+from __future__ import print_function
+
 import sys, os
 
 
 def main(argv):
 	if len(argv) != 3:
-		print "Usage: %s <input filename> <output filename>" % argv[0]
+		print("Usage: %s <input filename> <output filename>" % argv[0])
 		return 1
 	
 	ifname, ofname = argv[1:3]
