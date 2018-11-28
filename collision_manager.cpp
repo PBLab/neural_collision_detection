@@ -293,11 +293,13 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		LOG_TRACE("pthread_join #%i returned\n", i);
 	}
 
-	res.mark_mins(1000, _max_num_of_collisions);
+	res.mark_mins(10, _max_num_of_collisions);
 
 	res.for_each_result(single_result_callback, (void*)this);
 
 	res.write_to_file(output_filename, _neuron_filename, _minimal_only);
+	delete[] thread_ids;
+	delete[] all_params;
 }
 
 

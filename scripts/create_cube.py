@@ -39,7 +39,7 @@ def create_cube(center, r, filename):
 	z_low = z - r
 	z_high = z + r
 
-	create_box(x_low, x_high, y_low, y_high, z_low, z_high, filename)
+	create_box_obj(x_low, x_high, y_low, y_high, z_low, z_high, filename)
 
 def main(argv):
 	if len(argv) < 4:
