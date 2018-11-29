@@ -46,11 +46,11 @@ def create_column_graph(collision_arr, resolution, fname):
 	print(graph[1])
 
 	with open(fname, "ab") as f:
-		f.write(",".join([str(x) for x in graph[0]]))
-		f.write("\n")
-		f.write(",".join([str(x) for x in graph[1]]))
-		f.write("\n")
-		f.write("\n")
+		f.write(b",".join([str(x) for x in graph[0]]))
+		f.write(b"\n")
+		f.write(b",".join([str(x) for x in graph[1]]))
+		f.write(b"\n")
+		f.write(b"\n")
 
 def my_sum(arr1, arr2):
 	for i in range(len(arr1)):

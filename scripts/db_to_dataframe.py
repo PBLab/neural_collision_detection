@@ -72,9 +72,23 @@ def parse_raw_df(df) -> pd.DataFrame:
     return collisions
 
 
+def get_stats(df: pd.DataFrame):
+    rows = np.linspace(10000, 25000, 10, dtype=np.uint64)                
+    collisions_df = df.iloc[rows, :]
+    chosen_pos = np.array([collisions_df.index.get_level_values('x'),
+                           collisions_df.index.get_level_values('y'),
+                           collisions_df.index.get_level_values('z')]).T
+    
+    idx = pd.IndexSlice
+    relevant_collisions = df.loc[idx[:, :, :, chosen_pos[:, 0], 
+                                     chosen_pos[:, 1], chosen_pos[:, 2], :, :, :], 
+                                 :]
+                                 
+
 if __name__ == '__main__':
     fname = r'/data/simulated_morph_data/results/2018_11_26/gatherer.csv'
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
-    print(cols.head())
-    cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')
+    # print(cols.head())
+    # cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')
+    get_stats(cols)
