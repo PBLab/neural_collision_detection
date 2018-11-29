@@ -30,9 +30,9 @@ def find_bounding_box(obj):
 def get_bb_obj_file(fname):
 	obj = []
 	for line in open(fname, "rb"):
-		if not line.startswith("v "):
+		if not line.startswith(b"v "):
 			continue
-		point = line.split(" ")[1:4]
+		point = line.split(b" ")[1:4]
 		point = [float(x) for x in point] + [0]
 		obj.append(point)
 
@@ -41,7 +41,7 @@ def get_bb_obj_file(fname):
 def get_bb_csv_file(fname):
 	obj = []
 	for line in open(fname, "rb"):
-		point = line.split(",")
+		point = line.split(b",")
 		point = [float(x) for x in point]
 		obj.append(point)
 

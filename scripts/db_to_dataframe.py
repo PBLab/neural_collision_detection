@@ -73,7 +73,8 @@ def parse_raw_df(df) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    fname = r'/data/simulated_morph_data/results/agg_all_70_2.db'
+    fname = r'/data/simulated_morph_data/results/2018_11_26/gatherer.csv'
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     print(cols.head())
+    cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')

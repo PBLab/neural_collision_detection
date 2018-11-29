@@ -4,7 +4,7 @@ import sys, os, re
 
 def get_collision_string(fname):
 	res = ""
-	for line in open(fname, "rb"):
+	for line in open(fname, "r"):
 		x, y, z = line.replace("\n","").split(",")
 		col = " ".join([x, y, z])
 		res += col + "|"
@@ -39,7 +39,7 @@ def main(argv):
 		full_fname = os.path.join(input_dir, fname)
 		collisions = get_collision_string(full_fname)
 		line = "{run_id},{neuron_id},{vascular_id},{neuron_location},{neuron_rotation},{collisions}\n".format(**locals())
-		out.write(line)
+		out.write(line.encode())
 
 
 if __name__ == "__main__":

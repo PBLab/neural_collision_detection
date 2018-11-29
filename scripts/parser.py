@@ -120,7 +120,7 @@ class ResultsParser:
 
 	def __iter__(self):
 		self.idx = 0
-		return self.results
+		return self
 
 	def __next__(self):
 		if self.idx >= self.total_len:

@@ -25,7 +25,7 @@ def get_small_files(root, max_line_count):
 
 def process_main(fnames, out_dir, threshold_distance, vascular):
 	for fname in fnames:
-		re_exp = "/(\w+.obj)_([0-9-]+)_([0-9-]+)_([0-9-]+)__([0-9-]+)_([0-9-]+)_([0-9-]+)_collision.txt"
+		re_exp = r"/(\w+.obj)_([0-9-]+)_([0-9-]+)_([0-9-]+)__([0-9-]+)_([0-9-]+)_([0-9-]+)_collision.txt"
 		m = re.search(re_exp, fname)
 
 		neuron_name = m.group(1)

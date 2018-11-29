@@ -1,6 +1,7 @@
 #!/usr/bin/python
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, division
 import os, sys
+sys.path.append('.')
 import numpy as np
 import math
 import find_enclosing_box
@@ -11,13 +12,13 @@ SHRINK_FACTOR = 5
 
 def create_res_arr(bb):
 	xmin, xmax, ymin, ymax, zmin, zmax = [int(x) for x in bb]
-	x_size = (xmax - xmin) / SHRINK_FACTOR + 2
-	y_size = (ymax - ymin) / SHRINK_FACTOR + 2
-	z_size = (zmax - zmin) / SHRINK_FACTOR + 2
+	x_size = (xmax - xmin) // SHRINK_FACTOR + 2
+	y_size = (ymax - ymin) // SHRINK_FACTOR + 2
+	z_size = (zmax - zmin) // SHRINK_FACTOR + 2
 
 	res = np.zeros((x_size, y_size, z_size), np.int32)
 	print("Result array size:", x_size, y_size, z_size, " Total: ",  x_size * y_size * z_size)
-	return res, xmin / SHRINK_FACTOR, ymin / SHRINK_FACTOR, zmin / SHRINK_FACTOR
+	return res, xmin // SHRINK_FACTOR, ymin // SHRINK_FACTOR, zmin // SHRINK_FACTOR
 
 
 def create_column_graph(collision_arr, resolution, fname):
@@ -31,7 +32,7 @@ def create_column_graph(collision_arr, resolution, fname):
 
 	graph = []
 	graph.append(list(range(0, max_collisions, resolution)))
-	graph.append([0] * (max_collisions / resolution + 1))
+	graph.append([0] * (max_collisions // resolution + 1))
 
 	for i in range(len(collision_arr)):
 		for j in range(len(collision_arr[0])):
@@ -40,7 +41,7 @@ def create_column_graph(collision_arr, resolution, fname):
 				if cur_collisions == 0:
 					#continue
 					pass
-				graph[1][cur_collisions / resolution] += 1
+				graph[1][cur_collisions // resolution] += 1
 	print(graph[0])
 	print(graph[1])
 
@@ -59,7 +60,7 @@ def my_sum(arr1, arr2):
 
 
 def parse_neuron(parser, neuron_id, output_dir):
-	full_path = "/state/partition1/home/yoavj/neurons/{neuron_id}_balls.csv".format(**locals())
+	full_path = "/data/simulated_morph_data/neurons/{neuron_id}_balls.csv".format(**locals())
 	print(full_path)
 
 	bb = find_enclosing_box.get_bb(full_path)
@@ -74,9 +75,9 @@ def parse_neuron(parser, neuron_id, output_dir):
 		for c in cols:
 			# SWAP X Y
 			x, y, z = c[1], c[0], c[2]
-			shrinked_x = int(x) / SHRINK_FACTOR
-			shrinked_y = int(y) / SHRINK_FACTOR
-			shrinked_z = int(z) / SHRINK_FACTOR
+			shrinked_x = int(x) // SHRINK_FACTOR
+			shrinked_y = int(y) // SHRINK_FACTOR
+			shrinked_z = int(z) // SHRINK_FACTOR
 			arr_x_idx = shrinked_x - xmin
 			arr_y_idx = shrinked_y - ymin
 			arr_z_idx = shrinked_z - zmin

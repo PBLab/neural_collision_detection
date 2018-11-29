@@ -10,7 +10,7 @@ import bisect
 def read_balls(fname):
 	res = []
 
-	for line in open(fname, "rb"):
+	for line in open(fname, "r"):
 		if len(line) <= 1:
 			pass
 		x, y, z, r = [float(a) for a in line.split(",")]
@@ -200,7 +200,7 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 	with open(results_filename, "wb") as f:
 		#f.write(str(len(collisions)) + "\n")
 		for col in collisions:
-			f.write("%f,%f,%f\n" % (col[0], col[1], col[2]))
+			f.write(b"%f,%f,%f\n" % (col[0], col[1], col[2]))
 
 	print("Done!")
 	return 0
