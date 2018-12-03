@@ -9,6 +9,7 @@ def main(argv):
 	
 	input_filename = argv[1]
 	output_dir = argv[2]
+	r = 1
 	if len(argv) > 3:
 		r = float(argv[3])
 

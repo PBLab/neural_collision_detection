@@ -55,7 +55,7 @@ void Program::logic()
 		LOG_INFO("Creating output directory\n");
 		mkdir(_output_directory, 0700);
 	}
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks);
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks, _should_output_collisions);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
@@ -100,6 +100,8 @@ void Program::verify_args()
 			throw Exception("Can't use input file in verify mode");
 		if (_minimal_only)
 			throw Exception("Can't use minimal only in verify mode");
+
+		_should_output_collisions = true;
 		break;
 
 	case MODE__BATCH:
@@ -149,10 +151,11 @@ void Program::parse_args(int argc, char** argv)
 			{"location", required_argument, 0, 'l'},
 			{"minimal-only", required_argument, 0, 'z'},
 			{"bound-checks", required_argument, 0, 'b'},
+			{"should-output-collisions", required_argument, 0, 's'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzbvl:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzbsvl:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -210,6 +213,9 @@ void Program::parse_args(int argc, char** argv)
 		case 'b':
 			_bound_checks = false;
 			break;
+		case 's':
+			_should_output_collisions = true;
+			break;
 		case '?':
 		case 'h':
 		default:
@@ -254,6 +260,7 @@ void Program::print_usage()
 	printf("\t-c, --collisions\tNumber of maximum collisions to check [default - 2000]\n");
 	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
+	printf("\t-s, --output-collisions\tOutput files containing the collision points [Regular/Batch mode] [default - don't output]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 }
