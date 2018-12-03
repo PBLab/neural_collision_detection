@@ -5,8 +5,83 @@ from obj_operations import *
 from create_cube import *
 import numpy as np
 import random
+import datetime
 
-def parse_results(res_fname):
+def parse_results_centers_bounding_box(res_fname):
+	min_x = None
+	min_y = None
+	min_z = None
+
+	max_x = None
+	max_y = None
+	max_z = None
+	with open(res_fname, "rb") as f:
+		for l in f:
+			els = l.split(",")
+			if len(els) < 7:
+				continue
+			location = [int(x) for x in els[1:4]]
+			rotation = [int(x) for x in els[4:7]]
+			if min_x is None or min_x > location[0]:
+				min_x = location[0]
+			if min_y is None or min_y > location[1]:
+				min_y = location[1]
+			if min_z is None or min_z > location[2]:
+				min_z = location[2]
+
+			if max_x is None or max_x < location[0]:
+				max_x = location[0]
+			if max_y is None or max_y < location[1]:
+				max_y = location[1]
+			if max_z is None or max_z < location[2]:
+				max_z = location[2]
+
+	return (min_x, max_x, min_y, max_y, min_z, max_z)
+
+def parse_results_rotation(res_fname, real_rotation):
+	BASE_OFFSET = 16
+	distances_x = [0] * (BASE_OFFSET * 2 + 1)
+	distances_y = [0] * (BASE_OFFSET * 2 + 1)
+	distances_z = [0] * (BASE_OFFSET * 2 + 1)
+	helper = [0] * (BASE_OFFSET * 2 + 1)
+	helper[BASE_OFFSET] = 1
+	with open(res_fname, "rb") as f:
+		for l in f:
+			els = l.split(",")
+			if len(els) < 7:
+				continue
+			rotation = [int(x) for x in els[4:7]]
+
+			if (rotation[2] > 170):
+				continue
+			dist_x = (real_rotation[0] - rotation[0])
+			dist_y = (real_rotation[1] - rotation[1])
+			dist_z = (real_rotation[2] - rotation[2])
+
+			distances_x[dist_x + BASE_OFFSET] += 1
+			distances_y[dist_y + BASE_OFFSET] += 1
+			distances_z[dist_z + BASE_OFFSET] += 1
+
+
+	print "Distance from real rotation x: {distances_x}".format(**locals())
+	print "Distance from real rotation y: {distances_y}".format(**locals())
+	print "Distance from real rotation z: {distances_z}".format(**locals())
+	print "========= helper ============: {helper}".format(**locals())
+	print "(BASE_OFFSET: {BASE_OFFSET})".format(**locals())
+	FNAME_X = "distances_x"
+	FNAME_Y = "distances_y"
+	FNAME_Z = "distances_z"
+	append_results_to_file(distances_x, FNAME_X)
+	append_results_to_file(distances_y, FNAME_Y)
+	append_results_to_file(distances_z, FNAME_Z)
+
+	#return distances_x, distances_y, distances_z
+
+def append_results_to_file(results, fname):
+	with open(fname, "a") as f:
+		f.write(",".join(["%03s"%x for x in results]) + "\n")
+
+def parse_results_avg(res_fname):
 	cnt_location = 0
 	cnt_rotation = 0
 	avg_location = [0.0,0.0,0.0]
@@ -83,8 +158,9 @@ def generate_centers(start, end, amount, rotation, fname):
 		for c in centers:
 			f.write("%i,%i,%i\n" % (c[0], c[1], c[2]))
 
-def run_ncd(grid_fname, box_fname, centers_fname, results_fname):
-	ncd_path = "~/ncd"
+def run_ncd(grid_fname, box_fname, centers_fname, results_fname, force_run = False):
+	#ncd_path = "~/ncd"
+	ncd_path = "~/ncd_toy_example"
 	output_dir = "out"
 	output_file = results_fname
 	cmd_delete = "rm -rf {output_dir} {output_file}".format(**locals())
@@ -94,9 +170,10 @@ def run_ncd(grid_fname, box_fname, centers_fname, results_fname):
 	print cmd
 	#print cmd_check
 
-	input_text = raw_input("Run? [Y/n]")
-	if len(input_text) > 0 and input_text.lower()[0] == 'n':
-		return
+	if not force_run:
+		input_text = raw_input("Run? [Y/n]")
+		if len(input_text) > 0 and input_text.lower()[0] == 'n':
+			raise Exception("Aborted")
 
 
 	os.system(cmd_delete)
@@ -127,22 +204,24 @@ def generate_random_corner(start, end, empty_size):
 	return x, y, z
 
 def main():
-	GRID_SIZE = 160
+	FORCE_RUN = True
+	GRID_SIZE = 140
 	START = 0 - GRID_SIZE/2
 	END = 0 + GRID_SIZE/2
 	STEP = 2
 	WIDTH = 1
 	# Needs to be multiple of 7
-	EMPTY_SIZE   = (21, 126, 56)
+	EMPTY_SIZE   = (20, 125, 55)
 	#EMPTY_CORNER = (30, 40, 50)
 	#GRID_ROTATION = (0, 0, 45)
 	GRID_ROTATION = generate_random_rotation()
+	#GRID_ROTATION = (0, 0, 0)
 	EMPTY_CORNER = generate_random_corner(START, END, EMPTY_SIZE)
-	BOX_MARGIN   = [EMPTY_SIZE[0] / 7, EMPTY_SIZE[1] / 7, EMPTY_SIZE[2] / 7]
+	BOX_MARGIN   = [EMPTY_SIZE[0] / 5, EMPTY_SIZE[1] / 5, EMPTY_SIZE[2] / 5]
 	BOX_CENTER   = (0, 0, 0)
 	BOX_SIZE     = (EMPTY_SIZE[0] - BOX_MARGIN[0], EMPTY_SIZE[1] - BOX_MARGIN[1], EMPTY_SIZE[2] - BOX_MARGIN[2])
 	CENTERS_MARGIN = min(EMPTY_SIZE)
-	CENTERS_AMOUNT = 500000
+	CENTERS_AMOUNT = 2000
 	EMPTY = (EMPTY_CORNER[0], EMPTY_CORNER[0] + EMPTY_SIZE[0],
 			 EMPTY_CORNER[1], EMPTY_CORNER[1] + EMPTY_SIZE[1],
 			 EMPTY_CORNER[2], EMPTY_CORNER[2] + EMPTY_SIZE[2])
@@ -150,7 +229,8 @@ def main():
 	BOX_FNAME = "box.obj"
 	CENTERS_FNAME = "centers.csv"
 	RESULTS_FNAME = "res.txt"
-	PARAMS_FNAME = "params.txt"
+	date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+	PARAMS_FNAME = "params_%s.txt" % date
 
 	generate_grid(START, END, STEP, WIDTH, EMPTY, GRID_ROTATION, GRID_FNAME)
 
@@ -175,10 +255,29 @@ Centers:\n\t\t{CENTERS_AMOUNT} with {CENTERS_MARGIN} margin\n\
 	with open(PARAMS_FNAME, "wb") as f:
 		f.write(params)
 
-	run_ncd(GRID_FNAME, BOX_FNAME, CENTERS_FNAME, RESULTS_FNAME)
+	run_ncd(GRID_FNAME, BOX_FNAME, CENTERS_FNAME, RESULTS_FNAME, FORCE_RUN)
 	print params
 
-	parse_results(RESULTS_FNAME)
+	min_x, max_x, min_y, max_y, min_z, max_z = parse_results_centers_bounding_box(RESULTS_FNAME)
+	if min_x is None:
+		print "No results found"
+		return
+
+	print "Centers bb:\t({min_x},{min_y},{min_z}) -> ({max_x},{max_y},{max_z})".format(**locals())
+
+	t_min_x = min_x - BOX_SIZE[0]/2
+	t_min_y = min_y - BOX_SIZE[1]/2
+	t_min_z = min_z - BOX_SIZE[2]/2
+
+	t_max_x = max_x + BOX_SIZE[0]/2
+	t_max_y = max_y + BOX_SIZE[1]/2
+	t_max_z = max_z + BOX_SIZE[2]/2
+
+	print "Total bb:\t({t_min_x},{t_min_y},{t_min_z}) -> ({t_max_x},{t_max_y},{t_max_z})".format(**locals())
+	empty_far_corner = [EMPTY_CORNER[i] + EMPTY_SIZE[i] for i in range(3)]
+	print "Empty area:\t{EMPTY_CORNER} -> {empty_far_corner}".format(**locals())
+
+	parse_results_rotation(RESULTS_FNAME, GRID_ROTATION)
 
 
 if __name__ == "__main__":
