@@ -7,7 +7,7 @@ static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
 
 CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-									const std::string& output_directory, bool minimal_only, bool bound_checks)
+									const std::string& output_directory, bool minimal_only, bool bound_checks, bool should_output_collisions)
 {
 	_m1 = m1;
 	_m2 = m2;
@@ -17,6 +17,7 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 	_output_directory = output_directory;
 	_minimal_only = minimal_only;
 	_bound_checks = bound_checks;
+	_should_output_collision_files = should_output_collisions;
 
 	LOG_INFO("Creating model1...\n");
 	_fm1 = _m1->fcl_model();
@@ -217,6 +218,12 @@ void single_result_callback(void* arg, SingleResultCallbackParam * params)
 	if (!params->single_result->is_min)
 		return;
 
+	if (!cm->should_output_collisions())
+	{
+		strncpy(params->single_result->output_filename, "<no file created>", OUTPUT_FILENAME_LENGTH);
+		return;
+	}
+
 	std::string filename = cm->output_collision_points_single_collision(params->x, params->y, params->z, params->r_x, params->r_y, params->r_z);
 	strncpy(params->single_result->output_filename, filename.c_str(), OUTPUT_FILENAME_LENGTH);
 }
@@ -343,4 +350,9 @@ const Model* CollisionManager::m1() const
 const Model* CollisionManager::m2() const
 {
 	return _m2;
+}
+
+bool CollisionManager::should_output_collisions() const
+{
+	return _should_output_collision_files;
 }
