@@ -18,7 +18,7 @@ def get_ncd_results(ncd_output_file, max_collisions):
 	return results
 	
 
-def process_main(results, out_dir, threshold_distance, vascular):
+def process_main(results, output_fname, threshold_distance, vascular):
 	for res in results:
 		splitted = res.split(",")
 
@@ -33,25 +33,22 @@ def process_main(results, out_dir, threshold_distance, vascular):
 		rotation = [int(x) for x in rotation]
 
 		# TODO: get rid also of these files
-		out_file = "{0}/out_{1}_{2}_{3}.txt".format(out_dir, neuron_name, l, r).replace(",", "_")
 		neuron_name = neuron_name.replace(".obj", "_balls.csv")
 		neuron_fname = "../../neurons/" + neuron_name
 		vascular_fname = "../../vascular/vascular_balls.csv"
 
-		aggregate(vascular_fname, neuron_fname, location, rotation, out_file, threshold_distance, vascular)
+		aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
 
 
 def main(argv):
 	if len(argv) < 4:
-		print("Usage: %s <ncd output file> <max collisions> <threshold distance> <out dir>" % argv[0])
+		print("Usage: %s <ncd output file> <max collisions> <threshold distance> <output file>" % argv[0])
 		return 1
 
 	ncd_output_file = argv[1]
 	max_collisions = int(argv[2])
 	threshold_distance = int(argv[3])
-	out_dir = argv[4]
-
-	os.system("mkdir {0}".format(out_dir))
+	output_fname = argv[4]
 
 	ncd_results = get_ncd_results(ncd_output_file, max_collisions)
 	print("Running over {0} results".format(len(ncd_results)))
@@ -68,7 +65,7 @@ def main(argv):
 		if i == process_count - 1:
 			next_idx = len(ncd_results)
 
-		params = (ncd_results[last_idx : next_idx], out_dir, threshold_distance, vascular)
+		params = (ncd_results[last_idx : next_idx], output_fname, threshold_distance, vascular)
 		print(len(params[0]))
 
 		p = multiprocessing.Process(target=process_main, args = params)
