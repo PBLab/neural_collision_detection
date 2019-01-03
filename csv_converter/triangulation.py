@@ -20,7 +20,7 @@ class Triangulation(object):
         print("Reading faces ...")
         self.np_faces = Triangulation.list_to_np_array(faces, num_of_faces, int)
 
-        
+
         print("Num of vertices:\t", len(self.np_vertices))
         print("Num of triangles:\t", len(self.np_faces))
 
@@ -36,7 +36,7 @@ class Triangulation(object):
             np_array[i, 1] = el[1]
             np_array[i, 2] = el[2]
             if (100 * i) / lst_len > percent:
-                percent = (100 * i) / lst_len
+                percent = (100 * i) // lst_len
                 print("%2i%%" % percent + "\r")
                 sys.stdout.flush()
 
@@ -65,7 +65,7 @@ class ObjCreator:
         self.num_of_vertices = num_of_vertices
         self.num_of_triangles = num_of_triangles
 
-    
+
     def write_vertex(self, v):
         s  = ""
         #s += "vn 0.0 0.0 1.0\n"
@@ -74,8 +74,8 @@ class ObjCreator:
 
     def write_triangle(self, t):
         s = "f %i %i %i\n" % (t[0]+1,
-                                          t[1]+1,
-                                          t[2]+1)
+                              t[1]+1,
+                              t[2]+1)
         #s = "f %i//%i %i//%i %i//%i\n" % (t[0]+1, t[0]+1,
                                           #t[1]+1, t[1]+1,
                                           #t[2]+1, t[2]+1)

@@ -7,7 +7,7 @@ class Utils(object):
     @staticmethod
     def memory_usage():
         print("Memory usage:")
-        os.system("ps aux | grep %i | grep -v grep | awk '{sum=sum+$6}; END {print sum/1024 \" MB\"}'" % os.getpid() )
+        os.system("ps aux | grep %i | grep -v grep | awk '{sum=sum+$6}; END {print(sum//1024) \" MB\"}'" % os.getpid() )
 
     @staticmethod
     def fix_faces(faces):
