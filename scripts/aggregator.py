@@ -6,6 +6,13 @@ import numpy as np
 import time
 import bisect
 
+def create_collision_str(collisions):
+	res = ""
+	for c in collisions:
+		x, y, z, _ = [str(a) for a in c]
+		col = " ".join([x, y, z])
+		res += col + "|"
+	return res[:-1]
 
 def read_balls(fname):
 	res = []
@@ -197,10 +204,18 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 	print("Find nearest points...")
 	collisions = find_nearest_points(vascular, neuron, threshold_distance)
 
-	with open(results_filename, "wb") as f:
-		#f.write(str(len(collisions)) + "\n")
-		for col in collisions:
-			f.write(b"%f,%f,%f\n" % (col[0], col[1], col[2]))
+
+
+	collisions_str = create_collision_str(collisions)
+	run_id = "run_1"
+	neuron_id = os.path.basename(neuron_filename)
+	vascular_id = os.path.basename(vascular_filename)
+	neuron_location = "{0} {1} {2}".format(*location)
+	neuron_rotation = "{0} {1} {2}".format(*rotation)
+	collisions_count = len(collisions)
+	line = "{run_id},{neuron_id},{vascular_id},{neuron_location},{neuron_rotation},{collisions_count},{collisions_str}\n".format(**locals())
+	with open(results_filename, "ab") as f:
+		f.write(line)
 
 	print("Done!")
 	return 0

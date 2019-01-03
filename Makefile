@@ -8,6 +8,7 @@ LDFLAGS += -static -L/home/yoav/cg/new_fcl/fcl/build/src/CMakeFiles/fcl.dir
 
 all: $(OBJS)
 	g++ $(OBJS) -lfcl -lstdc++ -o ncd -L/home/yoav/cg/new_fcl/fcl/build/lib -lpthread -lfcl -lstdc++ -lccd $(LDFLAGS)
+	strip ncd
 clean:
 	rm -f ncd *.o
 run:
