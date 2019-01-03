@@ -121,7 +121,7 @@ if __name__ == '__main__':
     bins, maxp, minp = get_border_box(neuron[0], l)
     print(bins)
     
-    fname = r'C:\Py3DN\SampleCells\collisions_array_AP120420_s1c1.npz'
+    fname = r'/mnt/qnap/simulated_morph_data/neural_collision_detector/collisions_26_11.npz'
     collisions = np.load(fname)['arr_0']
     print(collisions.shape)
     assert collisions.shape == (bins.x, bins.y, bins.z)

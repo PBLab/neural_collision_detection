@@ -1,6 +1,8 @@
 import xarray as xr
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def read_db_into_raw_df(fname) -> pd.DataFrame:
@@ -79,11 +81,15 @@ def get_stats(df: pd.DataFrame):
                            collisions_df.index.get_level_values('y'),
                            collisions_df.index.get_level_values('z')]).T
     
+    
     idx = pd.IndexSlice
     relevant_collisions = df.loc[idx[:, :, :, chosen_pos[:, 0], 
                                      chosen_pos[:, 1], chosen_pos[:, 2], :, :, :], 
                                  :]
-                                 
+    color_dict = {tuple(row): f'C{idx}' for idx, row in enumerate(chosen_pos)}
+    relevant_collisions['color'] = color_dict[tuple(relevant_collisions.loc[:, 'x':'z'])]
+    return chosen_pos, relevant_collisions
+
 
 if __name__ == '__main__':
     fname = r'/data/simulated_morph_data/results/2018_11_26/gatherer.csv'
@@ -91,4 +97,4 @@ if __name__ == '__main__':
     cols = parse_raw_df(raw_df)
     # print(cols.head())
     # cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')
-    get_stats(cols)
+    chosen_pos, rel_cols = get_stats(cols)

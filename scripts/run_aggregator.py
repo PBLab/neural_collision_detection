@@ -21,7 +21,7 @@ def get_small_files(root, max_line_count):
 			if get_number_of_lines(full_filename) <= max_line_count:
 				l.append(full_filename)
 	return l
-	
+
 
 def process_main(fnames, out_dir, threshold_distance, vascular):
 	for fname in fnames:

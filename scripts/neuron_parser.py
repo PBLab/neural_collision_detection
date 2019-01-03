@@ -46,9 +46,9 @@ def create_column_graph(collision_arr, resolution, fname):
 	print(graph[1])
 
 	with open(fname, "ab") as f:
-		f.write(b",".join([str(x) for x in graph[0]]))
+		f.write(b",".join([bytes(x, 'utf-8') for x in graph[0]]))
 		f.write(b"\n")
-		f.write(b",".join([str(x) for x in graph[1]]))
+		f.write(b",".join([bytes(x, 'utf-8') for x in graph[1]]))
 		f.write(b"\n")
 		f.write(b"\n")
 
