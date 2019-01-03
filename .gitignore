@@ -13,3 +13,7 @@ output
 *.csv
 Eigen
 *.obj
+.mypy_cache/
+__pycache__/
+*.npz
+*.json
