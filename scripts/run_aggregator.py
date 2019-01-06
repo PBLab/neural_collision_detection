@@ -54,7 +54,7 @@ def main(argv):
 	print("Running over {0} results".format(len(ncd_results)))
 
 	process_count = 20
-	results_per_process = 1.0 * len(ncd_results) // process_count
+	results_per_process = 1.0 * len(ncd_results) / process_count
 	processes = []
 	last_idx = 0
 	vascular_fname = "../../vascular/vascular_balls.csv"
