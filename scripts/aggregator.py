@@ -66,14 +66,14 @@ def rotate(neuron, rotation):
 		rotated_v = m * v
 		x, y, z = rotated_v.transpose().tolist()[0]
 		neuron[i] = [x, y, z, r]
-	
+
 
 def translate(obj, location):
 	x_l, y_l, z_l = location
 	for i in range(len(obj)):
 		x, y, z, r = obj[i]
 		obj[i] = [x + x_l, y + y_l, z + z_l, r]
-		
+
 def find_bounding_box(obj):
 	min_x = max_x = obj[0][0]
 	min_y = max_y = obj[0][1]
@@ -204,8 +204,6 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 	print("Find nearest points...")
 	collisions = find_nearest_points(vascular, neuron, threshold_distance)
 
-
-
 	collisions_str = create_collision_str(collisions)
 	run_id = "run_1"
 	neuron_id = os.path.basename(neuron_filename)
@@ -214,7 +212,7 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 	neuron_rotation = "{0} {1} {2}".format(*rotation)
 	collisions_count = len(collisions)
 	line = "{run_id},{neuron_id},{vascular_id},{neuron_location},{neuron_rotation},{collisions_count},{collisions_str}\n".format(**locals())
-	with open(results_filename, "ab") as f:
+	with open(results_filename, "a") as f:
 		f.write(line)
 
 	print("Done!")
@@ -224,7 +222,7 @@ def main(argv):
 	if len(argv) < 6:
 		print("Usage: %s <vascular data> <neuron data> <location> <rotation> <results file> [threshold distance]" % argv[0])
 		return 1
-	
+
 	vascular_filename = argv[1]
 	neuron_filename = argv[2]
 	location = [int(a) for a in argv[3].split(",")]

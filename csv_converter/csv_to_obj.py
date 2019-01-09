@@ -21,7 +21,7 @@ def main_commandline():
     x_expand, y_expand, z_expand = 1,1,1
     if args.expand is not None:
         x_expand, y_expand, z_expand = [float(x) for x in args.expand.split(",")]
-    
+
     output_fname = args.output
 
     tr = Triangulation(args.faces, args.vertices)
@@ -37,8 +37,6 @@ def main_lib(faces, vertices, output_fname, x_expand = 1, y_expand = 1, z_expand
     tr = Triangulation(faces, vertices)
     creator = tr.get_obj_creator()
     creator.create_obj_file(output_fname, x_expand, y_expand, z_expand)
-
-
 
 
 if __name__ == "__main__":

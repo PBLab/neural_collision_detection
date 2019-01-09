@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import multiprocessing
 
 
 def read_db_into_raw_df(fname) -> pd.DataFrame:
@@ -10,10 +11,10 @@ def read_db_into_raw_df(fname) -> pd.DataFrame:
     Basic functionality to read the current
     DB format into an unprocessed DataFrame.
     """
-    column_names = ['run_id', 'neuron', 'vasc', 'location', 'rotation', 'collisions']
+    column_names = ['run_id', 'neuron', 'vasc', 'location', 'rotation', 'coll_count', 'collisions']
     dtypes = {column_names[0]: 'category', column_names[1]: 'category',
               column_names[2]: 'category', column_names[3]: str, column_names[4]: str,
-              column_names[5]: str}
+              column_names[5]: int, column_names[6]: str}
     df = pd.read_csv(fname, header=None, names=column_names,
                      index_col=column_names[:3], dtype=dtypes)
     return df
@@ -46,7 +47,7 @@ def parse_raw_df(df) -> pd.DataFrame:
     df[['roll', 'yaw', 'pitch']] = rots
     df = df.drop('rotation', axis=1)
     index_cols = list(set(df.columns) - set(['collisions']))
-    ordered_index_cols = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+    ordered_index_cols = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'coll_count']
     assert set(ordered_index_cols) == set(index_cols)
     df.set_index(ordered_index_cols, inplace=True, append=True)
 
@@ -86,17 +87,65 @@ def get_stats(df: pd.DataFrame):
 
     idx = pd.IndexSlice
     relevant_collisions = df.loc[idx[:, :, :, chosen_pos[:, 0],
-                                     chosen_pos[:, 1], chosen_pos[:, 2], :, :, :],
+                                     chosen_pos[:, 1], chosen_pos[:, 2], :, :, :, :],
                                  :]
     color_dict = {tuple(row): f'C{idx}' for idx, row in enumerate(chosen_pos)}
     relevant_collisions['color'] = color_dict[tuple(relevant_collisions.loc[:, 'x':'z'])]
     return chosen_pos, relevant_collisions
 
 
+def translate_colls(colls):
+    """ Translates the collisions back to the original coordinates """
+    colls_translated = cols.values
+    colls_translated[:, 0] -= cols.index.get_level_values('x')
+    colls_translated[:, 1] -= cols.index.get_level_values('y')
+    colls_translated[:, 2] -= cols.index.get_level_values('z')
+    return colls_translated
+
+
+def rotate_colls(colls: pd.DataFrame, colls_translated: np.ndarray) -> np.ndarray:
+    """ Rotates the translated collisions """
+    rot = np.stack((
+        colls.index.get_level_values('roll').values,
+        colls.index.get_level_values('pitch').values,
+        colls.index.get_level_values('yaw').values,
+    ), axis=1)
+    with multiprocessing.Pool() as pool:
+        rotated_colls = pool.starmap(_rotate_single_coll, zip(rot, colls_translated))
+
+    return np.array(rotated_colls)
+
+
+def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
+    """ Rotates a collisions 3D coordinate coll by rot degrees
+    in each axis.
+    rot is a vector with three entries, angle per axis.
+    coll is a vector with three entries, identifying the coordinates of
+    a specific collision.
+    """
+    rot_in_rads = np.radians(rot)
+    sine, cosine = np.sin(rot_in_rads), np.cos(rot_in_rads)
+    m_x = np.array([[1, 0, 0],
+                    [0, cosine, -sine],
+                    [0, sine, cosine]])
+    m_y = np.array([[cosine, 0, sine],
+                    [0, 1, 0],
+                    [-sine, 0, cosine]])
+    m_z = np.array([[cosine, -sine, 0],
+                    [sine, cosine, 0],
+                    [0, 0, 1]])
+    rot_matrix = np.linalg.inv(m_x @ m_y @ m_z)
+    return rot_matrix @ coll
+
+
 if __name__ == '__main__':
-    fname = r'/data/simulated_morph_data/results/2018_11_26/gatherer.csv'
+    fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results'
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
-    # print(cols.head())
+    print(cols.head())
+    colls_translated = translate_colls(cols)
+    colls_trans_rot = rotate_colls(cols, colls_translated)
+    np.savez('../results/2019_1_2/collisions.npz', {'translated': colls_trans_rot})
+
     # cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')
-    chosen_pos, rel_cols = get_stats(cols)
+    # chosen_pos, rel_cols = get_stats(cols)

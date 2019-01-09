@@ -5,8 +5,8 @@ sys.path.append('.')
 import numpy as np
 import math
 import find_enclosing_box
-from scripts.parser import ResultsParser
-from scripts.plotter import plot_2d
+from parser import ResultsParser
+from plotter import plot_2d
 
 SHRINK_FACTOR = 5
 
@@ -45,12 +45,12 @@ def create_column_graph(collision_arr, resolution, fname):
 	print(graph[0])
 	print(graph[1])
 
-	with open(fname, "ab") as f:
-		f.write(b",".join([bytes(x, 'utf-8') for x in graph[0]]))
-		f.write(b"\n")
-		f.write(b",".join([bytes(x, 'utf-8') for x in graph[1]]))
-		f.write(b"\n")
-		f.write(b"\n")
+	with open(fname, "a") as f:
+		f.write(",".join([bytes(x, 'utf-8') for x in graph[0]]))
+		f.write("\n")
+		f.write(",".join([bytes(x, 'utf-8') for x in graph[1]]))
+		f.write("\n")
+		f.write("\n")
 
 def my_sum(arr1, arr2):
 	for i in range(len(arr1)):
@@ -106,7 +106,7 @@ def main(argv):
 	if len(argv) < 3:
 		print("Usage: %s <input file> <output directory>" % argv[0])
 		return 1
-	
+
 	input_filename = argv[1]
 	output_dir = argv[2]
 
