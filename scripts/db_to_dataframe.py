@@ -1,9 +1,11 @@
+import multiprocessing
+
 import xarray as xr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import multiprocessing
+import numba
 
 
 def read_db_into_raw_df(fname) -> pd.DataFrame:
@@ -126,13 +128,13 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
     rot_in_rads = np.radians(rot)
     sine, cosine = np.sin(rot_in_rads), np.cos(rot_in_rads)
     m_x = np.array([[1, 0, 0],
-                    [0, cosine, -sine],
-                    [0, sine, cosine]])
-    m_y = np.array([[cosine, 0, sine],
+                    [0, cosine[0], -sine[0]],
+                    [0, sine[0], cosine[0]]])
+    m_y = np.array([[cosine[1], 0, sine[1]],
                     [0, 1, 0],
-                    [-sine, 0, cosine]])
-    m_z = np.array([[cosine, -sine, 0],
-                    [sine, cosine, 0],
+                    [-sine[1], 0, cosine[1]]])
+    m_z = np.array([[cosine[2], -sine[2], 0],
+                    [sine[2], cosine[2], 0],
                     [0, 0, 1]])
     rot_matrix = np.linalg.inv(m_x @ m_y @ m_z)
     return rot_matrix @ coll
@@ -142,10 +144,6 @@ if __name__ == '__main__':
     fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results'
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
-    print(cols.head())
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    np.savez('../results/2019_1_2/collisions.npz', {'translated': colls_trans_rot})
-
-    # cols.to_hdf(fname[:-4] + '_parsed.h5', key='70_2', mode='w')
-    # chosen_pos, rel_cols = get_stats(cols)
+    np.savez('../results/2019_1_2/collisions.npz', translated=colls_trans_rot)
