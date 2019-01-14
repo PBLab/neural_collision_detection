@@ -46,9 +46,9 @@ def create_column_graph(collision_arr, resolution, fname):
 	print(graph[1])
 
 	with open(fname, "a") as f:
-		f.write(",".join([bytes(x, 'utf-8') for x in graph[0]]))
+		f.write(",".join([str(x) for x in graph[0]]))
 		f.write("\n")
-		f.write(",".join([bytes(x, 'utf-8') for x in graph[1]]))
+		f.write(",".join([str(x) for x in graph[1]]))
 		f.write("\n")
 		f.write("\n")
 
@@ -60,7 +60,7 @@ def my_sum(arr1, arr2):
 
 
 def parse_neuron(parser, neuron_id, output_dir):
-	full_path = "/data/simulated_morph_data/neurons/{neuron_id}_balls.csv".format(**locals())
+	full_path = "/data/simulated_morph_data/neurons/{neuron_id}".format(**locals())
 	print(full_path)
 
 	bb = find_enclosing_box.get_bb(full_path)
@@ -84,7 +84,7 @@ def parse_neuron(parser, neuron_id, output_dir):
 			arr[arr_x_idx][arr_y_idx][arr_z_idx] += 1
 
 	output_npy = os.path.join(output_dir, "collisions_array_{neuron_id}.npz".format(**locals()))
-	np.savez(output_npy, {0: arr})
+	np.savez(output_npy, data=arr)
 	GRAPH_RESOLUTION = 5
 	output_csv = os.path.join(output_dir, "collisions_chart.csv")
 

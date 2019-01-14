@@ -21,16 +21,16 @@ def get_rotation_matrix(rotation):
 	sin_z = math.sin(z_rad)
 
 	m_x = [[1, 0, 0],
-			[ 0, cos_x, -1*sin_x],
-			[0, sin_x, cos_x]]
+		   [ 0, cos_x, -1*sin_x],
+		   [0, sin_x, cos_x]]
 
 	m_y = [[cos_y, 0, sin_y],
-			[0, 1, 0],
-			[-1 * sin_y, 0, cos_y]]
+		   [0, 1, 0],
+		   [-1 * sin_y, 0, cos_y]]
 
 	m_z = [[cos_z, -1 * sin_z, 0],
-			[sin_z, cos_z, 0],
-			[0, 0, 1]]
+		   [sin_z, cos_z, 0],
+		   [0, 0, 1]]
 
 	mx = np.matrix(m_x)
 	my = np.matrix(m_y)
@@ -78,11 +78,12 @@ class Result:
 		self.vascular_id = res.vascular_id
 		self.translation = res.translation
 		self.rotation = res.rotation
+		self.collisions_num = res.collisions_num
 		self.collisions = list(res.collisions)
 
 	def _init_from_string(self, line):
 		splitted = line.split(",")
-		if len(splitted) != 6:
+		if len(splitted) != 7:
 			raise Exception("bad line")
 
 		self.run_id = splitted[0]
@@ -90,8 +91,9 @@ class Result:
 		self.vascular_id = splitted[2]
 		self.translation = [float(x) for x in splitted[3].split(" ")]
 		self.rotation = [float(x) for x in splitted[4].split(" ")]
+		self.collisions_num = splitted[5]
 		self.collisions = []
-		for col in splitted[5].split("|"):
+		for col in splitted[6].split("|"):
 			if len(col.split(" ")) == 3:
 				self.collisions.append([float(x) for x in col.split(" ")])
 
@@ -107,7 +109,7 @@ class Result:
 		col_str = self._get_collision_string()
 		translation_str = " ".join([str(a) for a in self.translation])
 		rotation_str = " ".join([str(a) for a in self.rotation])
-		return "{0},{1},{2},{3},{4},{5}".format(self.run_id, self.neuron_id, self.vascular_id, translation_str, rotation_str, col_str)
+		return "{0},{1},{2},{3},{4},{5}, {6}".format(self.run_id, self.neuron_id, self.vascular_id, translation_str, rotation_str, self.collisions_num, col_str)
 
 class ResultsParser:
 	def __init__(self, lines):
@@ -141,7 +143,7 @@ class ResultsParser:
 			name.append(res.neuron_id)
 
 		return list(set(name))
-		
+
 	def __str__(self):
 		return "\n".join([str(x) for x in self.results])
 
