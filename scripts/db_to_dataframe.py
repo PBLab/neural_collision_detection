@@ -137,7 +137,9 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
                     [sine[2], cosine[2], 0],
                     [0, 0, 1]])
     rot_matrix = np.linalg.inv(m_x @ m_y @ m_z)
-    return rot_matrix @ coll
+    rotated_colls = (rot_matrix @ coll.T).T
+    rotated_colls[0], rotated_colls[1] = rotated_colls[1], rotated_colls[0]
+    return rotated_colls
 
 
 if __name__ == '__main__':

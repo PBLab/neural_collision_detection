@@ -8,6 +8,7 @@ Coor = namedtuple("Coor", ("x", "y", "z"))
 
 
 def gen_bins(colls: np.ndarray, l: Coor):
+    """ Histograms the collisions into l-sized bins """
     max_x, min_x = np.max(colls[:, 0]), np.min(colls[:, 0])
     max_y, min_y = np.max(colls[:, 1]), np.min(colls[:, 1])
     max_z, min_z = np.max(colls[:, 2]), np.min(colls[:, 2])
@@ -18,7 +19,13 @@ def gen_bins(colls: np.ndarray, l: Coor):
     return hist, edges
 
 
-def draw_collisions(colls, hist, edges):
+def filter_relevant_bins(colls, hist, edges):
+    """
+    After generating the histogram of collisions, filters out only
+    the bins in which a collisions occurred. It then generates two
+    arrays which contain the start and end of the bins containing the
+    collisions in microns.
+    """
     norm = 1.0 / np.max(hist)
     relevant_coords = np.where(
         hist > 0
@@ -35,8 +42,15 @@ def draw_collisions(colls, hist, edges):
     return hist[relevant_coords], bin_starts, bin_ends
 
 
-def create_verts_faces_and_draw(hist, bin_starts, bin_ends):
-    OPS_LAYER = 0
+def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
+    """
+    After generating a 3D histogram of collisions on top of the neuron,
+    create a new mesh in Blender which shows the number of collisions in
+    that bin in space by modifying the color brightness of that spot - the
+    brighter the generated mesh is, the more collisions occurred.
+
+    Based on a function from py3DN.
+    """
     norm = 1.0 / hist.max()
     for val, coll_start, coll_end in zip(hist, bin_starts, bin_ends):
         voxel_verts = [
@@ -84,57 +98,13 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends):
         obj.layers = layers
 
 
-def get_border_box(neuron, l):
-    """
-    Returns three 3D objects:
-    bins: the number of bins in each dimension for a given neuron,
-    normalized to a l.x-by-l.y-by-l.z box in um.
-    maxp: Maximal coordinate of the neuron in all three dimensions.
-    minp: Minimal coordinate of the neuron in all three dimensions.
-    Assumes that at least a single neuron was already loaded, and that
-    mytools was imported.
-    Taken directly from Py3DN with very minor changes by Hagai Har-Gil.
-    """
-
-    # to make things more readable
-    X = 0
-    Y = 1
-    Z = 2
-
-    # Find out how many coordinates the neuron contains
-    num_of_dims = 3
-    num_of_points = 0
-    for tree in neuron.tree:
-        num_of_points += len(tree.rawpoint)
-    neuron_coords = np.zeros((num_of_points, num_of_dims))
-
-    row = 0
-    for tree in neuron.tree:
-        for point in tree.rawpoint:
-            neuron_coords[row, :] = point.P
-            row += 1
-
-    min_point = neuron_coords.min(axis=0)
-    max_point = neuron_coords.max(axis=0)
-
-    bins_x = int((max_point[X] - min_point[X]) / l.x) + 2
-    bins_y = int((max_point[Y] - min_point[Y]) / l.y) + 2
-    bins_z = int((max_point[Z] - min_point[Z]) / l.z) + 2
-
-    bins = Coor(bins_x, bins_y, bins_z)
-    maxp = Coor(max_point[X], max_point[Y], max_point[Z])
-    minp = Coor(min_point[X], min_point[Y], min_point[Z])
-
-    return bins, maxp, minp
-
-
 if __name__ == "__main__":
     # Should only be run under Blender
     l = Coor(5, 5, 5)  # in um
-    fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions.npz"
-    downsample_factor = 10_000
+    fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser.npz"
+    downsample_factor = 1_000
     collisions = np.load(fname)["translated"][::downsample_factor, :]
     hist, edges = gen_bins(collisions, l)
-    nonzero_hist, bin_starts, bin_ends = draw_collisions(collisions, hist, edges)
-    create_verts_faces_and_draw(nonzero_hist, bin_starts, bin_ends)
+    nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(collisions, hist, edges)
+    create_verts_faces_and_draw(nonzero_hist, bin_starts, bin_ends, OPS_LAYER=4)
     print("Done!")
