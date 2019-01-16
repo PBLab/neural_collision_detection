@@ -77,9 +77,11 @@ This file explains the pipeline, the usage of each script file in this directory
 
 
 ## Blender:
-	overlay_collisions.py
-		Takes a loaded Blender neuron and overlays the collisions data on top of it for display purposes.
-		
+    overlay_collisions.py
+        Takes a loaded Blender neuron and overlays the collisions data on top of it for display purposes.
+	draw_collisions_on_tree.py
+		Assigns each collision detected through NCD to the neuronal tree it belongs to and renders it in 3D.
+
 ### Other:
 	plotter.py
 		Plots a general 2D array, using matplotlib. Not really needed right now.

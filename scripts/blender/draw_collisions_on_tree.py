@@ -9,19 +9,39 @@ import bpy
 from overlay_collisions import gen_bins, Coor
 
 
+def get_tree_points_into_array(neuron):
+    """
+    Finds the total number of points a neuron is composed
+    of and creates a numpy array of these points, where each
+    row is a point and the columns are the (x, y, z)
+    coordinates for downstream processing.
+    """
+    total_points = 0
+    for tree in neuron.tree:
+        total_points += tree.total_points
+
+    points_on_neuron = np.zeros((total_points, 3))
+
+    for tree in neuron.tree:
+        for idx, point in enumerate(tree.point):
+            points_on_neuron[idx, :] = point.P
+
+    return points_on_neuron, total_points
+
+
 def draw_tree_collisions(tree, object_name, collisions_hist, bin_starts, bin_ends):
 
-    collisions_on_tree = np.zeros(tree.total_points)
     colorcodes = np.zeros((tree.total_points, 3))
     N = bpy.context.scene.MyDrawTools_TreesDetail
 
-    min_collision_num = 0
     max_collisions_num = collisions_hist.max()
 
     bin_centers = (bin_starts + bin_ends) / 2
+    # points_on_tree, total_points = get_tree_points_into_array(neuron)
+
     points_on_tree = np.zeros((tree.total_points, 3))
     for idx, point in enumerate(tree.point):
-        points_on_tree[idx, :] = point.P
+            points_on_tree[idx, :] = point.P
 
     # The columns of the following arrays represent the bins, and the rows represent
     # the number of points on the tree
@@ -41,7 +61,7 @@ def draw_tree_collisions(tree, object_name, collisions_hist, bin_starts, bin_end
     # or you could avoid using the vertex color map name
     # color_map = color_map_collection.active
 
-    for pid in range(tree.total_points-1):
+    for pid in range(tree.total_points - 1):
         for i in range(N):
             color_map.data[pid*N+i].color = [ colorcodes[pid, 0], colorcodes[pid, 1], colorcodes[pid, 2] ]
 
@@ -85,4 +105,4 @@ if __name__ == "__main__":
     collisions = np.load(fname)["translated"][::downsample_factor, :]
     hist, edges = gen_bins(collisions, l)
     nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(collisions, hist, edges)
-    draw_tree_collisions(mytools.neuron[0].tree[0], 'Axon', nonzero_hist, bin_starts, bin_ends)
+    draw_tree_collisions(neuron[0], 'Axon', nonzero_hist, bin_starts, bin_ends)
