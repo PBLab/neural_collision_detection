@@ -7,6 +7,7 @@ import numpy as np
 import random
 import datetime
 
+
 def parse_results_centers_bounding_box(res_fname):
 	min_x = None
 	min_y = None
@@ -205,23 +206,24 @@ def generate_random_corner(start, end, empty_size):
 
 def main():
 	FORCE_RUN = True
-	GRID_SIZE = 140
+	GRID_SIZE = 160
 	START = 0 - GRID_SIZE/2
 	END = 0 + GRID_SIZE/2
 	STEP = 2
 	WIDTH = 1
 	# Needs to be multiple of 7
-	EMPTY_SIZE   = (20, 125, 55)
+	EMPTY_SIZE   = (21, 126, 56) # multiplty of 7
+	#EMPTY_SIZE   = (20, 125, 55) # multiply of 5
 	#EMPTY_CORNER = (30, 40, 50)
 	#GRID_ROTATION = (0, 0, 45)
 	GRID_ROTATION = generate_random_rotation()
-	#GRID_ROTATION = (0, 0, 0)
+	GRID_ROTATION = (0, 0, 0)
 	EMPTY_CORNER = generate_random_corner(START, END, EMPTY_SIZE)
-	BOX_MARGIN   = [EMPTY_SIZE[0] / 5, EMPTY_SIZE[1] / 5, EMPTY_SIZE[2] / 5]
+	BOX_MARGIN   = [EMPTY_SIZE[0] / 7, EMPTY_SIZE[1] / 7, EMPTY_SIZE[2] / 7]
 	BOX_CENTER   = (0, 0, 0)
 	BOX_SIZE     = (EMPTY_SIZE[0] - BOX_MARGIN[0], EMPTY_SIZE[1] - BOX_MARGIN[1], EMPTY_SIZE[2] - BOX_MARGIN[2])
 	CENTERS_MARGIN = min(EMPTY_SIZE)
-	CENTERS_AMOUNT = 2000
+	CENTERS_AMOUNT = 600000
 	EMPTY = (EMPTY_CORNER[0], EMPTY_CORNER[0] + EMPTY_SIZE[0],
 			 EMPTY_CORNER[1], EMPTY_CORNER[1] + EMPTY_SIZE[1],
 			 EMPTY_CORNER[2], EMPTY_CORNER[2] + EMPTY_SIZE[2])
@@ -277,7 +279,20 @@ Centers:\n\t\t{CENTERS_AMOUNT} with {CENTERS_MARGIN} margin\n\
 	empty_far_corner = [EMPTY_CORNER[i] + EMPTY_SIZE[i] for i in range(3)]
 	print "Empty area:\t{EMPTY_CORNER} -> {empty_far_corner}".format(**locals())
 
-	parse_results_rotation(RESULTS_FNAME, GRID_ROTATION)
+	#parse_results_rotation(RESULTS_FNAME, GRID_ROTATION)
+
+	############ Save output to dir 
+	OUTPUT_DIR = "non_rotation_data_%s" % date
+	os.system("mkdir " + OUTPUT_DIR)
+	os.system("cp {RESULTS_FNAME} {OUTPUT_DIR}/{RESULTS_FNAME}".format(**locals()))
+	os.system("cp {PARAMS_FNAME} {OUTPUT_DIR}/{PARAMS_FNAME}".format(**locals()))
+	total_bb_fname = os.path.join(OUTPUT_DIR, "parsed_run.txt")
+	with open(total_bb_fname, "wb") as f:
+		f.write("({t_min_x},{t_min_y},{t_min_z}) -> ({t_max_x},{t_max_y},{t_max_z})\n".format(**locals()))
+		f.write("{EMPTY_CORNER} -> {empty_far_corner}\n".format(**locals()))
+
+
+
 
 
 if __name__ == "__main__":
