@@ -7,6 +7,7 @@ import math
 import find_enclosing_box
 from parser import ResultsParser
 from plotter import plot_2d
+import re
 
 SHRINK_FACTOR = 1
 
@@ -59,10 +60,15 @@ def my_sum(arr1, arr2):
 	return arr1
 
 
+def get_cur_thresh(path):
+	""" Returns the current threshold used """
+	reg = re.compile(r'thresh_(\d+)')
+	return reg.findall(path)[0]
+
 def parse_neuron(parser, neuron_id, output_dir):
 	full_path = "/data/simulated_morph_data/neurons/{neuron_id}".format(**locals())
 	print(full_path)
-
+	thresh = get_cur_thresh(output_dir)
 	bb = find_enclosing_box.get_bb(full_path)
 	print("Bounding Box:", bb)
 
@@ -86,7 +92,7 @@ def parse_neuron(parser, neuron_id, output_dir):
 			arr[arr_x_idx][arr_y_idx][arr_z_idx] += 1
 
 	all_collisions[:, 0], all_collisions[:, 1] = all_collisions[:, 1], all_collisions[:, 0].copy()
-	np.savez('../results/2019_1_2/collisions_nparser.npz', translated=all_collisions)
+	np.savez(f'../results/2019_1_2/collisions_nparser_{thresh}.npz', translated=all_collisions)
 	output_npy = os.path.join(output_dir, "collisions_array_{neuron_id}.npz".format(**locals()))
 	np.savez(output_npy, data=arr)
 	GRAPH_RESOLUTION = 5

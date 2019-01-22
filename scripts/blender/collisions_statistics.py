@@ -8,7 +8,6 @@ import pandas as pd
 from attr.validators import instance_of
 
 
-
 class PointType(enum.Enum):
     STANDARD = 'standard'
     NODE = 'node'

@@ -144,8 +144,9 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
 
 if __name__ == '__main__':
     fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results_thresh_5.txt'
+    thresh = 5
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    np.savez('../results/2019_1_2/my_collisions.npz', translated=colls_trans_rot)
+    np.savez(f'../results/2019_1_2/collisions_thresh_{thresh}.npz', translated=colls_trans_rot)
