@@ -43,10 +43,10 @@ def parse_raw_df(df) -> pd.DataFrame:
     rots = (df
         .rotation
         .str.split(' ', expand=True)
-        .rename(columns={0: 'roll', 1: 'yaw', 2: 'pitch'})
+        .rename(columns={0: 'roll', 1: 'pitch', 2: 'yaw'})
         .astype(np.float64))
 
-    df[['roll', 'yaw', 'pitch']] = rots
+    df[['roll', 'pitch', 'yaw']] = rots
     df = df.drop('rotation', axis=1)
     index_cols = list(set(df.columns) - set(['collisions']))
     ordered_index_cols = ['x', 'y', 'z', 'roll', 'pitch', 'yaw', 'coll_count']
@@ -138,14 +138,14 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
                     [0, 0, 1]])
     rot_matrix = np.linalg.inv(m_x @ m_y @ m_z)
     rotated_colls = (rot_matrix @ coll.T).T
-    rotated_colls[0], rotated_colls[1] = rotated_colls[1], rotated_colls[0]
+    rotated_colls[0], rotated_colls[1] = rotated_colls[1], rotated_colls[0].copy()
     return rotated_colls
 
 
 if __name__ == '__main__':
-    fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results'
+    fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results_thresh_5.txt'
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    np.savez('../results/2019_1_2/collisions.npz', translated=colls_trans_rot)
+    np.savez('../results/2019_1_2/my_collisions.npz', translated=colls_trans_rot)
