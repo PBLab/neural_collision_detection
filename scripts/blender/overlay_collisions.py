@@ -4,17 +4,15 @@ from mytools import *
 from collections import namedtuple
 import bpy
 
-Coor = namedtuple("Coor", ("x", "y", "z"))
 
-
-def gen_bins(colls: np.ndarray, l: Coor):
+def gen_bins(colls: np.ndarray, l: tuple):
     """ Histograms the collisions into l-sized bins """
     max_x, min_x = np.max(colls[:, 0]), np.min(colls[:, 0])
     max_y, min_y = np.max(colls[:, 1]), np.min(colls[:, 1])
     max_z, min_z = np.max(colls[:, 2]), np.min(colls[:, 2])
-    bins_x = int(np.ceil(max_x - min_x / l.x))
-    bins_y = int(np.ceil(max_y - min_y / l.y))
-    bins_z = int(np.ceil(max_z - min_z / l.z))
+    bins_x = int(np.ceil(max_x - min_x / l[0]))
+    bins_y = int(np.ceil(max_y - min_y / l[1]))
+    bins_z = int(np.ceil(max_z - min_z / l[2]))
     hist, edges = np.histogramdd(colls, bins=(bins_x, bins_y, bins_z))
     return hist, edges
 
@@ -26,7 +24,6 @@ def filter_relevant_bins(colls, hist, edges):
     arrays which contain the start and end of the bins containing the
     collisions in microns.
     """
-    norm = 1.0 / np.max(hist)
     relevant_coords = np.where(
         hist > 0
     )  # each row is a dimension, each column a coordinate
@@ -100,7 +97,7 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
 
 if __name__ == "__main__":
     # Should only be run under Blender
-    l = Coor(5, 5, 5)  # in um
+    l = (5, 5, 5)  # in um
     fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser.npz"
     downsample_factor = 1_000
     collisions = np.load(fname)["translated"][::downsample_factor, :]
