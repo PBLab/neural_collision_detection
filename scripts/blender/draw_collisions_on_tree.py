@@ -1,6 +1,7 @@
 """ Should only be run under Blender """
 from collections import namedtuple
 import pathlib
+import sys
 import numpy as np
 import pandas as pd
 import scipy.spatial.distance
@@ -10,7 +11,8 @@ import bpy
 import attr
 from attr.validators import instance_of
 
-from overlay_collisions import gen_bins, Coor, filter_relevant_bins
+sys.path.append('/mnt/qnap/simulated_morph_data/neural_collision_detection/scripts/blender')
+from overlay_collisions import gen_bins, filter_relevant_bins
 
 
 @attr.s
@@ -34,6 +36,8 @@ class CollisionDrawer:
         assert neuron[0]
         self.total_points = 0
         for tree in neuron[0].tree:
+            print(tree.type)
+            print(tree.total_points)
             self.total_points += tree.total_points
 
     def _name_neuron_trees(self):
@@ -45,8 +49,8 @@ class CollisionDrawer:
         idx_axon = 1
         idx_dendrite = 1
         for treename in basic_tree_names:
-            if treename not in self.tree_names:
-                real_tree_names.append(tree)
+            if treename not in real_tree_names:
+                real_tree_names.append(treename)
                 continue
             if 'Axon' == treename:
                 new_name = f'Axon.00{idx_axon}'
@@ -83,13 +87,19 @@ class CollisionDrawer:
         type of tree is was taken from. """
         points_on_neuron = np.zeros((self.total_points, 3))
         object_name = np.zeros((self.total_points,), dtype=object)
+        starting_idx = 0
         for name, tree in zip(self.tree_names, neuron[0].tree):
-            for idx, point in enumerate(tree.rawpoint):
+            for idx, point in enumerate(tree.rawpoint, starting_idx):
                 points_on_neuron[idx, :] = point.P
-                object_name[idx, :] = name
+                object_name[idx] = name
+            starting_idx += idx
+            print(name, starting_idx)
+        print(object_name)
         object_name = pd.CategoricalIndex(object_name)
         numerical_index = np.arange(len(object_name))
-        return pd.DataFrame({'coor': points_on_neuron},
+        return pd.DataFrame({'x': points_on_neuron[:, 0],
+                             'y': points_on_neuron[:, 1],
+                             'z': points_on_neuron[:, 2]},
                             index=pd.MultiIndex.from_arrays([numerical_index, object_name]))
 
     def _find_distance_between_neuron_and_collision(self, collisions_hist, bin_starts, bin_ends) -> np.ndarray:
@@ -105,7 +115,7 @@ class CollisionDrawer:
         histogram bin per neural coordinate.
         """
         bin_centers = (bin_starts + bin_ends) / 2
-        point_to_bin_distance = scipy.spatial.distance.cdist(self.points_on_neuron, bin_centers)
+        point_to_bin_distance = scipy.spatial.distance.cdist(self.points_on_neuron.values, bin_centers)
         closest_bin_per_point = point_to_bin_distance.argmin(axis=1)
         assert len(bin_centers) == len(collisions_hist)
         return closest_bin_per_point
@@ -159,9 +169,8 @@ class CollisionDrawer:
 
 
 if __name__ == "__main__":
-    fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser.npz"
+    fname = pathlib.Path(r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser_0.npz")
     downsample_factor = 1000
     binsize = (5, 5, 5)
     coll_drawer = CollisionDrawer(fname=fname, downsample=downsample_factor, binsize=binsize)
     coll_drawer.run()
-    
