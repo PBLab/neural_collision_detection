@@ -1,18 +1,3 @@
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120410_s1c1.obj -t 24 -o ncd_results/out1 -f ncd_results/out1.txt -i ../Centers.csv -z && echo 1 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120410_s3c1.obj -t 24 -o ncd_results/out2 -f ncd_results/out2.txt -i ../Centers.csv -z && echo 2 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120412_s3c2.obj -t 24 -o ncd_results/out3 -f ncd_results/out3.txt -i ../Centers.csv -z && echo 3 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120416_s3c1.obj -t 24 -o ncd_results/out4 -f ncd_results/out4.txt -i ../Centers.csv -z && echo 4 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120419_s1c1.obj -t 24 -o ncd_results/out5 -f ncd_results/out5.txt -i ../Centers.csv -z && echo 5 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120420_s1c1.obj -t 24 -o ncd_results/out6 -f ncd_results/out6.txt -i ../Centers.csv -z && echo 6 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120420_s2c1.obj -t 24 -o ncd_results/out7 -f ncd_results/out7.txt -i ../Centers.csv -z && echo 7 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120507_s3c1.obj -t 24 -o ncd_results/out8 -f ncd_results/out8.txt -i ../Centers.csv -z && echo 8 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120510_s1c1.obj -t 24 -o ncd_results/out9 -f ncd_results/out9.txt -i ../Centers.csv -z && echo 9 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120522_s3c1.obj -t 24 -o ncd_results/out10 -f ncd_results/out10.txt -i ../Centers.csv -z && echo 10 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120524_s2c1.obj -t 24 -o ncd_results/out11 -f ncd_results/out11.txt -i ../Centers.csv -z && echo 11 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP120614_s1c2.obj -t 24 -o ncd_results/out12 -f ncd_results/out12.txt -i ../Centers.csv -z && echo 12 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP130312_s1c1.obj -t 24 -o ncd_results/out13 -f ncd_results/out13.txt -i ../Centers.csv -z && echo 13 >> log.txt
-# ../ncd -m batch -V ../vascular/vascular.obj -N ../neurons/AP131105_s1c1.obj -t 24 -o ncd_results/out14 -f ncd_results/out14.txt -i ../Centers.csv -z && echo 14 >> log.txt
-
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP120410_s1c1.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP120410_s1c1 -z -i ./vascular/centers_layer_FIVE.csv && echo neuron_done >> results/2019_2_10/log.txt
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP120410_s3c1.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP120410_s3c1 -z -i ./vascular/centers_layer_FIVE.csv && echo neuron_done >> results/2019_2_10/log.txt
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP120412_s3c2.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP120412_s3c2 -z -i ./vascular/centers_layer_FIVE.csv && echo neuron_done >> results/2019_2_10/log.txt

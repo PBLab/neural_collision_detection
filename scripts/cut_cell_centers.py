@@ -17,9 +17,8 @@ class CorticalLayer(Enum):
     SIX = (850, 1250)
 
 
-def read_csv(fname, downsample=1):
+def read_csv(fname):
     data = pd.read_csv(fname, header=None, names=["x", "y", "z"])
-    data = data.iloc[::downsample, :]
     return data
 
 
@@ -40,7 +39,7 @@ def save_cell_centers_array(
 
 if __name__ == "__main__":
     fname = "/data/simulated_morph_data/vascular/all_cell_centers.csv"
-    data = read_csv(fname, downsample=1)
+    data = read_csv(fname)
     for layer in [
         CorticalLayer.ONE,
         CorticalLayer.TWOTHREE,
