@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numba
+import scipy.io
 
 
 def read_db_into_raw_df(fname) -> pd.DataFrame:
@@ -142,6 +143,12 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
     return rotated_colls
 
 
+def save_results(data_dict, fname):
+    """ Save results into file in numpy and MATLAB formats """
+    np.savez(fname + '.npz', data_dict)
+    scipy.io.savemat(fname + '.mat', data_dict)
+
+
 if __name__ == '__main__':
     fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results_thresh_5.txt'
     thresh = 5
@@ -149,4 +156,5 @@ if __name__ == '__main__':
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    np.savez(f'../results/2019_1_2/collisions_thresh_{thresh}.npz', translated=colls_trans_rot)
+    fname = f'../results/2019_1_2/collisions_thresh_{thresh}'
+    save_results({'neuron_coords': colls_trans_rot, 'vasc_coords': cols}, fname)

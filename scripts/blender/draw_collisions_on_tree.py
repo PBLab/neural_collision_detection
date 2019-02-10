@@ -1,5 +1,6 @@
 """ Should only be run under Blender """
 from collections import namedtuple
+from typing import Tuple
 import pathlib
 import sys
 import numpy as np
@@ -24,9 +25,9 @@ class CollisionDrawer:
     (``from mytools import *``) and that we're in "Vertex Pain" mode. """
 
     fname = attr.ib(validator=instance_of(pathlib.Path))
-    binsize = attr.ib(default=(5, 5, 5), validator=instance_of(tuple))
+    binsize = attr.ib(default=(5, 5, 5), validator=instance_of(Tuple[int, int, int]))
     downsample = attr.ib(default=1000, validator=instance_of(int))
-    npz_keyname = attr.ib(default="translated", validator=instance_of(str))
+    npz_keyname = attr.ib(default="neuron_coords", validator=instance_of(str))
     total_points = attr.ib(init=False)
     tree_names = attr.ib(init=False)
     points_on_neuron = attr.ib(init=False)
@@ -36,9 +37,7 @@ class CollisionDrawer:
         assert neuron[0]
         self.total_points = 0
         for tree in neuron[0].tree:
-            print(tree.type)
-            print(tree.total_points)
-            self.total_points += tree.total_points
+            self.total_points += tree.total_rawpoints
 
     def _name_neuron_trees(self):
         """ Find the names Blender uses for the axon and dendrites """
@@ -92,10 +91,9 @@ class CollisionDrawer:
             for idx, point in enumerate(tree.rawpoint, starting_idx):
                 points_on_neuron[idx, :] = point.P
                 object_name[idx] = name
-            starting_idx += idx
-            print(name, starting_idx)
-        print(object_name)
+            starting_idx = idx + 1
         object_name = pd.CategoricalIndex(object_name)
+        print(object_name)
         numerical_index = np.arange(len(object_name))
         return pd.DataFrame({'x': points_on_neuron[:, 0],
                              'y': points_on_neuron[:, 1],
@@ -140,8 +138,11 @@ class CollisionDrawer:
         tree and color it
         """
         detail_level = bpy.context.scene.MyDrawTools_TreesDetail
+        for object_name in self.tree_names:
+            print(object_name, len(bpy.data.objects[object_name].data.vertex_colors['Col'].data))
         for object_name, tree in zip(self.tree_names, neuron[0].tree):
             # Now create a mesh with color information for each vertice
+            print("cur object name: ", object_name)
             my_object = bpy.data.objects[object_name].data
             color_map_collection = my_object.vertex_colors
             if len(color_map_collection) == 0:
@@ -152,6 +153,7 @@ class CollisionDrawer:
             # or you could avoid using the vertex color map name
             # color_map = color_map_collection.active
             cur_tree = self.points_on_neuron.xs(object_name, level=1)
+            print("Color map data len: ", len(color_map.data))
             for pid, _ in cur_tree.iterrows():
                 for i in range(detail_level):
                     color_map.data[pid * detail_level + i].color = [
