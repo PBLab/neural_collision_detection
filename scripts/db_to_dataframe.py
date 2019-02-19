@@ -150,11 +150,11 @@ def save_results(data_dict, fname):
 
 
 if __name__ == '__main__':
-    fname = r'/data/simulated_morph_data/results/2019_1_2/agg_results_thresh_5.txt'
-    thresh = 5
+    fname = r'/data/simulated_morph_data/results/2019_2_10/agg_AP120410_s1c1_thresh_0'
+    thresh = 0
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    fname = f'../results/2019_1_2/collisions_thresh_{thresh}'
+    fname = f'../../results/2019_2_10/normalized_agg_AP120410_s1c1_thresh_{thresh}'
     save_results({'neuron_coords': colls_trans_rot, 'vasc_coords': cols}, fname)

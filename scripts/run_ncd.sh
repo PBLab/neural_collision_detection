@@ -12,3 +12,4 @@
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP120614_s1c2.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP120614_s1c2 -z -i ./vascular/centers_layer_FIVE.csv && echo neuron_done >> results/2019_2_10/log.txt
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP130312_s1c1.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP130312_s1c1 -z -i ./vascular/centers_layer_TWOTHREE.csv && echo neuron_done >> results/2019_2_10/log.txt
 ./neural_collision_detection/ncd -m batch -V vascular/vascular.obj -N ./neurons/AP131105_s1c1.obj -o results/2019_2_10 -t 24 -c 500 -f results/2019_2_10/results_AP131105_s1c1 -z -i ./vascular/centers_layer_TWOTHREE.csv && echo neuron_done >> results/2019_2_10/log.txt
+

@@ -17,6 +17,7 @@ THRESHOLD_DISTANCE = 	1
 
 ############################################################################################
 
+
 def execute_pipeline(results_dir, vascular_data, neural_data, centers, max_collisions, threshold_distance, run_id):
 	ncd_path = NCD_PATH
 	threads_cnt = THREADS_CNT
@@ -26,7 +27,7 @@ def execute_pipeline(results_dir, vascular_data, neural_data, centers, max_colli
 
 	ncd_command = "{ncd_path} -m batch -V {vascular_data} -N {neural_data} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} -z".format(**locals())
 	print ("Running: " + ncd_command)
-	subprocess.check_output(ncd_command.split())
+	subprocess.run(ncd_command.split())
 
 	#print("Usage: %s <ncd output file> <max collisions> <threshold distance> <output file>" % argv[0])
 	agg_db = os.path.join(results_dir, run_id + "_agg_db.csv")
@@ -34,7 +35,7 @@ def execute_pipeline(results_dir, vascular_data, neural_data, centers, max_colli
 	python_path = PYTHON_PATH
 	run_aggregator_commnd = "{python_path} {run_agg_path} {ncd_output_file} {max_collisions} {threshold_distance} {agg_db}".format(**locals())
 	print ("Running: " + run_aggregator_commnd)
-	subprocess.check_output(run_aggregator_commnd.split())
+	subprocess.run(run_aggregator_commnd.split())
 	print ("Done!")
 
 
@@ -45,6 +46,7 @@ def main(argv):
 
 	run_id = argv[1]
 	execute_pipeline(RES_DIR, VASCULAR_DATA_PATH, NEURAL_DATA_PATH, CENTERS_PATH, MAX_COLLISIONS, THRESHOLD_DISTANCE, run_id)
+
 
 if __name__ == "__main__":
 	main(sys.argv)
