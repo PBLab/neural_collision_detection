@@ -1,6 +1,7 @@
 import enum
 import pathlib
 import sys
+import contextlib
 
 import numpy as np
 import networkx as nx
@@ -60,7 +61,7 @@ def make_collision_df(collisions, neuron):
     """
     num_of_nodes = 0
     for tree in neuron.tree:
-        num_of_nodes += tree.total_points
+        num_of_nodes += tree.total_rawpoints
     assert num_of_nodes == collisions.shape[0]
 
     df = pd.DataFrame(
@@ -73,23 +74,23 @@ def make_collision_df(collisions, neuron):
     pid_idx = 0
     for tree in neuron.tree:
         parent_node = CollisionNode(
-            loc=np.array(tree.point[0].P),
+            loc=np.array(tree.rawpoint[0].P),
             ppid=-1,
             ptype=PointType.STANDARD,
             collisions=collisions[pid_idx],
-            radius=tree.point[0].r,
+            radius=tree.rawpoint[0].r,
         )
         new_node = CollisionNode(
-            loc=np.array(tree.point[1].P),
-            ppid=tree.point[1].ppid,
-            ptype=tree.point[1].pytpe,
+            loc=np.array(tree.rawpoint[1].P),
+            ppid=tree.rawpoint[1].ppid,
+            ptype=tree.rawpoint[1].pytpe,
             collisions=collisions[1],
-            radius=tree.point[1].r,
+            radius=tree.rawpoint[1].r,
         )
-        dist = scipy.spatial.distance.pdist([tree.point[0].P, tree.point[1].P])
+        dist = scipy.spatial.distance.pdist([tree.rawpoint[0].P, tree.rawpoint[1].P])
         df.iloc[pid_idx] = [parent_node, new_node, dist]
         pid_idx += 1
-        for point in tree.point[2:]:
+        for point in tree.rawpoint[2:]:
             prev_node = new_node
             del new_node
             new_node = CollisionNode(
@@ -114,22 +115,30 @@ def correlate_collisions_with_distance(collisions, neuron):
     total_points = collisions.shape[0]
     neuron_total_points = 0
     for tree in neuron.tree:
-        neuron_total_points += tree.total_points
+        neuron_total_points += tree.total_rawpoints
     assert total_points == neuron_total_points
 
 
+@contextlib.contextmanager
 def load_neuron(fname):
     """
-    Uses py3DN's Load_Neuron function to load a Neurolucida XML
-    neuron into memory.
+    Uses py3DN's Load_Neuron function to load an XML representation
+    of a NeuroLucida neuron into memory.
+    Uses a context manager since it mingles with sys.path, and
+    we wish to leave it unchanged at the end of the execution.
     """
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[3] / 'py3DN'))
     import NeuroLucidaXMLParser
     neuron = NeuroLucidaXMLParser.Load_Neuron(fname, 0.17, False)
-    sys.path.pop(-1)
-    return neuron
+    try:
+        yield neuron
+    finally:
+        sys.path.pop(-1)
 
 
 if __name__ == "__main__":
-    fname = '/data/simulated_morph_data/neurons/AP120410_s1c1.xml'
-    neuron = load_neuron(fname)
+    neuron_fname = '/data/simulated_morph_data/neurons/AP120410_s1c1.xml'
+    collisions_fname = '/data/simulated_morph_data/results/2019_2_10/normalized_agg_AP120410_s1c1_thresh_0.npz'
+    collisions = np.load(collisions_fname)
+    with load_neuron(neuron_fname) as neuron:
+        df = make_collision_df(collisions['neuron_coords'], neuron)

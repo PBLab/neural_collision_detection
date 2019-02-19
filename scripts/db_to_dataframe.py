@@ -145,7 +145,7 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
 
 def save_results(data_dict, fname):
     """ Save results into file in numpy and MATLAB formats """
-    np.savez(fname + '.npz', data_dict)
+    np.savez(fname + '.npz', **data_dict)
     scipy.io.savemat(fname + '.mat', data_dict)
 
 
