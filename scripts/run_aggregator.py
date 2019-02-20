@@ -2,7 +2,9 @@
 
 import os, sys, re
 import multiprocessing
+import pathlib
 from aggregator import aggregate, get_vascular
+
 
 def get_ncd_results(ncd_output_file, max_collisions):
 	results = []
@@ -22,20 +24,13 @@ def process_main(results, output_fname, threshold_distance, vascular):
 	for res in results:
 		splitted = res.split(",")
 
-		neuron_name = splitted[0]
-		location = [splitted[1], splitted[2], splitted[3]]
-		rotation = [splitted[4], splitted[5], splitted[6]]
+		neuron_name = splitted[0].replace(".obj", "_balls.csv")
+		location = [int(splitted[1]), int(splitted[2]), int(splitted[3])]
+		rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
 
-		l = ",".join(location)
-		r = ",".join(rotation)
-
-		location = [int(x) for x in location]
-		rotation = [int(x) for x in rotation]
-
-		# TODO: get rid also of these files
-		neuron_name = neuron_name.replace(".obj", "_balls.csv")
-		neuron_fname = "../../neurons/" + neuron_name
-		vascular_fname = "../../vascular/vascular_balls.csv"
+		parent_folder = pathlib.Path(__file__).resolve().parents[2]
+		neuron_fname = str(parent_folder / "neurons" / neuron_name)
+		vascular_fname = str(parent_folder / "vascular" / "vascular_balls.csv")
 
 		aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
 

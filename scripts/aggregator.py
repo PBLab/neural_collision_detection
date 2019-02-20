@@ -142,7 +142,7 @@ def collide(n, v, threshold_distance):
 
 def find_nearest_points(vascular, neuron, threshold_distance):
 	collisions = []
-	print("len(neuron): ", len(neuron))
+	# print("len(neuron): ", len(neuron))
 
 	sort_vascular(vascular)
 
@@ -168,7 +168,6 @@ def find_nearest_points(vascular, neuron, threshold_distance):
 				break
 			cur_idx -= 1
 
-	#print "cnt = ", cnt
 	return collisions
 
 
@@ -185,23 +184,23 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
 		vascular = get_vascular(vascular_filename)
 	#max_r = max(vascular, key=lambda x : x[3])
 	#print max_r
-	print("Read neuron data...")
+	# print("Read neuron data...")
 	neuron = read_balls(neuron_filename)
 
 	#print find_bounding_box(vascular)
 	#print find_bounding_box(neuron)
 
-	print("Swap x y...")
+	# print("Swap x y...")
 	swap_x_y(neuron)
-	print("Rotate neuron...")
+	# print("Rotate neuron...")
 	rotate(neuron, rotation)
-	print("Translate neuron...")
+	# print("Translate neuron...")
 	translate(neuron, location)
 
-	print("Cut vascular data...")
+	# print("Cut vascular data...")
 	vascular = cut_vascular(vascular, neuron)
 
-	print("Find nearest points...")
+	# print("Find nearest points...")
 	collisions = find_nearest_points(vascular, neuron, threshold_distance)
 
 	collisions_str = create_collision_str(collisions)

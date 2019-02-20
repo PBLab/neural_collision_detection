@@ -11,6 +11,7 @@ import attr
 import pandas as pd
 from attr.validators import instance_of
 import scipy.spatial.distance
+import matplotlib.pyplot as plt
 
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[3] / "py3DN"))
@@ -62,6 +63,23 @@ class CollisionNode:
     collisions = attr.ib(validator=instance_of(np.uint64))
     radius = attr.ib(validator=instance_of(float))
     tree_type = attr.ib(validator=instance_of(TreeType))
+
+
+def filename_setup(
+    parent_folder: pathlib.Path, neuron_name: str, result_foldername: str, thresh: int
+):
+    """
+    Finds all needed files for the scripts to run
+    """
+    parent_folder = parent_folder.resolve()
+    neuron_fname = parent_folder / "neurons" / (neuron_name + ".xml")
+    full_res_folder = parent_folder / "results" / result_foldername
+    collisions_fname = (
+        full_res_folder / f"normalized_agg_results_{neuron_name}_thresh_{thresh}.npz"
+    )
+    image_graph_fname = full_res_folder / f"image_graph_{neuron_name}"
+    graph_fname = full_res_folder / f"graph_{neuron_name}.gexf"
+    return neuron_fname, collisions_fname, image_graph_fname, graph_fname
 
 
 def connect_collisions_to_neural_points(collisions: np.ndarray, neuron):
@@ -204,8 +222,22 @@ def generate_graph(df: pd.DataFrame):
     )
 
 
+def show_graph(g: nx.DiGraph, title: str = "Neuron", fname=None):
+    fig, ax = plt.subplots()
+    nx.draw(graph, node_size=5, with_labels=False, alpha=0.5)
+    ax.set_title(title)
+    if fname:
+        for suffix in [".eps", ".png", ".pdf"]:
+            fig.savefig(str(fname) + suffix, transparent=True, dpi=300)
+
+
+def serialize_graph(g: nx.DiGraph, fname: pathlib.Path):
+    """ Write graph g to disk """
+    nx.write_gexf(g, str(fname))
+
+
 @contextlib.contextmanager
-def load_neuron(fname):
+def load_neuron(fname: pathlib.Path):
     """
     Uses py3DN's Load_Neuron function to load an XML representation
     of a NeuroLucida neuron into memory.
@@ -215,7 +247,7 @@ def load_neuron(fname):
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[3] / "py3DN"))
     import NeuroLucidaXMLParser
 
-    neuron = NeuroLucidaXMLParser.Load_Neuron(fname, 0.17, False)
+    neuron = NeuroLucidaXMLParser.Load_Neuron(str(fname), 0.17, False)
     try:
         yield neuron
     finally:
@@ -223,13 +255,20 @@ def load_neuron(fname):
 
 
 if __name__ == "__main__":
-    neuron_fname = "/data/simulated_morph_data/neurons/AP120410_s1c1.xml"
-    collisions_fname = "/data/simulated_morph_data/results/2019_2_10/normalized_agg_AP120410_s1c1_thresh_0.npz"
-    collisions = np.load(collisions_fname)
+    neuron_name = "AP120410_s3c1"
+    parent_folder = pathlib.Path(__file__).parents[3].resolve()
+    result_folder = "2019_2_10"
+    thresh = 0
+    neuron_fname, collisions_fname, image_graph_fname, graph_fname = filename_setup(
+        parent_folder, neuron_name, result_folder, thresh
+    )
+    collisions = np.load(str(collisions_fname))
     with load_neuron(neuron_fname) as neuron:
         num_of_nodes, neuronal_points, dist = connect_collisions_to_neural_points(
             collisions["neuron_coords"], neuron
         )
         neural_collisions = coerce_collisions_to_neural_coords(neuronal_points, dist)
         df = make_collision_df(neural_collisions, neuron, num_of_nodes)
-        graph = generate_graph(df)
+    graph = generate_graph(df)
+    show_graph(graph, title=neuron_name, fname=image_graph_fname)
+    serialize_graph(graph, graph_fname)
