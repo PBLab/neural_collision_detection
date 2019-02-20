@@ -82,24 +82,32 @@ class NeuronToGraph:
     graph = attr.ib(init=False)
 
     def main(self):
-        """ Main entrance to pipeline """
+        """
+        Main entrance to pipeline.
+        If collisions exists it uses their real value and creates a graph
+        with the actual collision value inside the node's attributes. Else,
+        The nodes will contain 0 as their collision value.
+        """
         self.parent_folder = pathlib.Path(__file__).parents[3].resolve()
         neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
         with self._load_neuron(neuron_fname) as neuron:
             self.num_of_nodes = self._get_num_of_nodes(neuron)
+            neuronal_points = self._extract_neuronal_coords(self.num_of_nodes, neuron)
             if self.with_collisions:
                 collisions = np.load(str(collisions_fname))
+                closest_cell = self._connect_collisions_to_neural_points(
+                    self.num_of_nodes,
+                    collisions["neuron_coords"],
+                    neuron,
+                    neuronal_points,
+                )
+                neural_collisions = self._coerce_collisions_to_neural_coords(
+                    neuronal_points, closest_cell
+                )
             else:
-                collisions = np.zeros(self.num_of_nodes)
-            neuronal_points = self._extract_neuronal_coords(self.num_of_nodes, neuron)
-            closest_cell = self._connect_collisions_to_neural_points(
-                self.num_of_nodes, collisions["neuron_coords"], neuron, neuronal_points
-            )
-            neural_collisions = self._coerce_collisions_to_neural_coords(
-                neuronal_points, closest_cell
-            )
+                neural_collisions = np.zeros(self.num_of_nodes)
             collision_df = self._make_collision_df(
                 neural_collisions, neuron, self.num_of_nodes
             )
