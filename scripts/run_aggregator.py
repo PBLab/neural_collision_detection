@@ -52,7 +52,8 @@ def main(argv):
 	results_per_process = 1.0 * len(ncd_results) / process_count
 	processes = []
 	last_idx = 0
-	vascular_fname = "../../vascular/vascular_balls.csv"
+	parent_folder = pathlib.Path(__file__).parents[2]
+	vascular_fname = str(parent_folder / "vascular/vascular_balls.csv")
 	vascular = get_vascular(vascular_fname)
 
 	for i in range(process_count):
