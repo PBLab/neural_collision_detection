@@ -70,13 +70,22 @@ class CollisionNode:
 class NeuronToGraph:
     """
     Ordered methods to convert an NeuroLucida XML representation of a neuron,
-    possibly with collision data, to a networkx directed graph.
+    possibly with collision data, to a networkx directed graph. Use the "main"
+    method to run the pipeline after initializing the object.
+
+    Parameters:
+    :param str neuron_name: Tag of current neuron
+    :param str result_folder: Folder to save plotting and serialization results in.
+    :paramm int thresh: Distance in um that signifies a valid collision from the aggregator functions
+    :param bool with_collisions: Whether to look for collisions that were calculated for that specific neuron or not
+    :paramm bool with_plot: Whether to plot the neuron or not
     """
 
     neuron_name = attr.ib(validator=instance_of(str))
     result_folder = attr.ib(validator=instance_of(str))
     thresh = attr.ib(validator=instance_of(int))
     with_collisions = attr.ib(default=True, validator=instance_of(bool))
+    with_plot = attr.ib(default=False, validator=instance_of(bool))
     parent_folder = attr.ib(init=False)
     num_of_nodes = attr.ib(init=False)
     graph = attr.ib(init=False)
@@ -88,7 +97,7 @@ class NeuronToGraph:
         with the actual collision value inside the node's attributes. Else,
         The nodes will contain 0 as their collision value.
         """
-        self.parent_folder = pathlib.Path(__file__).parents[3].resolve()
+        self.parent_folder = pathlib.Path(__file__).resolve().parents[3]
         neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
@@ -107,13 +116,14 @@ class NeuronToGraph:
                     neuronal_points, closest_cell
                 )
             else:
-                neural_collisions = np.zeros(self.num_of_nodes)
+                neural_collisions = np.zeros(self.num_of_nodes, dtype=np.uint64)
             collision_df = self._make_collision_df(
                 neural_collisions, neuron, self.num_of_nodes
             )
 
         self.graph = self._generate_graph(collision_df)
-        self._show_graph(self.graph, title=self.neuron_name, fname=image_graph_fname)
+        if self.with_plot:
+            self._show_graph(self.graph, title=self.neuron_name, fname=image_graph_fname)
         self._serialize_graph(self.graph, graph_fname)
 
     def _get_num_of_nodes(self, neuron) -> int:
@@ -286,12 +296,22 @@ class NeuronToGraph:
         nx.draw(g, node_size=5, with_labels=False, alpha=0.5)
         ax.set_title(title)
         if fname:
+            fname = str(fname)
+            if self.with_collisions:
+                fname += '_with_collisions'
+            else:
+                fname += '_no_collisions'
             for suffix in [".eps", ".png", ".pdf"]:
                 fig.savefig(str(fname) + suffix, transparent=True, dpi=300)
 
     def _serialize_graph(self, g: nx.DiGraph, fname: pathlib.Path):
         """ Write graph g to disk """
-        nx.write_gexf(g, str(fname))
+        fname: str = str(fname)
+        if self.with_collisions:
+            fname = fname.replace('.gexf', '_with_collisions.gexf')
+        else:
+            fname = fname.replace('.gexf', '_no_collisions.gexf')
+        nx.write_gexf(g, fname)
 
     @contextlib.contextmanager
     def _load_neuron(self, fname: pathlib.Path):
@@ -325,15 +345,16 @@ def correlate_collisions_with_distance(collisions, neuron):
 
 
 if __name__ == "__main__":
-    neuron_name = "AP120410_s3c1"
+    neuron_name = "AP120420_s1c1"
     result_folder = "2019_2_10"
     thresh = 0
-    with_collisions = True
+    with_collisions = False
+    with_plot = False
     graphed_neuron = NeuronToGraph(
         neuron_name=neuron_name,
         result_folder=result_folder,
         thresh=thresh,
         with_collisions=with_collisions,
+        with_plot=with_plot,
     )
     graphed_neuron.main()
-
