@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import attr
 from attr.validators import instance_of
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[3] / "py3DN"))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py3DN"))
 import mytools
 
 
@@ -97,7 +97,7 @@ class NeuronToGraph:
         with the actual collision value inside the node's attributes. Else,
         The nodes will contain 0 as their collision value.
         """
-        self.parent_folder = pathlib.Path(__file__).resolve().parents[3]
+        self.parent_folder = pathlib.Path(__file__).resolve().parents[2]
         neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
@@ -345,16 +345,32 @@ def correlate_collisions_with_distance(collisions, neuron):
 
 
 if __name__ == "__main__":
-    neuron_name = "AP120420_s1c1"
+    neuron_names = [
+        'AP120410_s1c1',
+        'AP120410_s3c1',
+        'AP120412_s3c2',
+        'AP120416_s3c1',
+        'AP120419_s1c1',
+        'AP120420_s1c1',
+        'AP120420_s2c1',
+        'AP120507_s3c1',
+        'AP120510_s1c1',
+        'AP120522_s3c1',
+        'AP120524_s2c1',
+        'AP120614_s1c2',
+        'AP130312_s1c1',
+        'AP131105_s1c1',
+    ]
     result_folder = "2019_2_10"
     thresh = 0
     with_collisions = False
     with_plot = False
-    graphed_neuron = NeuronToGraph(
-        neuron_name=neuron_name,
-        result_folder=result_folder,
-        thresh=thresh,
-        with_collisions=with_collisions,
-        with_plot=with_plot,
-    )
-    graphed_neuron.main()
+    for neuron_name in neuron_names:
+        graphed_neuron = NeuronToGraph(
+            neuron_name=neuron_name,
+            result_folder=result_folder,
+            thresh=thresh,
+            with_collisions=with_collisions,
+            with_plot=with_plot,
+        )
+        graphed_neuron.main()

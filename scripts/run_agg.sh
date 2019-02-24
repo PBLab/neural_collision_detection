@@ -1,6 +1,6 @@
 # python run_aggregator.py ../../results/2019_2_10/results_AP120410_s1c1 1000 0 ../../results_2019_2_10/agg_results_AP120410_s1c1_thresh_0
-python run_aggregator.py ../../results/2019_2_10/results_AP120410_s3c1 1000 0 ../../results/2019_2_10/agg_results_AP120410_s3c1_thresh_0
-python run_aggregator.py ../../results/2019_2_10/results_AP120412_s3c2 1000 0 ../../results/2019_2_10/agg_results_AP120412_s3c2_thresh_0
+# python run_aggregator.py ../../results/2019_2_10/results_AP120410_s3c1 1000 0 ../../results/2019_2_10/agg_results_AP120410_s3c1_thresh_0
+# python run_aggregator.py ../../results/2019_2_10/results_AP120412_s3c2 1000 0 ../../results/2019_2_10/agg_results_AP120412_s3c2_thresh_0
 python run_aggregator.py ../../results/2019_2_10/results_AP120416_s3c1 1000 0 ../../results/2019_2_10/agg_results_AP120416_s3c1_thresh_0
 python run_aggregator.py ../../results/2019_2_10/results_AP120419_s1c1 1000 0 ../../results/2019_2_10/agg_results_AP120419_s1c1_thresh_0
 python run_aggregator.py ../../results/2019_2_10/results_AP120420_s1c1 1000 0 ../../results/2019_2_10/agg_results_AP120420_s1c1_thresh_0
