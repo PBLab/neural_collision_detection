@@ -101,7 +101,7 @@ class NeuronToGraph:
         neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
-        with self._load_neuron(neuron_fname) as neuron:
+        with load_neuron(self.parent_folder / "py3DN", neuron_fname) as neuron:
             self.num_of_nodes = self._get_num_of_nodes(neuron)
             neuronal_points = self._extract_neuronal_coords(self.num_of_nodes, neuron)
             if self.with_collisions:
@@ -313,22 +313,23 @@ class NeuronToGraph:
             fname = fname.replace('.gexf', '_no_collisions.gexf')
         nx.write_gexf(g, fname)
 
-    @contextlib.contextmanager
-    def _load_neuron(self, fname: pathlib.Path):
-        """
-        Uses py3DN's Load_Neuron function to load an XML representation
-        of a NeuroLucida neuron into memory.
-        Uses a context manager since it mingles with sys.path, and
-        we wish to leave it unchanged at the end of the execution.
-        """
-        sys.path.append(str(self.parent_folder / "py3DN"))
-        import NeuroLucidaXMLParser
 
-        neuron = NeuroLucidaXMLParser.Load_Neuron(str(fname), 0.17, False)
-        try:
-            yield neuron
-        finally:
-            sys.path.pop(-1)
+@contextlib.contextmanager
+def load_neuron(py3dn_folder: pathlib.Path, fname: pathlib.Path):
+    """
+    Uses py3DN's Load_Neuron function to load an XML representation
+    of a NeuroLucida neuron into memory.
+    Uses a context manager since it mingles with sys.path, and
+    we wish to leave it unchanged at the end of the execution.
+    """
+    sys.path.append(str(py3dn_folder))
+    import NeuroLucidaXMLParser
+
+    neuron = NeuroLucidaXMLParser.Load_Neuron(str(fname), 0.17, False)
+    try:
+        yield neuron
+    finally:
+        sys.path.pop(-1)
 
 
 def correlate_collisions_with_distance(collisions, neuron):
