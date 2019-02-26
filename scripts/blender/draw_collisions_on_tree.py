@@ -14,6 +14,7 @@ from attr.validators import instance_of
 
 sys.path.append('/mnt/qnap/simulated_morph_data/neural_collision_detection/scripts/blender')
 from overlay_collisions import gen_bins, filter_relevant_bins
+from general_methods import name_neuron_trees
 
 
 @attr.s
@@ -39,27 +40,6 @@ class CollisionDrawer:
         for tree in neuron[0].tree:
             self.total_points += tree.total_rawpoints
 
-    def _name_neuron_trees(self):
-        """ Find the names Blender uses for the axon and dendrites """
-        basic_tree_names = []
-        for tree in neuron[0].tree:
-            basic_tree_names.append(tree.type)
-        real_tree_names = []
-        idx_axon = 1
-        idx_dendrite = 1
-        for treename in basic_tree_names:
-            if treename not in real_tree_names:
-                real_tree_names.append(treename)
-                continue
-            if 'Axon' == treename:
-                new_name = f'Axon.00{idx_axon}'
-                idx_axon += 1
-            elif 'Dendrite' == treename:
-                new_name = f'Dendrite.00{idx_dendrite}'
-                idx_dendrite += 1
-            real_tree_names.append(new_name)
-        return real_tree_names
-
     def run(self):
         """
         Main class pipeline.
@@ -71,7 +51,7 @@ class CollisionDrawer:
         collisions in that area.
          """
         self.collisions = np.load(fname)[self.npz_keyname][::self.downsample, :]
-        self.tree_names = self._name_neuron_trees()
+        self.tree_names = name_neuron_trees()
         hist, edges = gen_bins(self.collisions, self.binsize)
         nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(self.collisions, hist, edges)
         self.points_on_neuron = self._get_all_points_into_array()
@@ -172,6 +152,7 @@ class CollisionDrawer:
 
 if __name__ == "__main__":
     fname = pathlib.Path(r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser_0.npz")
+
     downsample_factor = 1000
     binsize = (5, 5, 5)
     coll_drawer = CollisionDrawer(fname=fname, downsample=downsample_factor, binsize=binsize)
