@@ -4,7 +4,7 @@ import sys
 import contextlib
 import multiprocessing as mp
 import functools
-import time
+import re
 
 import numpy as np
 import networkx as nx
@@ -45,7 +45,28 @@ class CollisionNode:
     radius = attr.ib(validator=instance_of(float))
     tree_type = attr.ib(validator=in_(TREETYPE))
     collisions = attr.ib(default=np.uint64(0), validator=instance_of(np.uint64))
-    dist_to_body = attr.ib(default=np.uint64(0), validator=instance_of(np.float64))
+    dist_to_body = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
+
+    @classmethod
+    def from_str(cls, string):
+        """
+        Create an instance from a string representation (repr)
+        of the class.
+        Usually used when deserializing data.
+        """
+        all_matches_regex = re.compile(
+            r"loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), dist_to_body=(.+?)\)"
+        )
+        matches = all_matches_regex.findall(string)[0]
+        loc = eval(matches[0], {"__builtins__": tuple}, {})  # ¯\_(ツ)_/¯
+        ppid = int(matches[1])
+        ptype = matches[2]
+        radius = float(matches[3])
+        tree_type = matches[4]
+        collisions = np.uint64(matches[5])
+        dist_to_body = np.float64(matches[6])
+
+        return cls(loc, ppid, ptype, radius, tree_type, collisions, dist_to_body)
 
 
 @attr.s
@@ -135,7 +156,7 @@ class NeuronToGraph:
             / f"normalized_agg_results_{neuron_name}_thresh_{thresh}.npz"
         )
         image_graph_fname = full_res_folder / f"image_graph_{neuron_name}"
-        graph_fname = full_res_folder / f"graph_{neuron_name}.gexf"
+        graph_fname = full_res_folder / f"graph_{neuron_name}.gml"
         return neuron_fname, collisions_fname, image_graph_fname, graph_fname
 
     def _extract_neuronal_coords(self, num_of_nodes: int, neuron):
@@ -176,10 +197,13 @@ class NeuronToGraph:
         )[1:]
         split_colls = np.split(collisions, splits)
         neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
-        zipped_args = zip(split_colls, neuronal_points_iterable)
-
-        with mp.Pool() as pool:
-            closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
+        # zipped_args = zip(split_colls, neuronal_points_iterable)
+        # with mp.Pool() as pool:
+        #     closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
+        closest_cell_idx = [
+            self._dist_and_min(coll, npoint)
+            for coll, npoint in zip(split_colls, neuronal_points_iterable)
+        ]
 
         closest_cell_idx = np.concatenate(closest_cell_idx)
         return closest_cell_idx
@@ -295,10 +319,10 @@ class NeuronToGraph:
         """ Write graph g to disk """
         fname: str = str(fname)
         if self.with_collisions:
-            fname = fname.replace(".gexf", "_with_collisions.gexf")
+            fname = fname.replace(".gml", "_with_collisions.gml")
         else:
-            fname = fname.replace(".gexf", "_no_collisions.gexf")
-        nx.write_gexf(g, fname)
+            fname = fname.replace(".gml", "_no_collisions.gml")
+        nx.write_gml(g, fname, repr)
 
 
 @contextlib.contextmanager
@@ -319,46 +343,47 @@ def load_neuron(py3dn_folder: pathlib.Path, fname: pathlib.Path):
         sys.path.pop(-1)
 
 
-def correlate_collisions_with_distance(collisions, neuron):
+def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=False):
     """
-    Traverses the neuronal tree and bins the number of collisions
-    on each given neurnal point per its topological distance from
-    the cell body.
+    Run the pipeline in a parallel manner
     """
-    total_points = collisions.shape[0]
-    neuron_total_points = 0
-    for tree in neuron.tree:
-        neuron_total_points += tree.total_rawpoints
-    assert total_points == neuron_total_points
+    graphed_neuron = NeuronToGraph(
+        neuron_name=neuron_name,
+        result_folder=result_folder,
+        thresh=thresh,
+        with_collisions=with_collisions,
+        with_plot=with_plot,
+    )
+    graphed_neuron.main()
 
 
 if __name__ == "__main__":
     neuron_names = [
-        # "AP120410_s1c1",
-        'AP120410_s3c1',
-        # 'AP120412_s3c2',
-        # 'AP120416_s3c1',
-        # 'AP120419_s1c1',
-        # 'AP120420_s1c1',
-        # 'AP120420_s2c1',
-        # 'AP120507_s3c1',
-        # 'AP120510_s1c1',
-        # 'AP120522_s3c1',
-        # 'AP120524_s2c1',
-        # 'AP120614_s1c2',
-        # 'AP130312_s1c1',
-        # 'AP131105_s1c1',
+        "AP120410_s1c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+        "AP131105_s1c1",
     ]
     result_folder = "2019_2_10"
     thresh = 0
     with_collisions = True
     with_plot = False
-    for neuron_name in neuron_names:
-        graphed_neuron = NeuronToGraph(
-            neuron_name=neuron_name,
-            result_folder=result_folder,
-            thresh=thresh,
-            with_collisions=with_collisions,
-            with_plot=with_plot,
-        )
-        graphed_neuron.main()
+
+    args = [
+        (neuron_name, result_folder, thresh, with_collisions, with_plot)
+        for neuron_name in neuron_names
+    ]
+    with mp.Pool() as pool:
+        objs = pool.starmap(mp_main, args)
+
+    # obj = [mp_main(*arg) for arg in args]
