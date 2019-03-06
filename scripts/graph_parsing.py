@@ -4,6 +4,7 @@ import sys
 import contextlib
 import multiprocessing as mp
 import functools
+import time
 
 import numpy as np
 import networkx as nx
@@ -13,44 +14,24 @@ from attr.validators import instance_of
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
 import attr
-from attr.validators import instance_of
+from attr.validators import instance_of, in_
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py3DN"))
 import mytools
 
-
-class PointType(enum.Enum):
-    STANDARD = "standard"
-    NODE = "node"
-    ENDPOINT = "endpoint"
-
-    @classmethod
-    def from_str(cls, inp_str):
-        if inp_str == "standard":
-            return cls.STANDARD
-        elif inp_str == "node":
-            return cls.NODE
-        elif inp_str == "endpoint":
-            return cls.ENDPOINT
-        raise ValueError
+# Define basic types of points and trees - can't use an
+# Enum or class due to memory constraints
+POINTTYPE = ["standard", "node", "endpoint"]
+TREETYPE = ["Axon", "Dendrite"]
 
 
-class TreeType(enum.Enum):
-    AXON = "Axon"
-    DENDRITE = "Dendrite"
-
-    @classmethod
-    def from_str(cls, inp_str):
-        if inp_str == "Axon":
-            return cls.AXON
-        if inp_str == "Dendrite":
-            return cls.DENDRITE
-
-
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class CollisionNode:
     """
     A single node on a neuronal tree.
+    It's frozen since it has to be hashable in order to
+    be allocated to a graph, and slots helps since we create thousands
+    of it.
 
     :param np.ndarray loc: a 3-sized vector with coordinates.
     :param int ppid: parent point ID.
@@ -60,10 +41,11 @@ class CollisionNode:
 
     loc = attr.ib(validator=instance_of(tuple))
     ppid = attr.ib(validator=instance_of(int))
-    ptype = attr.ib(validator=instance_of(PointType))
+    ptype = attr.ib(validator=in_(POINTTYPE))
     radius = attr.ib(validator=instance_of(float))
-    tree_type = attr.ib(validator=instance_of(TreeType))
+    tree_type = attr.ib(validator=in_(TREETYPE))
     collisions = attr.ib(default=np.uint64(0), validator=instance_of(np.uint64))
+    dist_to_body = attr.ib(default=np.uint64(0), validator=instance_of(np.float64))
 
 
 @attr.s
@@ -123,7 +105,9 @@ class NeuronToGraph:
 
         self.graph = self._generate_graph(collision_df)
         if self.with_plot:
-            self._show_graph(self.graph, title=self.neuron_name, fname=image_graph_fname)
+            self._show_graph(
+                self.graph, title=self.neuron_name, fname=image_graph_fname
+            )
         self._serialize_graph(self.graph, graph_fname)
 
     def _get_num_of_nodes(self, neuron) -> int:
@@ -188,7 +172,7 @@ class NeuronToGraph:
             collisions.shape[1] == neuronal_points.shape[1]
         )  # two 3D coordinate arrays
         splits = np.linspace(
-            0, collisions.shape[0], num=1000, endpoint=False, dtype=np.int
+            0, collisions.shape[0], num=100, endpoint=False, dtype=np.int
         )[1:]
         split_colls = np.split(collisions, splits)
         neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
@@ -238,7 +222,7 @@ class NeuronToGraph:
             {
                 "source": np.zeros(num_of_nodes - neuron.total_trees, dtype=object),
                 "target": np.zeros(num_of_nodes - neuron.total_trees, dtype=object),
-                "distance": np.zeros(num_of_nodes - neuron.total_trees),
+                "weight": np.zeros(num_of_nodes - neuron.total_trees),
             }
         )
         print("Starting the tree parsing...")
@@ -248,69 +232,72 @@ class NeuronToGraph:
             parent_node = CollisionNode(
                 loc=tuple(tree.rawpoint[0].P),
                 ppid=-1,
-                ptype=PointType.STANDARD,
+                ptype="standard",
                 collisions=collisions[pair_number],
                 radius=tree.rawpoint[0].r,
-                tree_type=TreeType.from_str(tree.type),
+                tree_type=tree.type,
+                dist_to_body=np.float64(0),
             )
             new_node = CollisionNode(
                 loc=tuple(tree.rawpoint[1].P),
                 ppid=0,
-                ptype=PointType.from_str(tree.rawpoint[1].ptype),
+                ptype=tree.rawpoint[1].ptype,
                 collisions=collisions[1],
                 radius=tree.rawpoint[1].r,
-                tree_type=TreeType.from_str(tree.type),
+                tree_type=tree.type,
+                dist_to_body=np.float64(0),
             )
-            dist = 0
-            df.iloc[pair_number] = [parent_node, new_node, dist]
+            weight = np.float64(0)
+            df.iloc[pair_number] = [parent_node, new_node, weight]
             pair_number += 1
             for point in tree.rawpoint[2:]:
                 prev_node = new_node
                 del new_node
+                weight = (
+                    mytools.Get_FiberDistance_Between_RawPoints(
+                        tree, prev_node.ppid, point.ppid
+                    )
+                    + prev_node.dist_to_body
+                )
                 new_node = CollisionNode(
                     loc=tuple(point.P),
                     ppid=point.ppid,
-                    ptype=PointType.from_str(point.ptype),
+                    ptype=point.ptype,
                     collisions=collisions[pair_number],
                     radius=point.r,
-                    tree_type=TreeType.from_str(tree.type),
+                    tree_type=tree.type,
+                    dist_to_body=weight,
                 )
-                dist = mytools.Get_FiberDistance_Between_RawPoints(
-                    tree, prev_node.ppid, point.ppid
-                )
-                df.iloc[pair_number] = [prev_node, new_node, dist]
+
+                df.iloc[pair_number] = [prev_node, new_node, weight]
                 pair_number += 1
         return df
 
     def _generate_graph(self, df: pd.DataFrame):
         return nx.convert_matrix.from_pandas_edgelist(
-            df,
-            source="source",
-            target="target",
-            edge_attr=True,
-            create_using=nx.DiGraph,
+            df, source="source", target="target", edge_attr=True, create_using=nx.Graph
         )
 
-    def _show_graph(self, g: nx.DiGraph, title: str = "Neuron", fname=None):
+    def _show_graph(self, g: nx.Graph, title: str = "Neuron", fname=None):
         fig, ax = plt.subplots()
         nx.draw(g, node_size=5, with_labels=False, alpha=0.5)
         ax.set_title(title)
         if fname:
             fname = str(fname)
             if self.with_collisions:
-                fname += '_with_collisions'
+                fname += "_with_collisions"
             else:
-                fname += '_no_collisions'
+                fname += "_no_collisions"
             for suffix in [".eps", ".png", ".pdf"]:
                 fig.savefig(str(fname) + suffix, transparent=True, dpi=300)
 
-    def _serialize_graph(self, g: nx.DiGraph, fname: pathlib.Path):
+    def _serialize_graph(self, g: nx.Graph, fname: pathlib.Path):
         """ Write graph g to disk """
         fname: str = str(fname)
         if self.with_collisions:
-            fname = fname.replace('.gexf', '_with_collisions.gexf')
+            fname = fname.replace(".gexf", "_with_collisions.gexf")
         else:
-            fname = fname.replace('.gexf', '_no_collisions.gexf')
+            fname = fname.replace(".gexf", "_no_collisions.gexf")
         nx.write_gexf(g, fname)
 
 
@@ -347,24 +334,24 @@ def correlate_collisions_with_distance(collisions, neuron):
 
 if __name__ == "__main__":
     neuron_names = [
-        'AP120410_s1c1',
+        # "AP120410_s1c1",
         'AP120410_s3c1',
-        'AP120412_s3c2',
-        'AP120416_s3c1',
-        'AP120419_s1c1',
-        'AP120420_s1c1',
-        'AP120420_s2c1',
-        'AP120507_s3c1',
-        'AP120510_s1c1',
-        'AP120522_s3c1',
-        'AP120524_s2c1',
-        'AP120614_s1c2',
-        'AP130312_s1c1',
-        'AP131105_s1c1',
+        # 'AP120412_s3c2',
+        # 'AP120416_s3c1',
+        # 'AP120419_s1c1',
+        # 'AP120420_s1c1',
+        # 'AP120420_s2c1',
+        # 'AP120507_s3c1',
+        # 'AP120510_s1c1',
+        # 'AP120522_s3c1',
+        # 'AP120524_s2c1',
+        # 'AP120614_s1c2',
+        # 'AP130312_s1c1',
+        # 'AP131105_s1c1',
     ]
     result_folder = "2019_2_10"
     thresh = 0
-    with_collisions = False
+    with_collisions = True
     with_plot = False
     for neuron_name in neuron_names:
         graphed_neuron = NeuronToGraph(

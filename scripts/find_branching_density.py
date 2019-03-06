@@ -12,6 +12,7 @@ import attr
 from attr.validators import instance_of
 
 from graph_parsing import load_neuron
+from blender.general_methods import name_neuron_trees
 
 
 @attr.s
@@ -63,12 +64,13 @@ class BranchDensity:
             for sphere_size in sphere_sizes
         }
         df_dict["tree"] = self.tree_of_point
+        df_dict["num"] = np.arange(coord_num)
         branch_counts = (
             pd.DataFrame(df_dict)
             .assign(x=self.neuron_coords[:, 0])
             .assign(y=self.neuron_coords[:, 1])
             .assign(z=self.neuron_coords[:, 2])
-            .set_index(["tree", "x", "y", "z"])
+            .set_index(["num", "tree", "x", "y", "z"])
         )
         return sphere_sizes, branch_counts
 
@@ -84,12 +86,17 @@ class BranchDensity:
         neuronal_coords = neuronal_nodes.copy()
         coord_number = 0
         node_number = 0
-        for tree in neuron.tree:
+        tree_names = name_neuron_trees(neuron)
+        for tree, tree_name in zip(neuron.tree, tree_names):
             for point in tree.rawpoint:
-                tree_of_point[coord_number] = tree.type
+                tree_of_point[coord_number] = tree_name
                 p = point.P
                 neuronal_coords[coord_number] = p
-                if point.ptype == "node":
+                if (
+                    point.ptype == "standard"
+                    or point.ptype == "node"
+                    or point.ptype == "endpoint"
+                ):
                     neuronal_nodes[node_number] = p
                     node_number += 1
                 coord_number += 1
@@ -120,8 +127,13 @@ class BranchDensity:
 
 if __name__ == "__main__":
     neuron_fname = (
-        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120410_s1c1.xml"
+        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120410_s1c1.xml",
+        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120410_s3c1.xml",
+        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120412_s3c2.xml",
+        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120416_s3c1.xml",
     )
     py3dn_folder = pathlib.Path(__file__).resolve().parents[2] / "py3DN"
-    branch_den = BranchDensity(neuron_fname, py3dn_folder)
-    counts = branch_den.main()
+    for nf in neuron_fname[:1]:
+        branch_den = BranchDensity(nf, py3dn_folder)
+        counts = branch_den.main()
+        counts.hist()

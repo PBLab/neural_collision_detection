@@ -1,8 +1,10 @@
 """ Should only be run under Blender """
 from collections import namedtuple
 from typing import Tuple
+from importlib import reload
 import pathlib
 import sys
+
 import numpy as np
 import pandas as pd
 import scipy.spatial.distance
@@ -12,9 +14,13 @@ import bpy
 import attr
 from attr.validators import instance_of
 
-sys.path.append('/mnt/qnap/simulated_morph_data/neural_collision_detection/scripts/blender')
+sys.path.append(
+    "/mnt/qnap/simulated_morph_data/neural_collision_detection/scripts/blender"
+)
 from overlay_collisions import gen_bins, filter_relevant_bins
-from general_methods import name_neuron_trees
+import general_methods
+
+from mytools import *
 
 
 @attr.s
@@ -26,9 +32,10 @@ class CollisionDrawer:
     (``from mytools import *``) and that we're in "Vertex Pain" mode. """
 
     fname = attr.ib(validator=instance_of(pathlib.Path))
-    binsize = attr.ib(default=(5, 5, 5), validator=instance_of(Tuple[int, int, int]))
+    binsize = attr.ib(default=(5, 5, 5), validator=instance_of(tuple))
     downsample = attr.ib(default=1000, validator=instance_of(int))
     npz_keyname = attr.ib(default="neuron_coords", validator=instance_of(str))
+    collisions_fname = attr.ib(default=None)
     total_points = attr.ib(init=False)
     tree_names = attr.ib(init=False)
     points_on_neuron = attr.ib(init=False)
@@ -50,14 +57,20 @@ class CollisionDrawer:
         "color" each neuronal segment with a color proportionate to the number of
         collisions in that area.
          """
-        self.collisions = np.load(fname)[self.npz_keyname][::self.downsample, :]
-        self.tree_names = name_neuron_trees()
+        self.collisions = np.load(fname)[self.npz_keyname][:: self.downsample, :]
+        self.tree_names = general_methods.name_neuron_trees(neuron[0])
         hist, edges = gen_bins(self.collisions, self.binsize)
-        nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(self.collisions, hist, edges)
+        nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(
+            self.collisions, hist, edges
+        )
         self.points_on_neuron = self._get_all_points_into_array()
-        closest_bin_per_point = self._find_distance_between_neuron_and_collision(nonzero_hist, bin_starts, bin_ends)
-        colorcodes = self._generate_color_codes(nonzero_hist, closest_bin_per_point)
+        closest_bin_per_point = self._find_distance_between_neuron_and_collision(
+            nonzero_hist, bin_starts, bin_ends
+        )
+        colorcodes, collisions_per_neuron_point = self._generate_color_codes(nonzero_hist, closest_bin_per_point)
         self._redraw_trees(colorcodes)
+        if self.collisions_fname:
+            self._serialize_collisions_per_neuron_points(collisions_per_neuron_point)
 
     def _get_all_points_into_array(self) -> np.ndarray:
         """ For faster processing, loads all neural coordinates
@@ -73,14 +86,19 @@ class CollisionDrawer:
                 object_name[idx] = name
             starting_idx = idx + 1
         object_name = pd.CategoricalIndex(object_name)
-        print(object_name)
         numerical_index = np.arange(len(object_name))
-        return pd.DataFrame({'x': points_on_neuron[:, 0],
-                             'y': points_on_neuron[:, 1],
-                             'z': points_on_neuron[:, 2]},
-                            index=pd.MultiIndex.from_arrays([numerical_index, object_name]))
+        return pd.DataFrame(
+            {
+                "x": points_on_neuron[:, 0],
+                "y": points_on_neuron[:, 1],
+                "z": points_on_neuron[:, 2],
+            },
+            index=pd.MultiIndex.from_arrays([numerical_index, object_name]),
+        )
 
-    def _find_distance_between_neuron_and_collision(self, collisions_hist, bin_starts, bin_ends) -> np.ndarray:
+    def _find_distance_between_neuron_and_collision(
+        self, collisions_hist, bin_starts, bin_ends
+    ) -> np.ndarray:
         """
         Returns the closest histogram bin to a coordinate on the neuron.
 
@@ -93,9 +111,10 @@ class CollisionDrawer:
         histogram bin per neural coordinate.
         """
         bin_centers = (bin_starts + bin_ends) / 2
-        point_to_bin_distance = scipy.spatial.distance.cdist(self.points_on_neuron.values, bin_centers)
+        point_to_bin_distance = scipy.spatial.distance.cdist(
+            self.points_on_neuron.values, bin_centers
+        )
         closest_bin_per_point = point_to_bin_distance.argmin(axis=1)
-        assert len(bin_centers) == len(collisions_hist)
         return closest_bin_per_point
 
     def _generate_color_codes(self, collisions_hist, closest_bin_per_point):
@@ -108,21 +127,21 @@ class CollisionDrawer:
         collision_value_on_point = (
             collisions_hist[closest_bin_per_point] / max_collisions_num
         )
+
         colorcodes[:, 0] = collision_value_on_point
         colorcodes[:, 2] = 1 - collision_value_on_point
-        return colorcodes
+        return colorcodes, collisions_hist[closest_bin_per_point]
 
     def _redraw_trees(self, colorcodes):
         """
         Using the given color codes, traverse every point on every neuronal
         tree and color it
+        FIXME - the colorcodes row index keeps repeating itself
         """
+        # aaaaaa NOT WORKING PROPERLY DON'T USE AAAAAAAA
         detail_level = bpy.context.scene.MyDrawTools_TreesDetail
-        for object_name in self.tree_names:
-            print(object_name, len(bpy.data.objects[object_name].data.vertex_colors['Col'].data))
         for object_name, tree in zip(self.tree_names, neuron[0].tree):
             # Now create a mesh with color information for each vertice
-            print("cur object name: ", object_name)
             my_object = bpy.data.objects[object_name].data
             color_map_collection = my_object.vertex_colors
             if len(color_map_collection) == 0:
@@ -133,10 +152,9 @@ class CollisionDrawer:
             # or you could avoid using the vertex color map name
             # color_map = color_map_collection.active
             cur_tree = self.points_on_neuron.xs(object_name, level=1)
-            print("Color map data len: ", len(color_map.data))
-            for pid, _ in cur_tree.iterrows():
+            for idx, (pid, _) in enumerate(cur_tree.iterrows()):
                 for i in range(detail_level):
-                    color_map.data[pid * detail_level + i].color = [
+                    color_map.data[idx * detail_level + i].color = [
                         colorcodes[pid, 0],
                         colorcodes[pid, 1],
                         colorcodes[pid, 2],
@@ -149,11 +167,24 @@ class CollisionDrawer:
             # set to vertex paint mode to see the result
             bpy.ops.object.mode_set(mode="VERTEX_PAINT")
 
+    def _serialize_collisions_per_neuron_points(self, data):
+        """ Writes the array containing the number of collisions
+        per neuronal point to disk """
+        np.save(self.collisions_fname, data)
+
 
 if __name__ == "__main__":
-    fname = pathlib.Path(r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser_0.npz")
-
+    general_methods = reload(general_methods)
+    fname = pathlib.Path(
+        r"/mnt/qnap/simulated_morph_data/results/2019_2_10/normalized_agg_results_AP120410_s1c1_thresh_0.npz"
+    )
     downsample_factor = 1000
     binsize = (5, 5, 5)
-    coll_drawer = CollisionDrawer(fname=fname, downsample=downsample_factor, binsize=binsize)
+    colls_fname = "/home/hagaihargil/Downloads/colls.npy"
+    coll_drawer = CollisionDrawer(
+        fname=fname,
+        downsample=downsample_factor,
+        binsize=binsize,
+        collisions_fname=colls_fname,
+    )
     coll_drawer.run()

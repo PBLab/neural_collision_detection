@@ -14,6 +14,7 @@ output
 Eigen
 *.obj
 .mypy_cache/
+.pytest_cache/
 __pycache__/
 *.npz
 *.json
