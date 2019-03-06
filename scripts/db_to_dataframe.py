@@ -1,5 +1,6 @@
 import multiprocessing
 import pathlib
+import multiprocessing as mp
 
 import xarray as xr
 import pandas as pd
@@ -100,10 +101,10 @@ def get_stats(df: pd.DataFrame):
 
 def translate_colls(colls):
     """ Translates the collisions back to the original coordinates """
-    colls_translated = cols.values
-    colls_translated[:, 0] -= cols.index.get_level_values('x')
-    colls_translated[:, 1] -= cols.index.get_level_values('y')
-    colls_translated[:, 2] -= cols.index.get_level_values('z')
+    colls_translated = colls.values
+    colls_translated[:, 0] -= colls.index.get_level_values('x')
+    colls_translated[:, 1] -= colls.index.get_level_values('y')
+    colls_translated[:, 2] -= colls.index.get_level_values('z')
     return colls_translated
 
 
@@ -114,9 +115,9 @@ def rotate_colls(colls: pd.DataFrame, colls_translated: np.ndarray) -> np.ndarra
         colls.index.get_level_values('pitch').values,
         colls.index.get_level_values('yaw').values,
     ), axis=1)
-    with multiprocessing.Pool() as pool:
-        rotated_colls = pool.starmap(_rotate_single_coll, zip(rot, colls_translated))
-
+    # with multiprocessing.Pool() as pool:
+    #     rotated_colls = pool.starmap(_rotate_single_coll, zip(rot, colls_translated))
+    rotated_colls = [_rotate_single_coll(rotx, coll) for rotx, coll in zip(rot, colls_translated)]
     return np.array(rotated_colls)
 
 
@@ -144,18 +145,27 @@ def _rotate_single_coll(rot: np.ndarray, coll: np.ndarray) -> np.ndarray:
     return rotated_colls
 
 
-def save_results(data_dict, fname):
+def save_results(data_dict, fname: pathlib.Path):
     """ Save results into file in numpy and MATLAB formats """
-    np.savez(fname + '.npz', **data_dict)
-    scipy.io.savemat(fname + '.mat', data_dict)
+    np.savez(str(fname.with_suffix('.npz')), **data_dict)
+    scipy.io.savemat(str(fname.with_suffix('.mat')), data_dict)
 
 
-if __name__ == '__main__':
-    fname = r'/data/simulated_morph_data/results/2019_2_10/agg_results_AP120410_s1c1_thresh_0'
-    thresh = 0
+def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
+    """
+    Wrapper script to run this module on multiple cores
+    """
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
     colls_trans_rot = rotate_colls(cols, colls_translated)
-    # fname_new = pathlib.Path(__file__).resolve().parents[2] / f'results/2019_2_10/normalized_agg_results_AP120410_s3c1_thresh_{thresh}'
-    # save_results({'neuron_coords': colls_trans_rot, 'vasc_coords': cols}, str(fname_new))
+    new_fname = pathlib.Path("normalized_" + fname.name)
+    save_results({'neuron_coords': colls_trans_rot, 'vasc_coords': cols}, parent_folder / new_fname)
+
+
+if __name__ == '__main__':
+    parent_folder = pathlib.Path(r'/data/simulated_morph_data/results/2019_2_10/')
+    all_args = [(parent_folder, file) for file in parent_folder.glob('agg_results_*_thresh_0')]
+    with mp.Pool() as pool:
+        pool.starmap(mp_run, all_args)
+
