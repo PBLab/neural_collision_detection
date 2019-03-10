@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../lib/libtest_fcl_utility.a  CMakeFiles/test_fcl_utility.dir/test_fcl_utility.cpp.o
+/usr/bin/ranlib ../lib/libtest_fcl_utility.a

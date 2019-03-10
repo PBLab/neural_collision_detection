@@ -3,7 +3,6 @@
 *.pyc
 *.code-workspace
 ncd
-ncd_*
 tags
 output
 .idea/
@@ -16,6 +15,14 @@ Eigen
 .mypy_cache/
 .pytest_cache/
 __pycache__/
+*.npy
 *.npz
 *.json
 *.nfs*
+*.xml
+data/
+results/
+*.mp4
+*.pdf
+datajoint/
+*egg*
