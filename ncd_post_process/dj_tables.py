@@ -1,8 +1,7 @@
 import datajoint as dj
 
+SCHEMA_NAME = 'dj_ncd'
 
-SCHEMA_NAME = 'ncd'
-schema = dj.schema(SCHEMA_NAME, locals())
 dj.config['database.host'] = '127.0.0.1'
 dj.config['database.user'] = 'root'
 dj.config['database.password'] = 'pw4pblab'
@@ -10,8 +9,7 @@ dj.config['external-raw'] = {
     'protocol': 'file',
     'location': f'/data/neural_collision_detection/datajoint/data/{SCHEMA_NAME}'
 }
-
-
+schema = dj.schema(SCHEMA_NAME, locals())
 
 @schema
 class VasculatureData(dj.Manual):
@@ -28,8 +26,8 @@ class CellCenters(dj.Manual):
     centers_id: smallint unsigned
     -> VasculatureData
     ---
-    data: varchar(1000)
-    layer: enum('I', 'II', 'III', 'IV', 'V', 'VI')
+    fname: varchar(1000)
+    layer: enum('I', 'II_III', 'IV', 'V', 'VI')
     """
 
 
@@ -39,7 +37,8 @@ class Neuron(dj.Manual):
     neuron_id: smallint unsigned
     ---
     name: varchar(25)
-    layer: enum('I', 'II', 'III', 'IV', 'V', 'VI')
+    fname: varchar(1000)
+    layer: enum('I', 'II_III', 'IV', 'V', 'VI')
     -> CellCenters
     """
 
@@ -47,7 +46,7 @@ class Neuron(dj.Manual):
 @schema
 class NcdIterParams(dj.Lookup):
     definition = """
-    param_id = smallint unsigned
+    param_id: smallint unsigned
     ---
     vasc_path: varchar(1000)
     -> Neuron
@@ -75,11 +74,12 @@ class NcdIteration(dj.Computed):
 @schema
 class AggRunParams(dj.Lookup):
     definition = """
-    param_id = smallint unsigned
+    param_id: smallint unsigned
     ---
     max_collisions: smallint unsigned
     threshold: tinyint unsigned
     """
+
 
 @schema
 class AggRun(dj.Computed):
@@ -98,7 +98,7 @@ class CollisionsParse(dj.Computed):
     run_id: smallint unsigned
     -> AggRun
     ---
-    result = external-raw
+    result: external-raw
     """
 
 # @schema

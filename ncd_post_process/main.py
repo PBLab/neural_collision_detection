@@ -1,5 +1,6 @@
 import os, sys, subprocess
-
+import datajoint as dj
+from dj_tables import *
 ################################## PARAMS ##################################################
 
 ROOT = "../.."
@@ -50,8 +51,9 @@ def main(argv):
 
 def start_pipeline():
 
+	# schema = dj.schema(schema_name, locals())
+	pass
 
 if __name__ == "__main__":
-	dj.conn()
-	start_pipeline()
-	main(sys.argv)
+ 	start_pipeline()
+	# main(sys.argv)
