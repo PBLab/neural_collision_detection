@@ -24,3 +24,4 @@ data/
 results/
 *.mp4
 *.pdf
+datajoint/
