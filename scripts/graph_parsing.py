@@ -92,6 +92,7 @@ class NeuronToGraph:
     parent_folder = attr.ib(init=False)
     num_of_nodes = attr.ib(init=False)
     graph = attr.ib(init=False)
+    collisions_df = attr.ib(init=False)
 
     def main(self):
         """
@@ -120,11 +121,11 @@ class NeuronToGraph:
                 )
             else:
                 neural_collisions = np.zeros(self.num_of_nodes, dtype=np.uint64)
-            collision_df = self._make_collision_df(
+            self.collision_df = self._make_collision_df(
                 neural_collisions, neuron, self.num_of_nodes
             )
 
-        self.graph = self._generate_graph(collision_df)
+        self.graph = self._generate_graph(self.collision_df)
         if self.with_plot:
             self._show_graph(
                 self.graph, title=self.neuron_name, fname=image_graph_fname
@@ -197,9 +198,12 @@ class NeuronToGraph:
         )[1:]
         split_colls = np.split(collisions, splits)
         neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
+
+        # Three lines commented below due to parallelization of entire script
         # zipped_args = zip(split_colls, neuronal_points_iterable)
         # with mp.Pool() as pool:
         #     closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
+
         closest_cell_idx = [
             self._dist_and_min(coll, npoint)
             for coll, npoint in zip(split_colls, neuronal_points_iterable)
@@ -355,24 +359,25 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
         with_plot=with_plot,
     )
     graphed_neuron.main()
+    return graphed_neuron
 
 
 if __name__ == "__main__":
     neuron_names = [
         "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
-        "AP131105_s1c1",
+        # "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120507_s3c1",
+        # "AP120510_s1c1",
+        # "AP120522_s3c1",
+        # "AP120524_s2c1",
+        # "AP120614_s1c2",
+        # "AP130312_s1c1",
+        # "AP131105_s1c1",
     ]
     result_folder = "2019_2_10"
     thresh = 0
@@ -383,7 +388,7 @@ if __name__ == "__main__":
         (neuron_name, result_folder, thresh, with_collisions, with_plot)
         for neuron_name in neuron_names
     ]
-    with mp.Pool() as pool:
-        objs = pool.starmap(mp_main, args)
+    # with mp.Pool() as pool:
+    #     objs = pool.starmap(mp_main, args)
 
-    # obj = [mp_main(*arg) for arg in args]
+    obj = [mp_main(*arg) for arg in args]  # single core execution
