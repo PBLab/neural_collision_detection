@@ -48,5 +48,10 @@ def main(argv):
 	execute_pipeline(RES_DIR, VASCULAR_DATA_PATH, NEURAL_DATA_PATH, CENTERS_PATH, MAX_COLLISIONS, THRESHOLD_DISTANCE, run_id)
 
 
+def start_pipeline():
+
+
 if __name__ == "__main__":
+	dj.conn()
+	start_pipeline()
 	main(sys.argv)

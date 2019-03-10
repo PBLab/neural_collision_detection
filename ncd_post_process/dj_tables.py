@@ -1,13 +1,22 @@
 import datajoint as dj
 
 
-schema = dj.schema('ncd', locals())
+SCHEMA_NAME = 'ncd'
+schema = dj.schema(SCHEMA_NAME, locals())
+dj.config['database.host'] = '127.0.0.1'
+dj.config['database.user'] = 'root'
+dj.config['database.password'] = 'pw4pblab'
+dj.config['external-raw'] = {
+    'protocol': 'file',
+    'location': f'/data/neural_collision_detection/datajoint/data/{SCHEMA_NAME}'
+}
+
 
 
 @schema
 class VasculatureData(dj.Manual):
     definition = """
-    file_id: smallint unsigned
+    vasc_id: smallint unsigned
     ---
     fname: varchar(1000)
     """
@@ -16,10 +25,10 @@ class VasculatureData(dj.Manual):
 @schema
 class CellCenters(dj.Manual):
     definition = """
-    file_id: smallint unsigned
+    centers_id: smallint unsigned
     -> VasculatureData
     ---
-    fname: varchar(1000)
+    data: varchar(1000)
     layer: enum('I', 'II', 'III', 'IV', 'V', 'VI')
     """
 
@@ -36,14 +45,12 @@ class Neuron(dj.Manual):
 
 
 @schema
-class NcdIteration(dj.Computed):
+class NcdIterParams(dj.Lookup):
     definition = """
-    run_id: smallint unsigned
+    param_id = smallint unsigned
     ---
-    date = CURRENT_TIMESTAMP : timestamp
     vasc_path: varchar(1000)
     -> Neuron
-    output_path: varchar(1000)
     num_threads: tinyint unsigned
     max_num_of_collisions: smallint unsigned
     main_axis: enum('x', 'y', 'z')
@@ -51,16 +58,37 @@ class NcdIteration(dj.Computed):
     bounds_checking: enum('true', 'false')
     """
 
+@schema
+class NcdIteration(dj.Computed):
+    definition = """
+    run_id: smallint unsigned
+    -> NcdIterParams
+    ---
+    date = CURRENT_TIMESTAMP : timestamp
+    result: longblob
+    """
+
+    def _make_tuples(self, key):
+        pass
+
+
+@schema
+class AggRunParams(dj.Lookup):
+    definition = """
+    param_id = smallint unsigned
+    ---
+    max_collisions: smallint unsigned
+    threshold: tinyint unsigned
+    """
 
 @schema
 class AggRun(dj.Computed):
     definition = """
     run_id: smallint unsigned
     -> NcdIteration
+    -> AggRunParams
     ---
-    output_path: varchar(1000)
-    max_collisions: smallint unsigned
-    threshold: tinyint unsigned
+    result: external-raw
     """
 
 
@@ -70,14 +98,10 @@ class CollisionsParse(dj.Computed):
     run_id: smallint unsigned
     -> AggRun
     ---
-    output_path_npz: varchar(1000)
-    output_path_mat: varchar(1000)
+    result = external-raw
     """
 
 # @schema
 # class GraphNeuron(dj.Computed):
 #     definition = """
 
-
-if __name__ == "__main__":
-    dj.conn()
