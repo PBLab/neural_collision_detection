@@ -70,19 +70,19 @@ class NcdIteration(dj.Computed):
     """
 
     def make(self, key):
-        params = (NcdIterParams & key).fetch()[0]
+        params = (NcdIterParams & key).fetch(as_dict=True)[0]
         ncd_path = '../ncd'
-        vascular_data = (VasculatureData & params[1]).fetch1('fname')
-        print(vascular_data)
-        neural_data = (Neuron & params[2]).fetch1('fname')
-        neuron_name = (Neuron & params[2]).fetch1('name')
-        threads_cnt = params[3]
-        centers = (CellCenters & (Neuron & params[2]).fetch1['centers_id']).fetch1['fname']
-        output_dir = params[8]
+        vascular_data = (VasculatureData & {'vasc_id': params['vasc_id']}).fetch1('fname')
+        neuron = Neuron & {'neuron_id': params['neuron_id']}
+        neural_data = neuron.fetch1('fname')
+        neuron_name = neuron.fetch1('name')
+        threads_cnt = params['num_threads']
+        centers = (CellCenters & {'centers_id': neuron.fetch1('centers_id')}).fetch1('fname')
+        output_dir = params['results_folder']
         ncd_output_file = output_dir + f'/ncd_results_{neuron_name}'
-        max_col_cnt = params[4]
-        store_min_pos = '-z' if params[5] == 'true' else ''
-        bounds_checking = '-b' if params[6] == 'true' else ''
+        max_col_cnt = params['max_num_of_collisions']
+        store_min_pos = '-z' if params['pos_to_store'] == 'true' else ''
+        bounds_checking = '-b' if params['bounds_checking'] == 'true' else ''
         ncd_command = f"{ncd_path} -m batch -V {vascular_data} -N {neural_data} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} {store_min_pos} {bounds_checking}"
         print(ncd_command)
 

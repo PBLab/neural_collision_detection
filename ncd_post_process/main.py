@@ -82,7 +82,7 @@ class PipeRunner:
     pos_to_store = attr.ib(default=True, validator=instance_of(bool))
     bounds_checking = attr.ib(default=False, validator=instance_of(bool))
     results_folder = attr.ib(
-        default=pathlib.Path(__file__).parents[1] / "results",
+        default=pathlib.Path(__file__).resolve().parents[1] / "results",
         validator=instance_of(pathlib.Path),
     )
     params = attr.ib(init=False)
