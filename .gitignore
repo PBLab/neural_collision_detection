@@ -3,7 +3,6 @@
 *.pyc
 *.code-workspace
 ncd
-ncd_*
 tags
 output
 .idea/
@@ -24,3 +23,4 @@ __pycache__/
 data/
 results/
 *.mp4
+*.pdf
