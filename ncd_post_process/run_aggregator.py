@@ -17,7 +17,7 @@ def get_ncd_results(ncd_output_file, max_collisions):
 				continue
 			results.append(l)
 
-	return results
+	return results 
 
 
 def process_main(results, output_fname, threshold_distance, vascular):
@@ -33,6 +33,31 @@ def process_main(results, output_fname, threshold_distance, vascular):
 		vascular_fname = str(parent_folder / "vascular" / "vascular_balls.csv")
 
 		aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
+
+
+def main_as_func(ncd_output_file, max_collisions, threshold_distance, output_fname, vascular_fname):
+    """
+    Aggregate the NCD result files into a parsable DB while filtering it
+    based on the threshold distance of the collisions.
+    """
+    ncd_results = get_ncd_results(ncd_output_file, max_collisions)
+    process_count = 20
+    results_per_process = 1.0 * len(ncd_results) / process_count
+    processes = []
+    last_idx = 0
+    vascular = get_vascular(vascular_fname)
+    for i in range(process_count):
+    	next_idx = int(results_per_process * (i + 1))
+    	if i == process_count - 1:
+    		next_idx = len(ncd_results)
+    	params = (ncd_results[last_idx : next_idx], output_fname, threshold_distance, vascular)
+    	print(len(params[0]))
+    	p = multiprocessing.Process(target=process_main, args=params)
+    	processes.append(p)
+    	p.start()
+    	last_idx = next_idx
+    for i in range(process_count):
+    	processes[i].join()
 
 
 def main(argv):
