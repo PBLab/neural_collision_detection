@@ -1,4 +1,8 @@
+import subprocess
+
 import datajoint as dj
+
+import ncd_post_process
 
 SCHEMA_NAME = 'dj_ncd'
 
@@ -79,12 +83,17 @@ class NcdIteration(dj.Computed):
         threads_cnt = params['num_threads']
         centers = (CellCenters & {'centers_id': neuron.fetch1('centers_id')}).fetch1('fname')
         output_dir = params['results_folder']
-        ncd_output_file = output_dir + f'/ncd_results_{neuron_name}'
+        ncd_output_file = output_dir + f'/ncd_results_{neuron_name}.ncd'
         max_col_cnt = params['max_num_of_collisions']
         store_min_pos = '-z' if params['pos_to_store'] == 'true' else ''
         bounds_checking = '-b' if params['bounds_checking'] == 'true' else ''
         ncd_command = f"{ncd_path} -m batch -V {vascular_data} -N {neural_data} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} {store_min_pos} {bounds_checking}"
-        print(ncd_command)
+        result = subprocess.run(ncd_command.split())
+        if result.returncode == 0:
+            with open(ncd_output_file, 'r') as f:
+                key['result'] = f.read()
+        else:
+            key['result'] = None
 
 
 @schema
@@ -107,6 +116,14 @@ class AggRun(dj.Computed):
     result: external-raw
     """
 
+    def make(self, key):
+        params = (AggRunParams & key).fetch(as_dict=True)[0]
+        ncd_res = (NcdIteration & {'run_id': params['run_id']}).fetch('result')
+        if not ncd_res:
+            key['result'] = None
+            return
+        ncd_post_process.run_aggregator.main_as_func()
+        
 
 @schema
 class CollisionsParse(dj.Computed):
