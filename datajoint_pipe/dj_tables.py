@@ -1,19 +1,21 @@
 import subprocess
 
 import datajoint as dj
+import pandas as pd
 
 import ncd_post_process
 
-SCHEMA_NAME = 'dj_ncd'
+SCHEMA_NAME = "dj_ncd"
 
-dj.config['database.host'] = '127.0.0.1'
-dj.config['database.user'] = 'root'
-dj.config['database.password'] = 'pw4pblab'
-dj.config['external-raw'] = {
-    'protocol': 'file',
-    'location': f'/data/neural_collision_detection/datajoint/data/{SCHEMA_NAME}'
+dj.config["database.host"] = "127.0.0.1"
+dj.config["database.user"] = "root"
+dj.config["database.password"] = "pw4pblab"
+dj.config["external-raw"] = {
+    "protocol": "file",
+    "location": f"/data/neural_collision_detection/datajoint/data/{SCHEMA_NAME}",
 }
 schema = dj.schema(SCHEMA_NAME, locals())
+
 
 @schema
 class VasculatureData(dj.Manual):
@@ -75,25 +77,44 @@ class NcdIteration(dj.Computed):
 
     def make(self, key):
         params = (NcdIterParams & key).fetch(as_dict=True)[0]
-        ncd_path = '../ncd'
-        vascular_data = (VasculatureData & {'vasc_id': params['vasc_id']}).fetch1('fname')
-        neuron = Neuron & {'neuron_id': params['neuron_id']}
-        neural_data = neuron.fetch1('fname')
-        neuron_name = neuron.fetch1('name')
-        threads_cnt = params['num_threads']
-        centers = (CellCenters & {'centers_id': neuron.fetch1('centers_id')}).fetch1('fname')
-        output_dir = params['results_folder']
-        ncd_output_file = output_dir + f'/ncd_results_{neuron_name}.ncd'
-        max_col_cnt = params['max_num_of_collisions']
-        store_min_pos = '-z' if params['pos_to_store'] == 'true' else ''
-        bounds_checking = '-b' if params['bounds_checking'] == 'true' else ''
+        ncd_path = "../ncd"
+        vascular_data = (VasculatureData & {"vasc_id": params["vasc_id"]}).fetch1(
+            "fname"
+        )
+        neuron = Neuron & {"neuron_id": params["neuron_id"]}
+        neural_data = neuron.fetch1("fname")
+        neuron_name = neuron.fetch1("name")
+        threads_cnt = params["num_threads"]
+        centers = (CellCenters & {"centers_id": neuron.fetch1("centers_id")}).fetch1(
+            "fname"
+        )
+        output_dir = params["results_folder"]
+        ncd_output_file = output_dir + f"/ncd_results_{neuron_name}.ncd"
+        max_col_cnt = params["max_num_of_collisions"]
+        store_min_pos = "-z" if params["pos_to_store"] == "true" else ""
+        bounds_checking = "-b" if params["bounds_checking"] == "true" else ""
         ncd_command = f"{ncd_path} -m batch -V {vascular_data} -N {neural_data} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} {store_min_pos} {bounds_checking}"
         result = subprocess.run(ncd_command.split())
         if result.returncode == 0:
-            with open(ncd_output_file, 'r') as f:
-                key['result'] = f.read()
+            with open(ncd_output_file, "r") as f:
+                key["result"] = pd.read_csv(
+                    f,
+                    header=None,
+                    names=[
+                        "neuron_name",
+                        "x",
+                        "y",
+                        "z",
+                        "tip",
+                        "tilt",
+                        "yaw",
+                        "coll_num",
+                        "is_min",
+                        "file_path",
+                    ],
+                )
         else:
-            key['result'] = None
+            key["result"] = None
 
 
 @schema
@@ -118,12 +139,21 @@ class AggRun(dj.Computed):
 
     def make(self, key):
         params = (AggRunParams & key).fetch(as_dict=True)[0]
-        ncd_res = (NcdIteration & {'run_id': params['run_id']}).fetch('result')
+        ncd_iter = (NcdIteration & {"run_id": params["run_id"]})
+        ncd_res = ncd_iter.fetch("result")
         if not ncd_res:
-            key['result'] = None
+            key["result"] = None
             return
-        ncd_post_process.run_aggregator.main_as_func()
-        
+        ncd_iter_params = (NcdIterParams & {'param_id': ncd_iter.fetch1('param_id')})
+        neuron_name = ncd_iter_params.fetch1('neuron_id')
+        filtered_result = ncd_res[ncd_res.loc[:, 'coll_num'] < params['max_collisions']]
+        output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
+        neuron = (Neuron & {'neuron_id': ncd_iter_params['neuron_id']})
+        centers = CellCenters & {'centers_id': neuron.fetch1('centers_id')}
+        vascular_fname = (VasculatureData & {'vasc_id': centers.fetch1('vasc_id')}).fetch1('fname')
+        ncd_post_process.run_aggregator.main_from_mem(filtered_result, params['threshold'], vascular_fname)
+        key['result'] = output_fname
+
 
 @schema
 class CollisionsParse(dj.Computed):
@@ -133,6 +163,7 @@ class CollisionsParse(dj.Computed):
     ---
     result: external-raw
     """
+
 
 # @schema
 # class GraphNeuron(dj.Computed):
