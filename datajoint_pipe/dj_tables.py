@@ -1,4 +1,5 @@
 import subprocess
+import pathlib
 
 import datajoint as dj
 import pandas as pd
@@ -52,7 +53,7 @@ class Neuron(dj.Manual):
 @schema
 class NcdIterParams(dj.Lookup):
     definition = """
-    param_id: smallint unsigned
+    ncd_param_id: smallint unsigned
     ---
     -> VasculatureData
     -> Neuron
@@ -68,7 +69,7 @@ class NcdIterParams(dj.Lookup):
 @schema
 class NcdIteration(dj.Computed):
     definition = """
-    run_id: smallint unsigned
+    ncd_id: smallint unsigned
     -> NcdIterParams
     ---
     date = CURRENT_TIMESTAMP : timestamp
@@ -77,7 +78,7 @@ class NcdIteration(dj.Computed):
 
     def make(self, key):
         params = (NcdIterParams & key).fetch(as_dict=True)[0]
-        ncd_path = "../ncd"
+        ncd_path = str(pathlib.Path(__file__).resolve().parents[1] / "ncd")
         vascular_data = (VasculatureData & {"vasc_id": params["vasc_id"]}).fetch1(
             "fname"
         )
@@ -115,12 +116,13 @@ class NcdIteration(dj.Computed):
                 )
         else:
             key["result"] = None
+        self.insert(key)
 
 
 @schema
 class AggRunParams(dj.Lookup):
     definition = """
-    param_id: smallint unsigned
+    agg_param_id: smallint unsigned
     ---
     max_collisions: smallint unsigned
     threshold: tinyint unsigned
@@ -130,7 +132,7 @@ class AggRunParams(dj.Lookup):
 @schema
 class AggRun(dj.Computed):
     definition = """
-    run_id: smallint unsigned
+    agg_id: smallint unsigned
     -> NcdIteration
     -> AggRunParams
     ---
@@ -139,12 +141,12 @@ class AggRun(dj.Computed):
 
     def make(self, key):
         params = (AggRunParams & key).fetch(as_dict=True)[0]
-        ncd_iter = (NcdIteration & {"run_id": params["run_id"]})
+        ncd_iter = (NcdIteration & {"ncd_id": params["ncd_id"]})
         ncd_res = ncd_iter.fetch("result")
         if not ncd_res:
             key["result"] = None
             return
-        ncd_iter_params = (NcdIterParams & {'param_id': ncd_iter.fetch1('param_id')})
+        ncd_iter_params = (NcdIterParams & {'ncd_param_id': ncd_iter.fetch1('ncd_param_id')})
         neuron_name = ncd_iter_params.fetch1('neuron_id')
         filtered_result = ncd_res[ncd_res.loc[:, 'coll_num'] < params['max_collisions']]
         output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
@@ -153,12 +155,12 @@ class AggRun(dj.Computed):
         vascular_fname = (VasculatureData & {'vasc_id': centers.fetch1('vasc_id')}).fetch1('fname')
         ncd_post_process.run_aggregator.main_from_mem(filtered_result, params['threshold'], vascular_fname)
         key['result'] = output_fname
-
+        self.insert(key)
 
 @schema
 class CollisionsParse(dj.Computed):
     definition = """
-    run_id: smallint unsigned
+    coll_parse_id: smallint unsigned
     -> AggRun
     ---
     result: external-raw
@@ -168,4 +170,7 @@ class CollisionsParse(dj.Computed):
 # @schema
 # class GraphNeuron(dj.Computed):
 #     definition = """
+
+if __name__ == "__main__":
+    AggRun.populate()
 
