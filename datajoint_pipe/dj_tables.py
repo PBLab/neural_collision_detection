@@ -172,5 +172,5 @@ class CollisionsParse(dj.Computed):
 #     definition = """
 
 if __name__ == "__main__":
-    AggRun.populate()
+    NcdIteration.populate()
 

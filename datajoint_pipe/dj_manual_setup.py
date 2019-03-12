@@ -3,6 +3,8 @@ This script was run only once, and populated all
 of the needed manual entries in the database. In case
 we delete some table it should be run again.
 """
+import importlib
+
 from dj_tables import *
 
 
@@ -10,12 +12,14 @@ def drop_all():
     """
     Removes all manual tables
     """
-    vasc = VasculatureData()
-    vasc.drop_quick()
-    cells = CellCenters()
-    cells.drop_quick()
-    neuron = Neuron()
-    neuron.drop_quick()
+    CollisionsParse().drop_quick()
+    AggRun().drop_quick()
+    AggRunParams().drop_quick()
+    NcdIteration().drop_quick()
+    NcdIterParams().drop_quick()
+    Neuron().drop_quick()
+    CellCenters().drop_quick()
+    VasculatureData().drop_quick()
 
 
 def populate_vasc():
@@ -73,7 +77,9 @@ def populate_neurons():
 
 
 if __name__ == "__main__":
-    # drop_all()
+    drop_all()
+    import dj_tables
+    dj_tables = importlib.reload(dj_tables)
     populate_vasc()
     populate_cell_centers()
     populate_neurons()
