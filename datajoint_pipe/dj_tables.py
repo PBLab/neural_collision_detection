@@ -126,12 +126,15 @@ class AggRun(dj.Computed):
     def make(self, key):
         params = (AggRunParams & {'ncd_param_id': key['ncd_param_id']}).fetch(as_dict=True)[0]
         ncd_iter = (NcdIteration & key)
-        ncd_res = ncd_iter.fetch("result")
-        if not ncd_res:
+        ncd_res_fname = ncd_iter.fetch1("result_fname")
+        if not ncd_res_fname:
             key["result_fname"] = None
             return
+        ncd_res = pd.read_csv(ncd_res_fname)
+
         ncd_iter_params = (NcdIterParams & {'ncd_param_id': ncd_iter.fetch1('ncd_param_id')})
         neuron_name = ncd_iter_params.fetch1('neuron_id')
+        print(ncd_res, '\n', ncd_res.shape)
         filtered_result = ncd_res[ncd_res.loc[:, 'coll_num'] < params['max_collisions']]
         output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
         neuron = (Neuron & {'neuron_id': ncd_iter_params['neuron_id']})
