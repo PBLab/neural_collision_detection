@@ -4,6 +4,8 @@ of the needed manual entries in the database. In case
 we delete some table it should be run again.
 """
 import importlib
+import pathlib
+import itertools
 
 from dj_tables import *
 
@@ -24,16 +26,53 @@ def drop_all():
 
 def populate_vasc():
     vasc = VasculatureData()
-    vasc.insert1((0, '../data/vascular/vascular.0.999.obj'))
+    vasc.insert1(
+        (0, "/data/neural_collision_detection/data/vascular/vascular.0.999.obj")
+    )
 
 
 def populate_cell_centers():
     cells = CellCenters()
-    cells.insert1((0, 0, '../data/vascular/centers_layer_ONE.csv', 'I'))
-    cells.insert1((1, 0, '../data/vascular/centers_layer_TWOTHREE.csv', 'II_III'))
-    cells.insert1((2, 0, '../data/vascular/centers_layer_FOUR.csv', 'IV'))
-    cells.insert1((3, 0, '../data/vascular/centers_layer_FIVE.csv', 'V'))
-    cells.insert1((4, 0, '../data/vascular/centers_layer_SIX.csv', 'VI'))
+    cells.insert1(
+        (
+            0,
+            0,
+            "/data/neural_collision_detection/data/vascular/centers_layer_ONE.csv",
+            "I",
+        )
+    )
+    cells.insert1(
+        (
+            1,
+            0,
+            "/data/neural_collision_detection/data/vascular/centers_layer_TWOTHREE.csv",
+            "II_III",
+        )
+    )
+    cells.insert1(
+        (
+            2,
+            0,
+            "/data/neural_collision_detection/data/vascular/centers_layer_FOUR.csv",
+            "IV",
+        )
+    )
+    cells.insert1(
+        (
+            3,
+            0,
+            "/data/neural_collision_detection/data/vascular/centers_layer_FIVE.csv",
+            "V",
+        )
+    )
+    cells.insert1(
+        (
+            4,
+            0,
+            "/data/neural_collision_detection/data/vascular/centers_layer_SIX.csv",
+            "VI",
+        )
+    )
 
 
 def populate_neurons():
@@ -72,14 +111,69 @@ def populate_neurons():
     ]
     assert len(neuron_names) == len(layers)
     for idx, (neuron_name, layer) in enumerate(zip(neuron_names, layers)):
-        fname = f'../data/neurons/{neuron_name}.xml'
+        fname = f"/data/neural_collision_detection/data/neurons/{neuron_name}.xml"
         neuron.insert1((idx, neuron_name, fname, layer[0], layer[1], 0))
+
+
+def populate_agg_params(only_one: bool = False):
+    agg_params = AggRunParams()
+    collisions = (50, 100, 200, 300, 500)
+    threshold = range(10)
+    for idx, (coll, thresh) in enumerate(itertools.product(collisions, threshold)):
+        agg_params.insert1((idx, coll, thresh))
+        if only_one:
+            break
+
+
+def populate_ncd_params(only_one: bool = False):
+    ncd_params = NcdIterParams()
+    vasc_id = 0
+    neuron_ids = range(14)
+    num_threads = 24
+    max_coll_num = 500
+    main_axis = "z"
+    pos_to_store = 'true'
+    bounds_checking = 'false'
+    results_folder = str(pathlib.Path(__file__).resolve().parents[1] / "results")
+    if only_one:
+        ncd_params.insert1(
+            (
+                0,
+                vasc_id,
+                3,
+                num_threads,
+                max_coll_num,
+                main_axis,
+                pos_to_store,
+                bounds_checking,
+                results_folder,
+            )
+        )
+        return
+
+    for idx, neuron in enumerate(neuron_ids):
+        ncd_params.insert1(
+            (
+                idx,
+                vasc_id,
+                neuron,
+                num_threads,
+                max_coll_num,
+                main_axis,
+                pos_to_store,
+                bounds_checking,
+                results_folder,
+            )
+        )
 
 
 if __name__ == "__main__":
     drop_all()
     import dj_tables
+
     dj_tables = importlib.reload(dj_tables)
     populate_vasc()
     populate_cell_centers()
     populate_neurons()
+    populate_agg_params(True)
+    populate_ncd_params(True)

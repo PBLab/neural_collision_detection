@@ -73,7 +73,7 @@ class NcdIteration(dj.Computed):
     -> NcdIterParams
     ---
     date = CURRENT_TIMESTAMP : timestamp
-    result: longblob
+    result_fname: varchar(1000)
     """
 
     def make(self, key):
@@ -83,7 +83,7 @@ class NcdIteration(dj.Computed):
             "fname"
         )
         neuron = Neuron & {"neuron_id": params["neuron_id"]}
-        neural_data = neuron.fetch1("fname")
+        neuron_fname = neuron.fetch1("fname").replace('.xml', '.obj')
         neuron_name = neuron.fetch1("name")
         threads_cnt = params["num_threads"]
         centers = (CellCenters & {"centers_id": neuron.fetch1("centers_id")}).fetch1(
@@ -94,29 +94,14 @@ class NcdIteration(dj.Computed):
         max_col_cnt = params["max_num_of_collisions"]
         store_min_pos = "-z" if params["pos_to_store"] == "true" else ""
         bounds_checking = "-b" if params["bounds_checking"] == "true" else ""
-        ncd_command = f"{ncd_path} -m batch -V {vascular_data} -N {neural_data} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} {store_min_pos} {bounds_checking}"
+        ncd_command = f"{ncd_path} -m batch -V {vascular_data} -N {neuron_fname} -t {threads_cnt} -i {centers} -o {output_dir} -f {ncd_output_file} -c {max_col_cnt} {store_min_pos} {bounds_checking}"
         result = subprocess.run(ncd_command.split())
         if result.returncode == 0:
-            with open(ncd_output_file, "r") as f:
-                key["result"] = pd.read_csv(
-                    f,
-                    header=None,
-                    names=[
-                        "neuron_name",
-                        "x",
-                        "y",
-                        "z",
-                        "tip",
-                        "tilt",
-                        "yaw",
-                        "coll_num",
-                        "is_min",
-                        "file_path",
-                    ],
-                )
+            key["result_fname"] = ncd_output_file
         else:
-            key["result"] = None
-        self.insert(key)
+            key["result_fname"] = None
+        key["ncd_id"] = len(self)
+        self.insert1(key)
 
 
 @schema
@@ -132,19 +117,18 @@ class AggRunParams(dj.Lookup):
 @schema
 class AggRun(dj.Computed):
     definition = """
-    agg_id: smallint unsigned
     -> NcdIteration
     -> AggRunParams
     ---
-    result: external-raw
+    result_fname: varchar(1000)
     """
 
     def make(self, key):
-        params = (AggRunParams & key).fetch(as_dict=True)[0]
-        ncd_iter = (NcdIteration & {"ncd_id": params["ncd_id"]})
+        params = (AggRunParams & {'ncd_param_id': key['ncd_param_id']}).fetch(as_dict=True)[0]
+        ncd_iter = (NcdIteration & key)
         ncd_res = ncd_iter.fetch("result")
         if not ncd_res:
-            key["result"] = None
+            key["result_fname"] = None
             return
         ncd_iter_params = (NcdIterParams & {'ncd_param_id': ncd_iter.fetch1('ncd_param_id')})
         neuron_name = ncd_iter_params.fetch1('neuron_id')
@@ -154,8 +138,9 @@ class AggRun(dj.Computed):
         centers = CellCenters & {'centers_id': neuron.fetch1('centers_id')}
         vascular_fname = (VasculatureData & {'vasc_id': centers.fetch1('vasc_id')}).fetch1('fname')
         ncd_post_process.run_aggregator.main_from_mem(filtered_result, params['threshold'], vascular_fname)
-        key['result'] = output_fname
-        self.insert(key)
+        key['result_fname'] = output_fname
+        self.insert1(key)
+
 
 @schema
 class CollisionsParse(dj.Computed):
@@ -163,7 +148,7 @@ class CollisionsParse(dj.Computed):
     coll_parse_id: smallint unsigned
     -> AggRun
     ---
-    result: external-raw
+    result_fname: varchar(1000)
     """
 
 
@@ -173,4 +158,5 @@ class CollisionsParse(dj.Computed):
 
 if __name__ == "__main__":
     NcdIteration.populate()
+    # AggRun().populate()
 
