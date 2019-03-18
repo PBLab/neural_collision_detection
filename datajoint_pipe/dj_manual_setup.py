@@ -27,7 +27,7 @@ def drop_all():
 def populate_vasc():
     vasc = VasculatureData()
     vasc.insert1(
-        (0, "/data/neural_collision_detection/data/vascular/vascular.0.999.obj")
+        (0, "/data/neural_collision_detection/data/vascular/vascular.obj")
     )
 
 

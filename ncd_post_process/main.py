@@ -135,7 +135,7 @@ class PipeRunner:
 
 if __name__ == "__main__":
     params = PipeRunner().run()
-    # ag = AggRun()
-    # ag.populate()
-    ic = NcdIteration()
-    ic.populate()
+    ag = AggRun()
+    ag.populate()
+    # ic = NcdIteration()
+    # ic.populate()

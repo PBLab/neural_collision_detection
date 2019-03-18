@@ -3,7 +3,11 @@
 import os, sys, re
 import multiprocessing
 import pathlib
-from aggregator import aggregate, get_vascular
+
+import numpy as np
+import pandas as pd
+
+from ncd_post_process.aggregator import aggregate, get_vascular
 
 
 def get_ncd_results(ncd_output_file, max_collisions):
@@ -47,7 +51,7 @@ def process_main_from_mem(results: pd.DataFrame, output_fname, threshold_distanc
     neuron_fname = str(parent_folder / "neurons" / neuron_name)
     vascular_fname = str(parent_folder / "vascular" / "vascular_balls.csv")
     for loc, rot in zip(location, rotation):
-		aggregate(vascular_fname, neuron_fname, loc, rot, output_fname, threshold_distance, vascular)
+        aggregate(vascular_fname, neuron_fname, loc, rot, output_fname, threshold_distance, vascular)
 
 
 def main_from_mem(ncd_results, threshold_distance, output_fname, vascular_fname):
@@ -67,7 +71,7 @@ def main_from_mem(ncd_results, threshold_distance, output_fname, vascular_fname)
     	if i == process_count - 1:
     		next_idx = len(ncd_results)
     	params = (ncd_results.iloc[last_idx:next_idx, :], output_fname, threshold_distance, vascular)
-    	p = multiprocessing.Process(target=process_main, args=params)
+    	p = multiprocessing.Process(target=process_main_from_mem, args=params)
     	processes.append(p)
     	p.start()
     	last_idx = next_idx

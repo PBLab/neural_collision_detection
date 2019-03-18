@@ -4,8 +4,14 @@ import pathlib
 import datajoint as dj
 import pandas as pd
 
-import ncd_post_process
+from ncd_post_process import run_aggregator
 
+
+# To start the image, run `sudo docker-compose up -d`
+# from this fodlder. Then find the host IP address
+# of the docker container run `ip a` and look for the
+# docker0 port - the IP that is listed there is the
+# one to enter as host in the Helium API.
 SCHEMA_NAME = "dj_ncd"
 
 dj.config["database.host"] = "127.0.0.1"
@@ -23,7 +29,8 @@ class VasculatureData(dj.Manual):
     definition = """
     vasc_id: smallint unsigned
     ---
-    fname: varchar(1000)
+    obj_fname: varchar(1000)
+    balls_fname: varchar(1000)
     """
 
 
@@ -80,10 +87,10 @@ class NcdIteration(dj.Computed):
         params = (NcdIterParams & key).fetch(as_dict=True)[0]
         ncd_path = str(pathlib.Path(__file__).resolve().parents[1] / "ncd")
         vascular_data = (VasculatureData & {"vasc_id": params["vasc_id"]}).fetch1(
-            "fname"
+            "obj_fname"
         )
         neuron = Neuron & {"neuron_id": params["neuron_id"]}
-        neuron_fname = neuron.fetch1("fname").replace('.xml', '.obj')
+        neuron_fname = neuron.fetch1("fname").replace(".xml", ".obj")
         neuron_name = neuron.fetch1("name")
         threads_cnt = params["num_threads"]
         centers = (CellCenters & {"centers_id": neuron.fetch1("centers_id")}).fetch1(
@@ -124,24 +131,46 @@ class AggRun(dj.Computed):
     """
 
     def make(self, key):
-        params = (AggRunParams & {'ncd_param_id': key['ncd_param_id']}).fetch(as_dict=True)[0]
-        ncd_iter = (NcdIteration & key)
+        params = (AggRunParams & {"ncd_param_id": key["ncd_param_id"]}).fetch(
+            as_dict=True
+        )[0]
+        ncd_iter = NcdIteration & key
         ncd_res_fname = ncd_iter.fetch1("result_fname")
         if not ncd_res_fname:
             key["result_fname"] = None
             return
-        ncd_res = pd.read_csv(ncd_res_fname)
+        ncd_res = pd.read_csv(
+            ncd_res_fname,
+            header=None,
+            names=[
+                "neuron_name",
+                "x",
+                "y",
+                "z",
+                "tip",
+                "tilt",
+                "yaw",
+                "coll_num",
+                "is_min",
+                "file_path",
+            ],
+        )
 
-        ncd_iter_params = (NcdIterParams & {'ncd_param_id': ncd_iter.fetch1('ncd_param_id')})
-        neuron_name = ncd_iter_params.fetch1('neuron_id')
-        print(ncd_res, '\n', ncd_res.shape)
-        filtered_result = ncd_res[ncd_res.loc[:, 'coll_num'] < params['max_collisions']]
+        ncd_iter_params = NcdIterParams & {
+            "ncd_param_id": ncd_iter.fetch1("ncd_param_id")
+        }
+        neuron_name = ncd_iter_params.fetch1("neuron_id")
+        filtered_result = ncd_res[ncd_res.loc[:, "coll_num"] < params["max_collisions"]]
         output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
-        neuron = (Neuron & {'neuron_id': ncd_iter_params['neuron_id']})
-        centers = CellCenters & {'centers_id': neuron.fetch1('centers_id')}
-        vascular_fname = (VasculatureData & {'vasc_id': centers.fetch1('vasc_id')}).fetch1('fname')
-        ncd_post_process.run_aggregator.main_from_mem(filtered_result, params['threshold'], vascular_fname)
-        key['result_fname'] = output_fname
+        neuron = Neuron & {"neuron_id": ncd_iter_params.fetch1("neuron_id")}
+        centers = CellCenters & {"centers_id": neuron.fetch1("centers_id")}
+        vascular_fname = (
+            VasculatureData & {"vasc_id": centers.fetch1("vasc_id")}
+        ).fetch1("balls_fname")
+        run_aggregator.main_from_mem(
+            filtered_result, output_fname, params["threshold"], vascular_fname
+        )
+        key["result_fname"] = output_fname
         self.insert1(key)
 
 
