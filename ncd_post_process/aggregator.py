@@ -140,17 +140,36 @@ def collide(n, v, threshold_distance):
 		if distance(n, v) <= rsum:
 			return True
 
+def separate_vascular(vascular, threshold):
+	small_vascular = []
+	big_vascular = []
+	for v in vascular:
+		if v[3] < threshold:
+			small_vascular.append(v)
+		else:
+			big_vascular.append(v)
+	return small_vascular, big_vascular
+
 def find_nearest_points(vascular, neuron, threshold_distance):
 	collisions = []
-	# print("len(neuron): ", len(neuron))
 
+	BIG_VASCULAR_R = 3
 	sort_vascular(vascular)
+	vascular, big_vascular_nodes = separate_vascular(vascular, BIG_VASCULAR_R)
+	#print ("Small: %i, Big: %i" % (len(vascular), len(big_vascular_nodes)))
 
 	for n in neuron:
-		base_idx = bisect.bisect(vascular, n)
-		max_x_distance = 25 + n[3] + threshold_distance
-		cur_idx = base_idx
 		found = False
+		for v in big_vascular_nodes:
+			if collide(n, v, threshold_distance):
+				collisions.append(n)
+				found = True
+				break
+		if found:
+			continue
+		base_idx = bisect.bisect(vascular, n)
+		max_x_distance = BIG_VASCULAR_R + n[3] + threshold_distance
+		cur_idx = base_idx
 		while cur_idx < len(vascular) and abs(vascular[cur_idx][0]-n[0]) < max_x_distance:
 			v = vascular[cur_idx]
 			if collide(n, v, threshold_distance):
