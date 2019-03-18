@@ -93,11 +93,13 @@ class PipeRunner:
         assert self.results_folder.exists()
 
     def run(self):
-        self.params = NcdIterParams()
-        cur_params = self._populate_ncd_params(self.params)
-        return cur_params
+        # ncd_params = NcdIterParams()
+        # agg_params = AggRunParams()
+        # self._insert_ncd_params(ncd_params)
+        # self._insert_agg_params(agg_params)
+        pass
 
-    def _populate_ncd_params(self, ncd_params: NcdIterParams):
+    def _insert_ncd_params(self, ncd_params: NcdIterParams):
         """
 		Adds an entry to the NCDParams table with the current parameters.
 		"""
@@ -105,7 +107,7 @@ class PipeRunner:
         cur_params = (
             next_idx,
             0,
-            0,
+            9,
             self.num_threads,
             self.max_num_of_collisions,
             self.main_axis,
@@ -114,7 +116,13 @@ class PipeRunner:
             str(self.results_folder),
         )
         ncd_params.insert1(cur_params)
-        return cur_params
+
+    def _insert_agg_params(self, agg_params):
+        next_idx = len(agg_params)
+        cur_params = (
+            next_idx,
+
+        )
 
     def _run_ncd(self, params):
         """
@@ -127,5 +135,7 @@ class PipeRunner:
 
 if __name__ == "__main__":
     params = PipeRunner().run()
-    ic = NcdIteration()
-    ic.populate()
+    ag = AggRun()
+    ag.populate()
+    # ic = NcdIteration()
+    # ic.populate()
