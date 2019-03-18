@@ -119,11 +119,9 @@ def cut_vascular(vascular, neuron):
 	return cut_vascular
 
 def distance(n, v):
-	xn, yn, zn, rn = n
-	xv, yv, zv, rv = v
-
-	d = (xn-xv)**2 + (yn-yv)**2 + (zn-zv)**2
-	d = d ** 0.5
+	a = np.array(n[:3])
+	b = np.array(v[:3])
+	d = np.linalg.norm(a - b)
 	return d
 
 def sort_vascular(vascular):
@@ -139,6 +137,7 @@ def collide(n, v, threshold_distance):
 			return False
 		if distance(n, v) <= rsum:
 			return True
+		return False
 
 def separate_vascular(vascular, threshold):
 	small_vascular = []
