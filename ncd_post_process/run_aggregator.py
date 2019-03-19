@@ -32,9 +32,9 @@ def process_main(results, output_fname, threshold_distance, vascular):
 		location = [int(splitted[1]), int(splitted[2]), int(splitted[3])]
 		rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
 
-		parent_folder = pathlib.Path(__file__).resolve().parents[2]
-		neuron_fname = str(parent_folder / "neurons" / neuron_name)
-		vascular_fname = str(parent_folder / "vascular" / "vascular_balls.csv")
+		parent_folder = pathlib.Path(__file__).resolve().parents[1]
+		neuron_fname = str(parent_folder / "data" / "neurons" / neuron_name)
+		vascular_fname = str(parent_folder / "data" / "vascular" / "vascular_balls.csv")
 
 		aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
 
@@ -47,9 +47,9 @@ def process_main_from_mem(results: pd.DataFrame, output_fname, threshold_distanc
     location = results.loc[:, 'x':'z'].to_numpy().astype(np.int64)
     rotation = results.loc[:, 'tip':'yaw'].to_numpy().astype(np.int64)
     neuron_name = results['neuron_name'].iloc[0].replace('.obj', '_balls.csv')
-    parent_folder = pathlib.Path(__file__).resolve().parents[2]
-    neuron_fname = str(parent_folder / "neurons" / neuron_name)
-    vascular_fname = str(parent_folder / "vascular" / "vascular_balls.csv")
+    parent_folder = pathlib.Path(__file__).resolve().parents[1]
+    neuron_fname = str(parent_folder / "data" / "neurons" / neuron_name)
+    vascular_fname = str(parent_folder / "data" / "vascular" / "vascular_balls.csv")
     for loc, rot in zip(location, rotation):
         aggregate(vascular_fname, neuron_fname, loc, rot, output_fname, threshold_distance, vascular)
 
@@ -96,8 +96,8 @@ def main(argv):
 	results_per_process = 1.0 * len(ncd_results) / process_count
 	processes = []
 	last_idx = 0
-	parent_folder = pathlib.Path(__file__).resolve().parents[2]
-	vascular_fname = str(parent_folder / "vascular/vascular_balls.csv")
+	parent_folder = pathlib.Path(__file__).resolve().parents[1]
+	vascular_fname = str(parent_folder / "data" / "vascular/vascular_balls.csv")
 	vascular = get_vascular(vascular_fname)
 
 	for i in range(process_count):

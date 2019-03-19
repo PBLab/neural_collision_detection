@@ -127,12 +127,12 @@ class BranchDensity:
 
 if __name__ == "__main__":
     neuron_fname = (
-        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120410_s1c1.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120410_s3c1.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120412_s3c2.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "neurons" / "AP120416_s3c1.xml",
+        pathlib.Path(__file__).resolve().parents[1] / "data" / "neurons" / "AP120410_s1c1.xml",
+        pathlib.Path(__file__).resolve().parents[1] / "data" / "neurons" / "AP120410_s3c1.xml",
+        pathlib.Path(__file__).resolve().parents[1] / "data" / "neurons" / "AP120412_s3c2.xml",
+        pathlib.Path(__file__).resolve().parents[1] / "data" / "neurons" / "AP120416_s3c1.xml",
     )
-    py3dn_folder = pathlib.Path(__file__).resolve().parents[2] / "py3DN"
+    py3dn_folder = pathlib.Path(__file__).resolve().parents[1] / "py3DN"
     for nf in neuron_fname[:1]:
         branch_den = BranchDensity(nf, py3dn_folder)
         counts = branch_den.main()

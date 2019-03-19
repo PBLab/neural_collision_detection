@@ -71,7 +71,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(3, 3)
     fig.suptitle('Collisions as a function of topological distance from soma\nAxon collisions in blue, dendritic in orange')
     for neuron, axx in zip(neuron_names, ax.flatten()):
-        graph_fname = pathlib.Path(__file__).resolve().parents[2] / 'results' / '2019_2_10' / f'graph_{neuron}_with_collisions.gml'
+        graph_fname = pathlib.Path(__file__).resolve().parents[1] / 'results' / '2019_2_10' / f'graph_{neuron}_with_collisions.gml'
         graph = graph_file_to_graph_object(graph_fname)
         collisions_as_func_of_topo_dist(graph, neuron, axx)
     fig.tight_layout()
