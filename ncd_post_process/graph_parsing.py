@@ -10,13 +10,11 @@ import numpy as np
 import networkx as nx
 import attr
 import pandas as pd
-from attr.validators import instance_of
+from attr.validators import instance_of, in_
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
-import attr
-from attr.validators import instance_of, in_
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py3DN"))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "py3DN"))
 import mytools
 
 # Define basic types of points and trees - can't use an
@@ -33,12 +31,17 @@ class CollisionNode:
     be allocated to a graph, and slots helps since we create thousands
     of it.
 
+    :param int ord_number: Ordinal number of the point.
     :param np.ndarray loc: a 3-sized vector with coordinates.
     :param int ppid: parent point ID.
-    :param PointType ptype:
-    :param int collisions: Number of collisions on the node.
+    :param str ptype: Type of point, one of POINTTYPE's values
+    :param float radius: Radius of point
+    :param str tree_type: Type of tree, one of TREETYPE's values
+    :param np.uint64 collisions: Number of collisions on the node.
+    :param np.float64 dist_to_body: topological distance to the cell body
     """
 
+    ord_number = attr.ib(validator=instance_of(int))
     loc = attr.ib(validator=instance_of(tuple))
     ppid = attr.ib(validator=instance_of(int))
     ptype = attr.ib(validator=in_(POINTTYPE))
@@ -55,18 +58,21 @@ class CollisionNode:
         Usually used when deserializing data.
         """
         all_matches_regex = re.compile(
-            r"loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), dist_to_body=(.+?)\)"
+            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), dist_to_body=(.+?)\)"
         )
         matches = all_matches_regex.findall(string)[0]
-        loc = eval(matches[0], {"__builtins__": tuple}, {})  # ¯\_(ツ)_/¯
-        ppid = int(matches[1])
-        ptype = matches[2]
-        radius = float(matches[3])
-        tree_type = matches[4]
-        collisions = np.uint64(matches[5])
-        dist_to_body = np.float64(matches[6])
+        ord_number = int(matches[0])
+        loc = eval(matches[1], {"__builtins__": tuple}, {})  # ¯\_(ツ)_/¯
+        ppid = int(matches[2])
+        ptype = matches[3]
+        radius = float(matches[4])
+        tree_type = matches[5]
+        collisions = np.uint64(matches[6])
+        dist_to_body = np.float64(matches[7])
 
-        return cls(loc, ppid, ptype, radius, tree_type, collisions, dist_to_body)
+        return cls(
+            ord_number, loc, ppid, ptype, radius, tree_type, collisions, dist_to_body
+        )
 
 
 @attr.s
@@ -82,6 +88,7 @@ class NeuronToGraph:
     :paramm int thresh: Distance in um that signifies a valid collision from the aggregator functions
     :param bool with_collisions: Whether to look for collisions that were calculated for that specific neuron or not
     :paramm bool with_plot: Whether to plot the neuron or not
+    :param bool with_serialize: Whether to write the graph to the disk
     """
 
     neuron_name = attr.ib(validator=instance_of(str))
@@ -89,8 +96,11 @@ class NeuronToGraph:
     thresh = attr.ib(validator=instance_of(int))
     with_collisions = attr.ib(default=True, validator=instance_of(bool))
     with_plot = attr.ib(default=False, validator=instance_of(bool))
+    with_serialize = attr.ib(default=True, validator=instance_of(bool))
     parent_folder = attr.ib(init=False)
     num_of_nodes = attr.ib(init=False)
+    collisions = attr.ib(init=False)
+    neuronal_points = attr.ib(init=False)
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
 
@@ -101,24 +111,24 @@ class NeuronToGraph:
         with the actual collision value inside the node's attributes. Else,
         The nodes will contain 0 as their collision value.
         """
-        self.parent_folder = pathlib.Path(__file__).resolve().parents[2]
+        self.parent_folder = pathlib.Path(__file__).resolve().parents[1]
         neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
         with load_neuron(self.parent_folder / "py3DN", neuron_fname) as neuron:
             self.num_of_nodes = self._get_num_of_nodes(neuron)
-            neuronal_points = self._extract_neuronal_coords(self.num_of_nodes, neuron)
+            self.neuronal_points = self._extract_neuronal_coords(
+                self.num_of_nodes, neuron
+            )
             if self.with_collisions:
-                collisions = np.load(str(collisions_fname))
-                min_dist, closest_cell = self._connect_collisions_to_neural_points(
-                    self.num_of_nodes,
-                    collisions["neuron_coords"],
-                    neuron,
-                    neuronal_points,
+                self.collisions = np.load(str(collisions_fname))["neuron_coords"]
+                closest_cell = self._connect_collisions_to_neural_points(
+                    self.collisions, self.neuronal_points
                 )
                 neural_collisions = self._coerce_collisions_to_neural_coords(
-                    neuronal_points, closest_cell
+                    self.neuronal_points, closest_cell
                 )
+
             else:
                 neural_collisions = np.zeros(self.num_of_nodes, dtype=np.uint64)
             self.collision_df = self._make_collision_df(
@@ -130,7 +140,8 @@ class NeuronToGraph:
             self._show_graph(
                 self.graph, title=self.neuron_name, fname=image_graph_fname
             )
-        self._serialize_graph(self.graph, graph_fname)
+        if self.with_serialize:
+            self._serialize_graph(self.graph, graph_fname)
 
     def _get_num_of_nodes(self, neuron) -> int:
         """ Count number of nodes on an XML neuron """
@@ -150,7 +161,7 @@ class NeuronToGraph:
         Finds all needed files for the scripts to run
         """
         parent_folder = parent_folder.resolve()
-        neuron_fname = parent_folder / "neurons" / (neuron_name + ".xml")
+        neuron_fname = parent_folder / "data" / "neurons" / (neuron_name + ".xml")
         full_res_folder = parent_folder / "results" / result_foldername
         collisions_fname = (
             full_res_folder
@@ -174,11 +185,7 @@ class NeuronToGraph:
         return neuronal_points
 
     def _connect_collisions_to_neural_points(
-        self,
-        num_of_nodes: int,
-        collisions: np.ndarray,
-        neuron,
-        neuronal_points: np.ndarray,
+        self, collisions: np.ndarray, neuronal_points: np.ndarray
     ):
         """
         For each point in the neural tree, find the closest collision
@@ -186,7 +193,6 @@ class NeuronToGraph:
         are attributed to the same neural point.
 
         Returns:
-        num_of_nodes: Number of raw points on that neuron.
         neural_points: Array of coordinates that make up the neuron.
         closest_cell_idx: Index to the closest point on the cell contour to the given collision.
         """
@@ -204,23 +210,16 @@ class NeuronToGraph:
         # with mp.Pool() as pool:
         #     closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
 
-        min_and_argmin = [
+        closest_cell_idx = [
             self._dist_and_min(coll, npoint)
             for coll, npoint in zip(split_colls, neuronal_points_iterable)
         ]
-        minimal_dist = []
-        closest_cell_idx = []
-        for item in min_and_argmin:
-            minimal_dist.append(item[0])
-            closest_cell_idx.append(item[1])
-
-        minimal_dist = np.cocatenate(minimal_dist)
         closest_cell_idx = np.concatenate(closest_cell_idx)
-        return minimal_dist, closest_cell_idx
+        return closest_cell_idx
 
     def _dist_and_min(self, colls, neuronal_points):
         dist = scipy.spatial.distance.cdist(colls, neuronal_points)
-        return dist.min(axis=1), dist.argmin(axis=1)
+        return dist.argmin(axis=1)
 
     def _coerce_collisions_to_neural_coords(
         self, neuronal_points, closest_cell_idx: np.ndarray
@@ -265,6 +264,7 @@ class NeuronToGraph:
         for tree in neuron.tree:
             print(f"Parsing tree {tree.type}")
             parent_node = CollisionNode(
+                ord_number=0,
                 loc=tuple(tree.rawpoint[0].P),
                 ppid=-1,
                 ptype="standard",
@@ -274,6 +274,7 @@ class NeuronToGraph:
                 dist_to_body=np.float64(0),
             )
             new_node = CollisionNode(
+                ord_number=1,
                 loc=tuple(tree.rawpoint[1].P),
                 ppid=0,
                 ptype=tree.rawpoint[1].ptype,
@@ -285,7 +286,7 @@ class NeuronToGraph:
             weight = np.float64(0)
             df.iloc[pair_number] = [parent_node, new_node, weight]
             pair_number += 1
-            for point in tree.rawpoint[2:]:
+            for idx, point in enumerate(tree.rawpoint[2:], 2):
                 prev_node = new_node
                 del new_node
                 weight = (
@@ -295,6 +296,7 @@ class NeuronToGraph:
                     + prev_node.dist_to_body
                 )
                 new_node = CollisionNode(
+                    ord_number=idx,
                     loc=tuple(point.P),
                     ppid=point.ppid,
                     ptype=point.ptype,
