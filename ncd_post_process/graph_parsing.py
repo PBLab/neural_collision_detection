@@ -110,7 +110,7 @@ class NeuronToGraph:
             neuronal_points = self._extract_neuronal_coords(self.num_of_nodes, neuron)
             if self.with_collisions:
                 collisions = np.load(str(collisions_fname))
-                closest_cell = self._connect_collisions_to_neural_points(
+                min_dist, closest_cell = self._connect_collisions_to_neural_points(
                     self.num_of_nodes,
                     collisions["neuron_coords"],
                     neuron,
@@ -204,16 +204,23 @@ class NeuronToGraph:
         # with mp.Pool() as pool:
         #     closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
 
-        closest_cell_idx = [
+        min_and_argmin = [
             self._dist_and_min(coll, npoint)
             for coll, npoint in zip(split_colls, neuronal_points_iterable)
         ]
+        minimal_dist = []
+        closest_cell_idx = []
+        for item in min_and_argmin:
+            minimal_dist.append(item[0])
+            closest_cell_idx.append(item[1])
 
+        minimal_dist = np.cocatenate(minimal_dist)
         closest_cell_idx = np.concatenate(closest_cell_idx)
-        return closest_cell_idx
+        return minimal_dist, closest_cell_idx
 
     def _dist_and_min(self, colls, neuronal_points):
-        return scipy.spatial.distance.cdist(colls, neuronal_points).argmin(axis=1)
+        dist = scipy.spatial.distance.cdist(colls, neuronal_points)
+        return dist.min(axis=1), dist.argmin(axis=1)
 
     def _coerce_collisions_to_neural_coords(
         self, neuronal_points, closest_cell_idx: np.ndarray
