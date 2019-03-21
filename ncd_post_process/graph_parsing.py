@@ -89,6 +89,8 @@ class NeuronToGraph:
     :param bool with_collisions: Whether to look for collisions that were calculated for that specific neuron or not
     :paramm bool with_plot: Whether to plot the neuron or not
     :param bool with_serialize: Whether to write the graph to the disk
+    :param bool inner_multiprocess: Whether to use multiprocessing in internal methods.
+        Defaults to false since usually this whole module is called in a MP context.
     """
 
     neuron_name = attr.ib(validator=instance_of(str))
@@ -97,14 +99,16 @@ class NeuronToGraph:
     with_collisions = attr.ib(default=True, validator=instance_of(bool))
     with_plot = attr.ib(default=False, validator=instance_of(bool))
     with_serialize = attr.ib(default=True, validator=instance_of(bool))
+    inner_multiprocess = attr.ib(default=False, validator=instance_of(bool))
     parent_folder = attr.ib(init=False)
     num_of_nodes = attr.ib(init=False)
     collisions = attr.ib(init=False)
     neuronal_points = attr.ib(init=False)
+    closest_cell = attr.ib(init=False)
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
 
-    def main(self):
+    def run(self):
         """
         Main entrance to pipeline.
         If collisions exists it uses their real value and creates a graph
@@ -122,11 +126,11 @@ class NeuronToGraph:
             )
             if self.with_collisions:
                 self.collisions = np.load(str(collisions_fname))["neuron_coords"]
-                closest_cell = connect_collisions_to_neural_points(
-                    self.collisions, self.neuronal_points
+                self.closest_cell = connect_collisions_to_neural_points(
+                    self.collisions, self.neuronal_points, self.inner_multiprocess
                 )
                 neural_collisions = self._coerce_collisions_to_neural_coords(
-                    self.neuronal_points, closest_cell
+                    self.neuronal_points, self.closest_cell
                 )
 
             else:
@@ -370,7 +374,7 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
         with_collisions=with_collisions,
         with_plot=with_plot,
     )
-    graphed_neuron.main()
+    graphed_neuron.run()
     return graphed_neuron
 
 

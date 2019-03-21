@@ -3,20 +3,16 @@ import multiprocessing
 import itertools
 from typing import List, Tuple
 from collections import namedtuple
+import copy
 
 import numpy as np
 import attr
 from attr.validators import instance_of
 import scipy.interpolate
-import scipy.distance
+import scipy.spatial
 import networkx as nx
 
-from graph_parsing import (
-    CollisionNode,
-    NeuronToGraph,
-    connect_collisions_to_neural_points,
-    dist_and_min,
-)
+from graph_parsing import CollisionNode, NeuronToGraph
 
 NodesAndCoords = namedtuple("NodesAndCoords", ["as_nodes", "as_coords"])
 
@@ -37,15 +33,16 @@ class CollisionsAndDistance:
 
     def run(self):
         self.nodes_array = self._create_nodes_array()
-        closest_node_per_coll = connect_collisions_to_neural_points(
-            self.nrn_to_graph.collisions,
-            self.nrn_to_graph.neuronal_points,
-            multiprocessed=True,
-        )
+        print("Finding coords...")
         nodes_coords = self._find_coords_for_closest_nodes_per_coll(
-            closest_node_per_coll
+            self.nrn_to_graph.closest_cell
         )
+        print("Calc topo distance...")
         dists = self._calc_topo_dist_per_coll(nodes_coords)
+        self.coll_topo_dist = self._match_dist_to_node(
+            dists, nodes_coords
+        )
+        self.coll_euclid_dist = self._calc_collision_euc_distance_to_origin()
 
     def _create_nodes_array(self):
         """ Transform the graph into an ordered 1D vector """
@@ -53,7 +50,7 @@ class CollisionsAndDistance:
             (self.nrn_to_graph.neuronal_points.shape[0]), dtype="object"
         )
         for node in self.nrn_to_graph.graph.nodes():
-            nodes_array[node.ord_number] = node.copy()
+            nodes_array[node.ord_number] = copy.deepcopy(node)
         return nodes_array
 
     def _find_coords_for_closest_nodes_per_coll(
@@ -105,7 +102,7 @@ class CollisionsAndDistance:
 
     def _calc_topo_dist_per_coll(
         self, nodes_coords
-    ) -> List[Tuple[np.ndarray, np.float64]]:
+    ) -> List[Tuple[np.uint32, np.float64]]:
         """
         Calculates the exact topological distance of each
         collision from the cell's soma.
@@ -120,6 +117,22 @@ class CollisionsAndDistance:
             point_idx_and_dist = pool.starmap(FindClosestPoint(), args)
         return point_idx_and_dist
 
+    def _match_dist_to_node(
+        self,
+        dists: List[Tuple[np.uint32, np.float64]],
+        nodes_coords: List[NodesAndCoords],
+    ) -> np.ndarray:
+        """
+        Iterates over the computed distances and all the nodes and
+        matches a distance with its corresponding node.
+        """
+        assert len(dists) == len(nodes_coords)
+        topo_dist_of_each_coll = np.zeros(len(dists))
+        for idx, (dist, node_coord) in enumerate(nodes_coords):
+            cur_node = node_coord.as_nodes[dist[0]]
+            topo_dist_of_each_coll[idx] = dist[1] + cur_node.dist_to_body
+
+        return topo_dist_of_each_coll
 
 @attr.s
 class FindClosestPoint:
@@ -146,16 +159,17 @@ class FindClosestPoint:
         self.points = points
         return self.run()
 
-    def run(self) -> Tuple[np.ndarray, np.float64]:
+    def run(self) -> Tuple[np.uint32, np.float64]:
         """ Run pipeline """
         interped_points = self._interp_3d()
+
         closest_interped_point_to_coll = self._find_closest_interped_point(
             interped_points
         )
         distance_to_point_on_neuron, point_idx = self._find_next_closest_point(
             interped_points[closest_interped_point_to_coll]
         )
-        return self.points[point_idx], distance_to_point_on_neuron
+        return point_idx, distance_to_point_on_neuron
 
     def _interp_3d(self, num_points=100):
         """
@@ -177,13 +191,23 @@ class FindClosestPoint:
         dist = scipy.spatial.distance.cdist(np.atleast_2d(self.coll), interped_points.T)
         return dist.argmin(axis=1)
 
-    def _find_next_closest_point(self, coord):
+    def _find_next_closest_point(self, coord) -> Tuple[np.float64, np.uint32]:
         """
         Connects the interpolated closest point to the closest point
         on the neuronal graph that exists. This helps us calculate the
         distance from the collision point to the soma. """
         dist = scipy.spatial.distance.cdist(np.atleast_2d(coord), self.points)
         return dist.min(axis=1), dist.argmin(axis=1)
+
+    def _calc_collision_euc_distance_to_origin(self):
+        """
+        Creates a 1D vector with the distance of each collision
+        from the cell center, i.e. the origin
+        """
+        origin = np.array([0., 0., 0.,])
+        dists = scipy.spatial.distance.cdist(origin, self.nrn_to_graph.collisions)
+        return dists
+
 
 
 if __name__ == "__main__":
@@ -193,16 +217,16 @@ if __name__ == "__main__":
     with_collisions = True
     with_plot = False
     with_serialize = False
-
-    coll = np.array([100, -23.5, 45])
-    points = np.array(
-        [
-            [89, -41.0, 30],
-            [91, -36.1, 32],
-            [94, -22.0, 41],
-            [97, -17.6, 48.9],
-            [101, -11.3, 49.9],
-        ]
+    inner_multiprocess = True
+    ntg = NeuronToGraph(
+        neuron_name,
+        result_folder,
+        thresh,
+        with_collisions,
+        with_plot,
+        with_serialize,
+        inner_multiprocess,
     )
-    closest = FindClosestPoint(coll, points)
-    retpoints = closest.run()
+    ntg.run()
+    coll_dist = CollisionsAndDistance(ntg)
+    coll_dist.run()
