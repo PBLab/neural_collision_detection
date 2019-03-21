@@ -134,6 +134,16 @@ class CollisionsAndDistance:
 
         return topo_dist_of_each_coll
 
+    def _calc_collision_euc_distance_to_origin(self):
+        """
+        Creates a 1D vector with the distance of each collision
+        from the cell center, i.e. the origin
+        """
+        origin = np.array([0., 0., 0.,])
+        dists = scipy.spatial.distance.cdist(origin, self.nrn_to_graph.collisions)
+        return dists
+
+
 @attr.s
 class FindClosestPoint:
     """
@@ -198,16 +208,6 @@ class FindClosestPoint:
         distance from the collision point to the soma. """
         dist = scipy.spatial.distance.cdist(np.atleast_2d(coord), self.points)
         return dist.min(axis=1), dist.argmin(axis=1)
-
-    def _calc_collision_euc_distance_to_origin(self):
-        """
-        Creates a 1D vector with the distance of each collision
-        from the cell center, i.e. the origin
-        """
-        origin = np.array([0., 0., 0.,])
-        dists = scipy.spatial.distance.cdist(origin, self.nrn_to_graph.collisions)
-        return dists
-
 
 
 if __name__ == "__main__":
