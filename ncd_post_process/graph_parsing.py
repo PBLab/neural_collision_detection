@@ -302,7 +302,8 @@ class NeuronToGraph:
 
 
 def connect_collisions_to_neural_points(
-    collisions: np.ndarray, neuronal_points: np.ndarray
+    collisions: np.ndarray, neuronal_points: np.ndarray,
+    multiprocessed=False
 ):
     """
     For each point in the neural tree, find the closest collision
@@ -322,15 +323,15 @@ def connect_collisions_to_neural_points(
     split_colls = np.split(collisions, splits)
     neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
 
-    # Three lines commented below due to parallelization of entire script
-    # zipped_args = zip(split_colls, neuronal_points_iterable)
-    # with mp.Pool() as pool:
-    #     closest_cell_idx = pool.starmap(self._dist_and_min, zipped_args)
-
-    closest_cell_idx = [
-        dist_and_min(coll, npoint)
-        for coll, npoint in zip(split_colls, neuronal_points_iterable)
-    ]
+    if multiprocessed:
+        zipped_args = zip(split_colls, neuronal_points_iterable)
+        with mp.Pool() as pool:
+            closest_cell_idx = pool.starmap(dist_and_min, zipped_args)
+    else:
+        closest_cell_idx = [
+            dist_and_min(coll, npoint)
+            for coll, npoint in zip(split_colls, neuronal_points_iterable)
+        ]
     closest_cell_idx = np.concatenate(closest_cell_idx)
     return closest_cell_idx
 
