@@ -253,7 +253,7 @@ class NeuronToGraph:
             weight = np.float64(0)
             df.iloc[pair_number] = [parent_node, new_node, weight]
             pair_number += 1
-            for idx, point in enumerate(tree.rawpoint[2:], 2):
+            for point in tree.rawpoint[2:]:
                 prev_node = new_node
                 del new_node
                 weight = (
@@ -263,7 +263,7 @@ class NeuronToGraph:
                     + prev_node.dist_to_body
                 )
                 new_node = CollisionNode(
-                    ord_number=idx,
+                    ord_number=pair_number + 1,
                     loc=tuple(point.P),
                     ppid=point.ppid,
                     ptype=point.ptype,

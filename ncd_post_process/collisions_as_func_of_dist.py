@@ -4,6 +4,8 @@ import itertools
 from typing import List, Tuple
 from collections import namedtuple
 import copy
+import pickle
+import functools
 
 import numpy as np
 import attr
@@ -32,6 +34,7 @@ class CollisionsAndDistance:
     coll_euclid_dist = attr.ib(init=False)
 
     def run(self):
+        """ Main pipeline """
         self.nodes_array = self._create_nodes_array()
         print("Finding coords...")
         nodes_coords = self._find_coords_for_closest_nodes_per_coll(
@@ -45,13 +48,18 @@ class CollisionsAndDistance:
         self.coll_euclid_dist = self._calc_collision_euc_distance_to_origin()
 
     def _create_nodes_array(self):
-        """ Transform the graph into an ordered 1D vector """
-        nodes_array = np.zeros(
-            (self.nrn_to_graph.neuronal_points.shape[0]), dtype="object"
-        )
+        """
+        Transform the graph into an ordered 1D vector.
+        This is done using Python lists and not array since the
+        exact number of nodes is hard to define for each graph,
+        which means that we need its sizr to be dynamic.
+         """
+        nodes_array = []
         for node in self.nrn_to_graph.graph.nodes():
-            nodes_array[node.ord_number] = copy.deepcopy(node)
-        return nodes_array
+            nodes_array.append(copy.deepcopy(node))
+
+        nodes_array.sort(key=lambda elem: elem.ord_number)
+        return np.array(nodes_array, dtype='object')
 
     def _find_coords_for_closest_nodes_per_coll(
         self, closest_node_per_coll
@@ -59,46 +67,16 @@ class CollisionsAndDistance:
         """
         Return list populated with small numpy arrays which contain the coordinates
         of the points on top of the neuron closest to a given collision and the nodes
-        that "own" these coordinates
+        that "own" these coordinates.
+
+        Uses an external method even though it's pretty closely coupled
+        to this object due to caching (AKA performance) reasons.
         """
         all_nodes_with_colls = self.nodes_array[closest_node_per_coll]
-        zipped_args = ((node, self.nrn_to_graph.graph) for node in all_nodes_with_colls)
+        zipped_args = itertools.zip_longest(all_nodes_with_colls, [], fillvalue=self.nrn_to_graph.graph)
         with multiprocessing.Pool() as pool:
-            nodes_coords = pool.starmap(self._find_four_closest, zipped_args)
+            nodes_coords = pool.starmap(find_four_closest, zipped_args)
         return nodes_coords
-
-    def _find_four_closest(
-        self, node: CollisionNode, graph: nx.Graph
-    ) -> NodesAndCoords:
-        """
-        For a given node index in the graph, find the four closest nodes topologically
-        to that node. Generate a coordinate array from these four nodes + the
-        original one.
-        """
-        neighboring_nodes: List[CollisionNode] = []
-        neighboring_nodes = self._get_neighbors(neighboring_nodes, node, graph)
-        neighboring_nodes.insert(2, node)
-        coord_array = np.zeros((5, 3))
-        for idx, node in enumerate(neighboring_nodes):
-            coord_array[idx, :] = np.array(node.loc)
-
-        return NodesAndCoords(neighboring_nodes, coord_array)
-
-    def _get_neighbors(self, found_neighbors, node, graph) -> List[CollisionNode]:
-        """
-        Traverses the given graph both ways to find the four closets neighbors
-        to the origin node.
-        """
-        while len(found_neighbors) < 4:
-            if node:
-                prev, next_ = graph[node]  # retrieves neighbors
-                if prev:
-                    found_neighbors.append(prev)
-                if next_:
-                    found_neighbors.append(next_)
-                self._get_neighbors(found_neighbors, prev, graph)
-                self._get_neighbors(found_neighbors, next_, graph)
-        return found_neighbors
 
     def _calc_topo_dist_per_coll(
         self, nodes_coords
@@ -115,6 +93,10 @@ class CollisionsAndDistance:
         )
         with multiprocessing.Pool() as pool:
             point_idx_and_dist = pool.starmap(FindClosestPoint(), args)
+        # point_idx_and_dist = []
+        # for coll, coord in args:
+        #     point_idx_and_dist.append(FindClosestPoint()(coll, coord))
+
         return point_idx_and_dist
 
     def _match_dist_to_node(
@@ -129,7 +111,8 @@ class CollisionsAndDistance:
         assert len(dists) == len(nodes_coords)
         topo_dist_of_each_coll = np.zeros(len(dists))
         for idx, (dist, node_coord) in enumerate(nodes_coords):
-            cur_node = node_coord.as_nodes[dist[0]]
+            print(dist, node_coord)
+            cur_node = node_coord[dist[0]]
             topo_dist_of_each_coll[idx] = dist[1] + cur_node.dist_to_body
 
         return topo_dist_of_each_coll
@@ -139,7 +122,7 @@ class CollisionsAndDistance:
         Creates a 1D vector with the distance of each collision
         from the cell center, i.e. the origin
         """
-        origin = np.array([0., 0., 0.,])
+        origin = np.atleast_2d(np.array([0., 0., 0.,]))
         dists = scipy.spatial.distance.cdist(origin, self.nrn_to_graph.collisions)
         return dists
 
@@ -155,7 +138,7 @@ class FindClosestPoint:
 
     Inputs:
     :param np.ndarray coll: Collision point (3D)
-    :param np.ndarray points: Three relevant points on the neuron, 3x3 array.
+    :param np.ndarray points: At least 5 relevant points on the neuron, 5x3 array.
 
     Returns (from run):
     :param Tuple[np.ndarray, float]: Coordinate of closest point and the distance to that point
@@ -188,17 +171,22 @@ class FindClosestPoint:
         find the closest one to another point.
         Returns an (num_points x 3) array of coordinates.
         """
-        tck, u = scipy.interpolate.splprep(
-            (self.points[:, 0], self.points[:, 1], self.points[:, 2]), s=2
-        )
-        u_fine = np.linspace(0, 1, num_points)
-        x_fine, y_fine, z_fine = scipy.interpolate.splev(u_fine, tck)
-        return np.array([x_fine, y_fine, z_fine])
+        try:
+            tck, _ = scipy.interpolate.splprep(
+                (self.points[:, 0], self.points[:, 1], self.points[:, 2]), s=12
+            )
+        except ValueError:  # happens when coordinates overlap
+            nans = np.full((100,), np.nan)
+            return np.array([nans, nans, nans]).transpose()
+        else:
+            u_fine = np.linspace(0, 1, num_points)
+            x_fine, y_fine, z_fine = scipy.interpolate.splev(u_fine, tck)
+            return np.array([x_fine, y_fine, z_fine]).transpose()
 
     def _find_closest_interped_point(self, interped_points):
         """ Finds the closest point from the interpolated
         points to the collision """
-        dist = scipy.spatial.distance.cdist(np.atleast_2d(self.coll), interped_points.T)
+        dist = scipy.spatial.distance.cdist(np.atleast_2d(self.coll), interped_points)
         return dist.argmin(axis=1)
 
     def _find_next_closest_point(self, coord) -> Tuple[np.float64, np.uint32]:
@@ -210,23 +198,67 @@ class FindClosestPoint:
         return dist.min(axis=1), dist.argmin(axis=1)
 
 
+@functools.lru_cache(maxsize=4096)
+def find_four_closest(
+    node: CollisionNode, graph: nx.Graph
+) -> NodesAndCoords:
+    """
+    For a given node index in the graph, find the four closest nodes topologically
+    to that node. Generate a coordinate array from these four nodes + the
+    original one.
+    This is an external method due to it being cached, and caching "self" is
+    not possible.
+    """
+    neighboring_nodes: List[CollisionNode] = [node]
+    neighboring_nodes = _get_neighbors(neighboring_nodes, graph)
+    coord_array = np.zeros((len(neighboring_nodes), 3))
+    for idx, node in enumerate(neighboring_nodes):
+        cur_arr = np.array(node.loc)
+        coord_array[idx, :] = cur_arr
+    return NodesAndCoords(neighboring_nodes, coord_array)
+
+def _get_neighbors(found_neighbors, graph) -> List[CollisionNode]:
+    """
+    Traverses the given graph both ways to find the four closets neighbors
+    to the origin node.
+    This is an external method due to it being cached, and caching "self" is
+    not possible. It should only be called from the invokation of
+    find_four_closest, and not independently.
+    """
+    for node in found_neighbors:
+        for neigh in graph.neighbors(node):
+            if (neigh not in found_neighbors) and (len(found_neighbors) < 5):
+                found_neighbors.append(neigh)
+    if len(found_neighbors) < 5:
+        found_neighbors = _get_neighbors(found_neighbors, graph)
+    return found_neighbors
+
+
 if __name__ == "__main__":
-    neuron_name = "AP120410_s1c1"
-    result_folder = "2019_2_10"
-    thresh = 0
-    with_collisions = True
-    with_plot = False
-    with_serialize = False
-    inner_multiprocess = True
-    ntg = NeuronToGraph(
-        neuron_name,
-        result_folder,
-        thresh,
-        with_collisions,
-        with_plot,
-        with_serialize,
-        inner_multiprocess,
-    )
-    ntg.run()
-    coll_dist = CollisionsAndDistance(ntg)
-    coll_dist.run()
+    pickled_fname = '/data/neural_collision_detection/results/2019_2_10/pickled_ap120410_s1c1_graph_obj.p'
+    try:
+        with open(pickled_fname, 'rb') as f:
+            ntg = pickle.load(f)
+    except FileNotFoundError:
+        neuron_name = "AP120410_s1c1"
+        result_folder = "2019_2_10"
+        thresh = 0
+        with_collisions = True
+        with_plot = False
+        with_serialize = False
+        inner_multiprocess = True
+        ntg = NeuronToGraph(
+            neuron_name,
+            result_folder,
+            thresh,
+            with_collisions,
+            with_plot,
+            with_serialize,
+            inner_multiprocess,
+        )
+        ntg.run()
+        with open(pickled_fname, 'wb') as f:
+            pickle.dump(ntg, f)
+    finally:
+        coll_dist = CollisionsAndDistance(ntg)
+        coll_dist.run()
