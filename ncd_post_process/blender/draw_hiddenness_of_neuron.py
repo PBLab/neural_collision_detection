@@ -1,7 +1,7 @@
 """
 This scripts attemps to qualititavely assess the "hiddenness" or complexity
 of a given neuron. It should be run under Blender after "from mytools import *"
-and in Vertex Paint mode. It has large similaritiess to "draw_collisions_on_tree"
+and in Vertex Paint mode. It has large similarities to "draw_collisions_on_tree"
 and to some of the functions supplied by py3DN.
 """
 import sys

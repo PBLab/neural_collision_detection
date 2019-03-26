@@ -107,13 +107,15 @@ class CollisionsAndDistance:
         """
         Iterates over the computed distances and all the nodes and
         matches a distance with its corresponding node.
+        Returns an array, the length of which is the number of
+        parsed collisions, and the values are the topological
+        distance of that collision to the cell body.
         """
         assert len(dists) == len(nodes_coords)
         topo_dist_of_each_coll = np.zeros(len(dists))
-        for idx, (dist, node_coord) in enumerate(nodes_coords):
-            print(dist, node_coord)
-            cur_node = node_coord[dist[0]]
-            topo_dist_of_each_coll[idx] = dist[1] + cur_node.dist_to_body
+        for idx, (dist, node_coord) in enumerate(zip(dists, nodes_coords)):
+            cur_node = node_coord.as_nodes[dist[0][0]]
+            topo_dist_of_each_coll[idx] = dist[1][0] + cur_node.dist_to_body
 
         return topo_dist_of_each_coll
 
@@ -198,7 +200,7 @@ class FindClosestPoint:
         return dist.min(axis=1), dist.argmin(axis=1)
 
 
-@functools.lru_cache(maxsize=4096)
+@functools.lru_cache(maxsize=None)
 def find_four_closest(
     node: CollisionNode, graph: nx.Graph
 ) -> NodesAndCoords:
