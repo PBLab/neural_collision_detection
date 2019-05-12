@@ -7,7 +7,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-from aggregator import aggregate, get_vascular
+from ncd_post_process.aggregator import aggregate, get_vascular
 
 
 def get_ncd_results(ncd_output_file, max_collisions):

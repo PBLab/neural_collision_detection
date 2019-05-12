@@ -8,10 +8,15 @@ from ncd_post_process import run_aggregator
 
 
 # To start the image, run `sudo docker-compose up -d`
-# from this fodlder. Then find the host IP address
+# from this folder. Then find the host IP address
 # of the docker container run `ip a` and look for the
 # docker0 port - the IP that is listed there is the
-# one to enter as host in the Helium API.
+# one to enter as host in the Helium API. 
+
+# Run Helium with:
+# docker run -d --rm -p 3000:3000 --name helium mattbdean/helium:1.0.0
+# Then connect with the username and password written below
+# to the following IP: 172.17.0.1
 SCHEMA_NAME = "dj_ncd"
 
 dj.config["database.host"] = "127.0.0.1"
