@@ -26,7 +26,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='collisions morphology fcl',  # Optional
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
+    packages=find_packages(exclude=['contrib', 'docs', 'src/tests']),  # Required
     install_requires=['matplotlib > 3',
                       'numpy > 1.16',
                       'scipy > 1.2',

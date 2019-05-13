@@ -2,5 +2,5 @@
 NCD API
 -----------
 
-.. toctre::
+.. toctree::
     ncd_post_process.analyze_graph
