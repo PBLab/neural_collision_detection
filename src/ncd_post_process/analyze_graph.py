@@ -9,10 +9,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from graph_parsing import CollisionNode
+from src.ncd_post_process.graph_parsing import CollisionNode
 
 
-def graph_file_to_graph_object(fname: pathlib.Path):
+def graph_file_to_graph_object(fname: pathlib.Path) -> nx.Graph:
     """
     Deserializes a saved graph into a graph object
     """

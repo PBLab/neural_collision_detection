@@ -45,3 +45,9 @@ Ongoing Work
      a function of the topological distance of that point.
   #. 3D scatter plot for each point on the neuronal tree showing its assigned
      number of collisions, :math:`U_n(r)` and :math:`U_v(r)`.
+
+  The code for these figures will be located in ``ncd_post_process/create_neuron_id``.
+
+* The code in ``ncd_post_process/create_neuron_id/compare_collisions_with_density.py`` creates a scatter plot of the number of collisions as a function of the density of a given neuronal point. No visible trend is detected for the first neuron that I conducted the analysis on.
+
+

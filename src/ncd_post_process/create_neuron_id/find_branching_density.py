@@ -11,8 +11,8 @@ import scipy
 import attr
 from attr.validators import instance_of
 
-from graph_parsing import load_neuron
-from blender.general_methods import name_neuron_trees
+from src.ncd_post_process.graph_parsing import load_neuron
+from src.ncd_post_process.blender.general_methods import name_neuron_trees
 
 
 @attr.s
@@ -127,10 +127,10 @@ class BranchDensity:
 
 if __name__ == "__main__":
     neuron_fname = (
-        pathlib.Path(__file__).resolve().parents[2] / "data" / "neurons" / "AP120410_s1c1.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "data" / "neurons" / "AP120410_s3c1.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "data" / "neurons" / "AP120412_s3c2.xml",
-        pathlib.Path(__file__).resolve().parents[2] / "data" / "neurons" / "AP120416_s3c1.xml",
+        pathlib.Path(__file__).resolve().parents[3] / "data" / "neurons" / "AP120410_s3c1.xml",
+        pathlib.Path(__file__).resolve().parents[3] / "data" / "neurons" / "AP120412_s3c2.xml",
+        pathlib.Path(__file__).resolve().parents[3] / "data" / "neurons" / "AP120410_s1c1.xml",
+        pathlib.Path(__file__).resolve().parents[3] / "data" / "neurons" / "AP120416_s3c1.xml",
     )
     py3dn_folder = pathlib.Path(__file__).resolve().parents[2] / "py3DN"
     for nf in neuron_fname[:1]:
