@@ -24,8 +24,10 @@ class CollisionsAndDistance:
     """
     Correlates and plots the number of collisions
     between the neuron and the surrounding vasculature
-    as a function of their distance - either topological
-    or Euclidean
+    as a function of their distance - both topological
+    and Euclidean.
+
+    :param NeuronToGraph nrn_to_graph: A graph instance
     """
 
     nrn_to_graph = attr.ib(validator=instance_of(NeuronToGraph))

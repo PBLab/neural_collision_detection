@@ -14,7 +14,7 @@ from attr.validators import instance_of, in_
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py3DN"))
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "py3DN"))
 import mytools
 
 # Define basic types of points and trees - can't use an
