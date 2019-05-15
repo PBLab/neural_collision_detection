@@ -53,19 +53,26 @@ class BranchDensityAndCollisions:
         :return:
         """
         fig, ax = plt.subplots()
-        ax.scatter(self.counts[5], self.counts['collisions'])
-        ax.set_xlabel('U(r=5)')
+        r = 10
+        axon_idx = self.counts.index.get_level_values('tree') == 'Axon'
+        axon_df = self.counts.loc[axon_idx]
+        dend_df = self.counts.loc[~axon_idx]
+        ax.scatter(axon_df[r], axon_df['collisions'], c='C2', s=0.2, alpha=0.8, label='Axon')
+        ax.scatter(dend_df[r], dend_df['collisions'], c='C1', s=0.2, alpha=0.8, label='Dendrite')
+        ax.set_xlabel(f'U(r={r})')
         ax.set_ylabel('# of collisions')
-        ax.set_title('Collisions as a function of density for a single neuron with r=5 um')
+        ax.legend()
+        ax.set_title(f'Collisions as a function of density for a single neuron with r={r} um')
 
 if __name__ == '__main__':
-    neuron_name = pathlib.Path(__file__).resolve().parents[
-                      3] / "data" / "neurons" / "AP120410_s1c1.xml"
+    neuron_name = 'AP120410_s1c1'
+    neuron_fname = pathlib.Path(__file__).resolve().parents[
+                      3] / "data" / "neurons" / f"{neuron_name}.xml"
     py3dn_folder = pathlib.Path(__file__).resolve().parents[2] / "py3DN"
-    bdens = BranchDensity(neuron_name, py3dn_folder)
+    bdens = BranchDensity(neuron_fname, py3dn_folder)
     neuron_graph = pathlib.Path(__file__).resolve().parents[
                        3] / "results" / "2019_2_10" /\
-                       'graph_AP120410_s1c1_with_collisions.gml'
+                       f'graph_{neuron_name}_with_collisions.gml'
     graph = graph_file_to_graph_object(neuron_graph)
     bdens_coll = BranchDensityAndCollisions(bdens, graph)
     bdens_coll.main()

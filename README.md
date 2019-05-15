@@ -19,7 +19,7 @@ between the two, for all possible rotation in a specific location.
 ===============================
 The data is located in Yoav's Stromboli user, but also in PBLab's QNAP, in the folder `simulated_morph_data`.
 
-The data was originally received in `.asc` (ASCII) format. To convert it to usable
+The data was originally received in `.asc` (ASCII) format from [here]( https://academic.oup.com/cercor/article/25/12/4854/311945). To convert it to usable
 objects, we used a couple of custom-made MATLAB scripts which can be found in the 
 `convert_obj_matlab` folder.
 

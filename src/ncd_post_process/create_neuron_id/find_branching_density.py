@@ -70,6 +70,7 @@ class BranchDensity:
             .assign(x=self.neuron_coords[:, 0])
             .assign(y=self.neuron_coords[:, 1])
             .assign(z=self.neuron_coords[:, 2])
+            .assign(tree=lambda x: x['tree'].astype('category'))
             .set_index(["num", "tree", "x", "y", "z"])
         )
         return sphere_sizes, branch_counts
