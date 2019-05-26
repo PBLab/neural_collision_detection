@@ -169,9 +169,11 @@ class AggRun(dj.Computed):
         output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
         neuron = Neuron & {"neuron_id": ncd_iter_params.fetch1("neuron_id")}
         centers = CellCenters & {"centers_id": neuron.fetch1("centers_id")}
+        print(VasculatureData & {"vasc_id": centers.fetch1("vasc_id")})
         vascular_fname = (
             VasculatureData & {"vasc_id": centers.fetch1("vasc_id")}
         ).fetch1("balls_fname")
+        print()
         run_aggregator.main_from_mem(
             filtered_result, output_fname, params["threshold"], vascular_fname
         )
@@ -195,5 +197,5 @@ class CollisionsParse(dj.Computed):
 
 if __name__ == "__main__":
     NcdIteration.populate()
-    # AggRun().populate()
+    AggRun().populate()
 

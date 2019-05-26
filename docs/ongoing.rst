@@ -70,4 +70,17 @@ to be P(collision). This is calculated by dividing the number of collision by
 100k, since we currently have 10k locations per cell, and we keep the data from
 10 orientations.
 
+* Meeting with Dan @ 26.5:
+
+    1. Show the collisions on the neurons with Blender.
+    #. Re-run NCD with lower collision thresholds, i.e. only permit locations
+       and orientations that contain 20, 40, 50 collisions in total.
+    #. Yoav will calculate :math:`U(r)` for all points on the vascular tree, for
+       multiple :math:`r`s. Once he does that we want to match between each
+       collision and its closest point on the vascular tree, essentially
+       creating a mirror image of the collisions on top of the vasculature.
+    #. The 3D scatter plot mentioned above is also important in understanding
+       the relations between the points on the neuronal tree.
+
+
 

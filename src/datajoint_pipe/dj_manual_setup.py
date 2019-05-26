@@ -27,7 +27,11 @@ def drop_all():
 def populate_vasc():
     vasc = VasculatureData()
     vasc.insert1(
-        (0, "/data/neural_collision_detection/data/vascular/vascular.obj")
+        (
+            0,
+            "/data/neural_collision_detection/data/vascular/vascular.obj",
+            "/data/neural_collision_detection/data/vascular/vascular_balls.csv",
+        )
     )
 
 
@@ -132,8 +136,8 @@ def populate_ncd_params(only_one: bool = False):
     num_threads = 24
     max_coll_num = 500
     main_axis = "z"
-    pos_to_store = 'true'
-    bounds_checking = 'false'
+    pos_to_store = "true"
+    bounds_checking = "false"
     results_folder = str(pathlib.Path(__file__).resolve().parents[2] / "results")
     if only_one:
         ncd_params.insert1(

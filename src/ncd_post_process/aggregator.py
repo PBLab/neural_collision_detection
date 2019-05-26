@@ -61,7 +61,7 @@ def rotate(neuron, rotation):
 	m = mx * my * mz
 	for i in range(len(neuron)):
 		x, y, z, r = neuron[i]
-		v = np.matrix(neuron[i][x, y, z]).transpose()
+		v = np.matrix([x, y, z]).transpose()
 		rotated_v = m * v
 		x, y, z = rotated_v.transpose().tolist()[0]
 		neuron[i] = [x, y, z, r]
