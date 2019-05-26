@@ -14,13 +14,13 @@ We introduce a program named ncd (which stands for Neural Collision Detection).
 Given vascular data and neural data, the program computes the number of collisions
 between the two, for all possible rotation in a specific location.
 
-	
+
 2	Preparing the data for ncd:
 ===============================
 The data is located in Yoav's Stromboli user, but also in PBLab's QNAP, in the folder `simulated_morph_data`.
 
 The data was originally received in `.asc` (ASCII) format from [here]( https://academic.oup.com/cercor/article/25/12/4854/311945). To convert it to usable
-objects, we used a couple of custom-made MATLAB scripts which can be found in the 
+objects, we used a couple of custom-made MATLAB scripts which can be found in the
 `convert_obj_matlab` folder.
 
 First run `Neurolucida2Mat.m` on an input `.asc` file to create
@@ -88,17 +88,17 @@ Recommended params:
 4.1	Collisions computation
 
 The collision computation itself is done using an open source library called
-fcl (Flexible Collision Library). 
+fcl (Flexible Collision Library).
 
 4.2	Running time
 
 The running time is affected by several factors:
 
-- The complexity of the original meshes 
+- The complexity of the original meshes
 - The simplification factor
 - The server running ncd
 - The amount of collisions requested
-  
+
 On stromboli server, with the recommended simplification, the running is
 between 10 minutes and 15 minutes. Take into account that it may vary
 if the mentioned factors are changed.

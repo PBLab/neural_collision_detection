@@ -48,10 +48,26 @@ Ongoing Work
 
   The code for these figures will be located in ``ncd_post_process/create_neuron_id``.
 
-* The code in ``ncd_post_process/create_neuron_id/compare_collisions_with_density.py`` creates a scatter plot of the number of collisions as a function of the density of a given neuronal point (shown below). We see two population of points on the dendritic tree - the lower and upper one. We see that the more complex a neural point is, the less likely it is to encounter a blood vessel.
+* The code in ``ncd_post_process/create_neuron_id/compare_collisions_with_density.py``
+  creates a scatter plot of the number of collisions as a function of the
+  density of a given neuronal point (shown below). We sometimes see two
+  population of points on the dendritic tree - the lower and upper one. We see
+  that the more complex a neural point is, the less likely it is to encounter
+  a blood vessel.
 
 .. image:: coll_dens.png
 
-* Due to the two populations which are visible in the scatter plot, we wish to display the points of that upper cloud on a neuron, probably using Blender. We'd also like to change the scale of the y-axis, so that it would show the "probability of collision", i.e. the fraction of collisions a point experienced out of the total iteration steps it has undergone. The scale of the y-axis will be [0, 1], with 1 being a 100% chance to collide with a blood vessel in every iteration (= neuron orientation).
+* Due to the two populations which are visible in the scatter plot, we wish
+  to display the points of that upper cloud on a neuron, probably using Blender.
+  We'd also like to change the scale of the y-axis, so that it would show the
+  "probability of collision", i.e. the fraction of collisions a point experienced
+  out of the total iteration steps it has undergone. The scale of the y-axis will
+  be [0, 1], with 1 being a 100% chance to collide with a blood vessel in every
+  iteration (= neuron orientation).
+
+* In May 26 I updated the y-axis of ``ncd_post_process/create_neuron_id/compare_collisions_with_density.py``
+to be P(collision). This is calculated by dividing the number of collision by
+100k, since we currently have 10k locations per cell, and we keep the data from
+10 orientations.
 
 
