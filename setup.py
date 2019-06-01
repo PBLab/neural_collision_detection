@@ -1,6 +1,8 @@
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 from os import path
+from glob import glob
+
 
 here = path.abspath(path.dirname(__file__))
 
@@ -26,7 +28,9 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='collisions morphology fcl',  # Optional
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
+    packages=find_packages("src", exclude=['contrib', 'docs', 'src/tests']),  # Required
+    package_dir={"": "src"},
+    py_modules=[path.splitext(path.basename(p))[0] for p in glob("src/*.py")],
     install_requires=['matplotlib > 3',
                       'numpy > 1.16',
                       'scipy > 1.2',

@@ -26,3 +26,4 @@ results/
 *.pdf
 datajoint/
 *egg*
+docs/_build/*
