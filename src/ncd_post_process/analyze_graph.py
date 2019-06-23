@@ -9,15 +9,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.ncd_post_process.graph_parsing import CollisionNode
+from ncd_post_process.graph_parsing import CollisionNode
 
 
 def graph_file_to_graph_object(fname: pathlib.Path) -> nx.Graph:
     """
     Deserializes a saved graph into a graph object
     """
-    graph = nx.readwrite.gml.read_gml(str(fname), label=None, destringizer=CollisionNode.from_str)
-    return graph
+    try:
+        graph = nx.readwrite.gml.read_gml(str(fname), label=None, destringizer=CollisionNode.from_str)
+    except FileNotFoundError:
+        raise
+    else:
+        return graph
 
 
 def collisions_as_func_of_topo_dist(g: nx.Graph, neuron: str, ax=None):
@@ -72,7 +76,10 @@ if __name__ == "__main__":
     fig.suptitle('Collisions as a function of topological distance from soma\nAxon collisions in blue, dendritic in orange')
     for neuron, axx in zip(neuron_names, ax.flatten()):
         graph_fname = pathlib.Path(__file__).resolve().parents[2] / 'results' / '2019_2_10' / f'graph_{neuron}_with_collisions.gml'
-        graph = graph_file_to_graph_object(graph_fname)
+        try:
+            graph = graph_file_to_graph_object(graph_fname)
+        except FileNotFoundError:
+            continue
         collisions_as_func_of_topo_dist(graph, neuron, axx)
     fig.tight_layout()
     plt.show(block=False)

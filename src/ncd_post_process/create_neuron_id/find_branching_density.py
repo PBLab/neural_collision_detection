@@ -11,8 +11,8 @@ import scipy
 import attr
 from attr.validators import instance_of
 
-from src.ncd_post_process.graph_parsing import load_neuron
-from src.ncd_post_process.blender.general_methods import name_neuron_trees
+from ncd_post_process.graph_parsing import load_neuron
+from ncd_post_process.blender.general_methods import name_neuron_trees
 
 
 @attr.s
