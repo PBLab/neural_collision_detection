@@ -81,6 +81,6 @@ to be P(collision). This is calculated by dividing the number of collision by
        creating a mirror image of the collisions on top of the vasculature.
     #. The 3D scatter plot mentioned above is also important in understanding
        the relations between the points on the neuronal tree.
-
+    #. Add to the scatter plots the distribution of the points on each axis.
 
 

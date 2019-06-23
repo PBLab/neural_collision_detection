@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
     fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser.npz"
-    downsample_factor = 1_000
+    downsample_factor = 1000
     collisions = np.load(fname)["translated"][::downsample_factor, :]
     hist, edges = gen_bins(collisions, l)
     nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(collisions, hist, edges)

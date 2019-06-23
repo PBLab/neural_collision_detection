@@ -15,7 +15,7 @@ import attr
 from attr.validators import instance_of
 
 sys.path.append(
-    "/mnt/qnap/simulated_morph_data/neural_collision_detection/scripts/blender"
+    "/mnt/qnap/neural_collision_detection/src/ncd_post_process/blender"
 )
 from overlay_collisions import gen_bins, filter_relevant_bins
 import general_methods
@@ -176,11 +176,11 @@ class CollisionDrawer:
 if __name__ == "__main__":
     general_methods = reload(general_methods)
     fname = pathlib.Path(
-        r"/mnt/qnap/simulated_morph_data/results/2019_2_10/normalized_agg_results_AP120410_s1c1_thresh_0.npz"
+        r"/mnt/qnap/neural_collision_detection/results/2019_2_10/normalized_agg_results_AP120410_s1c1_thresh_0.npz"
     )
     downsample_factor = 1000
     binsize = (5, 5, 5)
-    colls_fname = "/home/hagaihargil/Downloads/colls.npy"
+    colls_fname = "/home/hagai/Downloads/colls.npy"
     coll_drawer = CollisionDrawer(
         fname=fname,
         downsample=downsample_factor,

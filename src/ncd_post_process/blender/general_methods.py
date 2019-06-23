@@ -55,10 +55,10 @@ def name_neuron_trees(inp_neuron=None):
             real_tree_names.append(treename)
             continue
         if "Axon" == treename:
-            new_name = f"Axon.00{idx_axon}"
+            new_name = "Axon.00{}".format(idx_axon)
             idx_axon += 1
         elif "Dendrite" == treename:
-            new_name = f"Dendrite.00{idx_dendrite}"
+            new_name = "Dendrite.00{}".format(idx_dendrite)
             idx_dendrite += 1
         real_tree_names.append(new_name)
     return real_tree_names
@@ -73,7 +73,7 @@ def generate_color_codes(data):
     normed_data = (data / data.max()).ravel()
     colorcodes[:, 0] = normed_data
     colorcodes[:, 2] = 1 - normed_data
-    print(f"Normed data mean {normed_data.mean()}")
+    print("Normed data mean {}".format(normed_data.mean()))
     return colorcodes
 
 

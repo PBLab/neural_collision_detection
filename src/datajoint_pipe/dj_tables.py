@@ -15,6 +15,7 @@ from ncd_post_process import run_aggregator
 
 # Run Helium with:
 # docker run -d --rm -p 3000:3000 --name helium mattbdean/helium:1.0.0
+# Open Firefox and browse to http://localhost:3000/login
 # Then connect with the username and password written below
 # to the following IP: 172.17.0.1
 SCHEMA_NAME = "dj_ncd"
@@ -120,6 +121,7 @@ class NcdIteration(dj.Computed):
 class AggRunParams(dj.Lookup):
     definition = """
     agg_param_id: smallint unsigned
+    -> NcdIteration
     ---
     max_collisions: smallint unsigned
     threshold: tinyint unsigned
@@ -129,7 +131,6 @@ class AggRunParams(dj.Lookup):
 @schema
 class AggRun(dj.Computed):
     definition = """
-    -> NcdIteration
     -> AggRunParams
     ---
     result_fname: varchar(1000)
@@ -165,15 +166,20 @@ class AggRun(dj.Computed):
             "ncd_param_id": ncd_iter.fetch1("ncd_param_id")
         }
         neuron_name = ncd_iter_params.fetch1("neuron_id")
-        filtered_result = ncd_res[ncd_res.loc[:, "coll_num"] < params["max_collisions"]]
+        filtered_result = ncd_res.loc[ncd_res.loc[:, "coll_num"] <= params["max_collisions"], :]
         output_fname = f'agg_{neuron_name}_thresh_{params["threshold"]}.csv'
+        if filtered_result.empty:
+            pathlib.Path(output_fname).touch()
+            key["result_fname"] = output_fname
+            self.insert1(key)
+            return
+
         neuron = Neuron & {"neuron_id": ncd_iter_params.fetch1("neuron_id")}
         centers = CellCenters & {"centers_id": neuron.fetch1("centers_id")}
-        print(VasculatureData & {"vasc_id": centers.fetch1("vasc_id")})
         vascular_fname = (
             VasculatureData & {"vasc_id": centers.fetch1("vasc_id")}
         ).fetch1("balls_fname")
-        print()
+
         run_aggregator.main_from_mem(
             filtered_result, output_fname, params["threshold"], vascular_fname
         )
@@ -195,7 +201,9 @@ class CollisionsParse(dj.Computed):
 # class GraphNeuron(dj.Computed):
 #     definition = """
 
+
 if __name__ == "__main__":
     NcdIteration.populate()
     AggRun().populate()
+
 

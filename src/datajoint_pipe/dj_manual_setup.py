@@ -6,6 +6,7 @@ we delete some table it should be run again.
 import importlib
 import pathlib
 import itertools
+import datetime
 
 from dj_tables import *
 
@@ -121,7 +122,7 @@ def populate_neurons():
 
 def populate_agg_params(only_one: bool = False):
     agg_params = AggRunParams()
-    collisions = (50, 100, 200, 300, 500)
+    collisions = (0, 10, 20, 50, 100, 200)
     threshold = range(10)
     for idx, (coll, thresh) in enumerate(itertools.product(collisions, threshold)):
         agg_params.insert1((idx, coll, thresh))
@@ -134,25 +135,30 @@ def populate_ncd_params(only_one: bool = False):
     vasc_id = 0
     neuron_ids = range(14)
     num_threads = 24
-    max_coll_num = 500
+    max_coll_num = (0, 10, 20, 50, 100, 200)
     main_axis = "z"
     pos_to_store = "true"
     bounds_checking = "false"
-    results_folder = str(pathlib.Path(__file__).resolve().parents[2] / "results")
+    results_folder_base = str(pathlib.Path(__file__).resolve().parents[2] / "results" / str(datetime.datetime.now().date()) / 'id_{}')
     if only_one:
-        ncd_params.insert1(
-            (
-                0,
-                vasc_id,
-                3,
-                num_threads,
-                max_coll_num,
-                main_axis,
-                pos_to_store,
-                bounds_checking,
-                results_folder,
+        for idx, cur_max_coll_num in enumerate(max_coll_num):
+            results_folder = pathlib.Path(results_folder_base.format(idx))
+            results_folder.mkdir(parents=True, exist_ok=True)
+            results_folder = str(results_folder)
+            ncd_params.insert1(
+                (
+                    idx,
+                    vasc_id,
+                    3,
+                    num_threads,
+                    cur_max_coll_num,
+                    main_axis,
+                    pos_to_store,
+                    bounds_checking,
+                    results_folder,
+                )
             )
-        )
+
         return
 
     for idx, neuron in enumerate(neuron_ids):
@@ -166,7 +172,7 @@ def populate_ncd_params(only_one: bool = False):
                 main_axis,
                 pos_to_store,
                 bounds_checking,
-                results_folder,
+                results_folder.format(idx),
             )
         )
 
@@ -179,5 +185,5 @@ if __name__ == "__main__":
     populate_vasc()
     populate_cell_centers()
     populate_neurons()
-    populate_agg_params(True)
+    populate_agg_params(False)
     populate_ncd_params(True)
