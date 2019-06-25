@@ -1,3 +1,16 @@
+"""
+This script, when run under Blender, shows the distribution
+of collision on a given neuron.
+
+This is done by first rendering the neuron in Blender using
+standard py3DN procedure, and then running this code
+as a script, whilst giving it the proper inputs - i.e.
+the correct neuron name and its collisions data.
+
+The result is shown by overlaying cubes on top of the neuron,
+the color of which is indicative of the number of collisions
+that were registered in that bin.
+"""
 import numpy as np
 import DrawingXtras
 from mytools import *
@@ -48,7 +61,7 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
 
     Based on a function from py3DN.
     """
-    norm = 1.0 / hist.max()
+    norm = 1.0 / (hist.max() * 0.5)
     for val, coll_start, coll_end in zip(hist, bin_starts, bin_ends):
         voxel_verts = [
             [*coll_start],
@@ -84,7 +97,7 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
         mat.specular_color = [0.0, 0.0, 0.0]
         mat.specular_shader = "COOKTORR"
         mat.specular_intensity = 1.0
-        mat.alpha = val * norm * 0.5
+        mat.alpha = val * norm * 2 # * 0.5
         mat.ambient = 1.0
         # mat.transparency_method = 'Z_TRANSPARENCY'
         obj.data.materials.append(mat)
@@ -98,9 +111,9 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
 if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
-    fname = r"/mnt/qnap/simulated_morph_data/results/2019_1_2/collisions_nparser.npz"
+    fname = r"/mnt/qnap/neural_collision_detection/results/2019_2_10/normalized_agg_results_AP130312_s1c1_thresh_0.npz"
     downsample_factor = 1000
-    collisions = np.load(fname)["translated"][::downsample_factor, :]
+    collisions = np.load(fname)["neuron_coords"][::downsample_factor, :]
     hist, edges = gen_bins(collisions, l)
     nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(collisions, hist, edges)
     create_verts_faces_and_draw(nonzero_hist, bin_starts, bin_ends, OPS_LAYER=4)

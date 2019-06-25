@@ -166,10 +166,10 @@ def run_single_neuron_with_jointplot():
     plot with the histograms of the two axes on its sides.
     """
     neuron_names = [
-        # "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120410_s1c1",
-        # "AP120416_s3c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120410_s1c1",
+        "AP120416_s3c1",
         "AP120419_s1c1",
         "AP120420_s1c1",
         "AP120420_s2c1",
