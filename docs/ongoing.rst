@@ -83,4 +83,19 @@ to be P(collision). This is calculated by dividing the number of collision by
        the relations between the points on the neuronal tree.
     #. Add to the scatter plots the distribution of the points on each axis.
 
+* As a preparation for the upcoming 26.6 meeting, I've created a mini-ID PDF
+figure for each neuron. The PDF contains a plot of the numbers of collision as
+a function of :math:`U(r=10)`, with the distributions of :math:`U(r)` and the # collisions
+on each side. It also contains a Blender render of the neuron with 3 axial
+projections of the neuron overlayed with the number of collisions it felt
+on each pixel. All plots were generated manually in Blender, with py3DN
+and :class:`blender/overlay_collisions.py`.
+
+* For the same meeting, I also added the method ``get_top_colls_percentile`` to
+:class:`BranchDensityAndCollisions` as a way to save to disk only the locations
+that had the highest chance to collide with blood vessels. I then followed by
+using Blender to show the collisions on top of each neuron. It seems that
+for the most part, these locations are on the dendritic tree of the neuron,
+rather than on its axon.
+
 

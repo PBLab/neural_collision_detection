@@ -14,7 +14,7 @@ import scipy.interpolate
 import scipy.spatial
 import networkx as nx
 
-from graph_parsing import CollisionNode, NeuronToGraph
+from ncd_post_process.graph_parsing import CollisionNode, NeuronToGraph
 
 NodesAndCoords = namedtuple("NodesAndCoords", ["as_nodes", "as_coords"])
 

@@ -111,9 +111,9 @@ def create_verts_faces_and_draw(hist, bin_starts, bin_ends, OPS_LAYER=4):
 if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
-    fname = r"/mnt/qnap/neural_collision_detection/results/2019_2_10/normalized_agg_results_AP130312_s1c1_thresh_0.npz"
-    downsample_factor = 1000
-    collisions = np.load(fname)["neuron_coords"][::downsample_factor, :]
+    fname = r"/mnt/qnap/neural_collision_detection/results/2019_2_10/top_10p_likely_colls_AP131105_s1c1.npy"
+    downsample_factor = 1
+    collisions = np.load(fname) # ["neuron_coords"][::downsample_factor, :]
     hist, edges = gen_bins(collisions, l)
     nonzero_hist, bin_starts, bin_ends = filter_relevant_bins(collisions, hist, edges)
     create_verts_faces_and_draw(nonzero_hist, bin_starts, bin_ends, OPS_LAYER=4)

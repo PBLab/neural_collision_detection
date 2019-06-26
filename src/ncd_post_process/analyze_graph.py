@@ -48,7 +48,7 @@ def collisions_as_func_of_topo_dist(g: nx.Graph, neuron: str, ax=None):
 
     if not ax:
         _, ax = plt.subplots()
-    ax.scatter(distance_ax, collisions_ax, s=0.3, c='C0', alpha=0.3)
+    ax.scatter(distance_ax, collisions_ax, s=0.3, c='C2', alpha=0.3)
     ax.set_title(f'{neuron}')
     ax.set_xlabel('Distance [um]')
     ax.set_ylabel('Collisions [counts]')
@@ -66,20 +66,23 @@ if __name__ == "__main__":
         "AP120420_s2c1",
         "AP120507_s3c1",
         "AP120510_s1c1",
-        # "AP120522_s3c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
-        # "AP130312_s1c1",
-        # "AP131105_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+        "AP131105_s1c1",
     ]
-    fig, ax = plt.subplots(3, 3)
-    fig.suptitle('Collisions as a function of topological distance from soma\nAxon collisions in blue, dendritic in orange')
-    for neuron, axx in zip(neuron_names, ax.flatten()):
+    # fig, ax = plt.subplots(2, 2)
+    # fig.suptitle('Collisions as a function of topological distance from soma\nAxon collisions in blue, dendritic in orange')
+    # for neuron, axx in zip(neuron_names, ax.flatten()):
+    for neuron in neuron_names:
         graph_fname = pathlib.Path(__file__).resolve().parents[2] / 'results' / '2019_2_10' / f'graph_{neuron}_with_collisions.gml'
         try:
             graph = graph_file_to_graph_object(graph_fname)
         except FileNotFoundError:
             continue
+        fig, axx = plt.subplots()
         collisions_as_func_of_topo_dist(graph, neuron, axx)
-    fig.tight_layout()
+        fig.savefig(graph_fname.with_name(f'colls_dist_{neuron}.pdf'), transparent=True, dpi=300)
+    # fig.tight_layout()
     plt.show(block=False)
