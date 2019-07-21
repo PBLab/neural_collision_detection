@@ -45,6 +45,11 @@ class OverlayCollisions:
         )
 
     @classmethod
+    def from_vasc_density(cls, fname, binsize=(5, 5, 5)):
+        """
+        Shows the vascular density of the
+        """
+    @classmethod
     def from_top_collisions(cls, fname, binsize=(5, 5, 5)):
         """
         Overlay the collisions with the top percentage

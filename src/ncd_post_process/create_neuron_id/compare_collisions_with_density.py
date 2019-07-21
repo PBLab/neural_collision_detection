@@ -28,6 +28,7 @@ class BranchDensityAndCollisions:
 
     bdens = attr.ib(validator=instance_of(BranchDensity))
     graph = attr.ib(validator=instance_of(nx.Graph))
+    r = attr.ib(default=10, validator=instance_of(int))
     counts = attr.ib(init=False)
 
     def main(self, plot=True):
@@ -75,7 +76,7 @@ class BranchDensityAndCollisions:
             self.counts.iloc[row_idx, -1] = node.collisions
             row_idx += 1
 
-    def _prepare_colls_dens_data(self, r=10):
+    def _prepare_colls_dens_data(self):
         """
         Pre-processing steps before populating the histogram of
         collisions to density.
@@ -89,8 +90,8 @@ class BranchDensityAndCollisions:
         # in that location.
         normed_axon = axon_df["collisions"] / 100_000
         normed_dend = dend_df["collisions"] / 100_000
-        dens_axon = axon_df[r]
-        dens_dend = dend_df[r]
+        dens_axon = axon_df[self.r]
+        dens_dend = dend_df[self.r]
         return normed_axon, normed_dend, dens_axon, dens_dend
 
     def plot_colls_dens_hist(self, ax=None):
@@ -100,11 +101,11 @@ class BranchDensityAndCollisions:
 
         ax.scatter(dens_axon, normed_axon, c="C2", s=0.2, alpha=0.8, label="Axon")
         ax.scatter(dens_dend, normed_dend, c="C2", s=0.2, alpha=0.8, label="Dendrite")
-        ax.set_xlabel(f"U(r={r})")
+        ax.set_xlabel(f"U(r={self.r})")
         ax.set_ylabel("P(collision)")
         ax.legend()
         ax.set_title(
-            f"Collisions as a function of density for a single neuron with r={r} um"
+            f"Collisions as a function of density for a single neuron with r={self.r} um"
         )
 
     def plot_colls_dens_jointplot(self, neuron_name=None):
@@ -163,14 +164,82 @@ class BranchDensityAndCollisions:
         return rect_scatter, rect_histx, rect_histy
 
 
+
+@attr.s
+class BranchDensityAndDist:
+    """Takes a generated BranchDensity object and a serializd neuron
+    and compares the branching density of that neuron with the
+    topological distance in each point of the neuron.
+    """
+
+    bdens = attr.ib(validator=instance_of(BranchDensity))
+    graph = attr.ib(validator=instance_of(nx.Graph))
+    r = attr.ib(default=10, validator=instance_of(int))
+    ur = attr.ib(init=False)
+    topodist_ax = attr.ib(init=False)
+    topodist_dend = attr.ib(init=False)
+    eucdist_ax = attr.ib(init=False)
+    eucdist_dend = attr.ib(init=False)
+
+    def main(self, plot=True):
+        self.ur = self._get_density_from_bdens()
+        self.topodist_ax, self.topodist_dend = self._get_topodist_from_graph()
+        self._plot_ur_topo()
+
+    def _get_density_from_bdens(self):
+        """
+        Runs the main analysis pipeline of the BranchDensity class to
+        receive a DataFrame containing the density data per radius.
+        :return pd.DataFrame:
+        """
+        counts = self.bdens.main()
+        return counts
+
+    def _get_topodist_from_graph(self):
+        """Create an array of the topological distance of each
+        point on the graph.
+        """
+        dists_ax = np.zeros(self.graph.number_of_nodes())
+        dists_dend = dists_ax.copy()
+        for idx, node in enumerate(self.graph.nodes()):
+            if 'Axon' in node.tree_type:
+                dists_ax[idx] = node.dist_to_body
+            elif 'Dend' in node.tree_type:
+                dists_dend[idx] = node.dist_to_body
+
+        return dists_ax, dists_dend
+
+    def _plot_ur_topo(self):
+        """Genereates a plot of the Branching Density U(r)
+        as a function of the topological distance of the node.
+        """
+        fig, ax = plt.subplots()
+        nonzero_ax = self.topodist_ax.nonzero()
+        nonzero_dend = self.topodist_dend.nonzero()
+        ax.scatter(self.topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax], s=0.2, c='C2', alpha=0.3)
+        ax.scatter(self.topodist_dend[nonzero_dend], self.ur[self.r].iloc[nonzero_dend], s=0.2, c='C1', alpha=0.3)
+        ax.set_xlabel('Topological distance [um]')
+        ax.set_ylabel(f'U(r={self.r})')
+        ax.set_title(f"U(r) as a function of the topological distance of the node, {self.bdens.neuron_fname.stem}")
+        ax.legend(['Axon', 'Dendrite'])
+        fig.savefig(f'results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf', transparent=True)
+
+
 def run_multiple_neurons():
     """
     Creates a 2x2 scatter plot of four collisions-to-density
     comparisons from four different neurons.
     """
-    neuron_names = ["AP120410_s3c1", "AP120412_s3c2", "AP120410_s1c1", "AP120416_s3c1"]
+    neuron_names = [
+        "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120410_s1c1",
+        # "AP120416_s3c1",
+    ]
+
     fig, axes = plt.subplots(2, 2)
     for neuron_name, ax in zip(neuron_names, axes.flatten()):
+        bdens_coll = _instantiate_bdens(neuron_name)
         bdens_coll.main(plot=False)
         bdens_coll.plot_colls_dens_hist(ax)
         ax.set_title(neuron_name)
@@ -181,10 +250,10 @@ def run_multiple_neurons():
     plt.show()
 
 
-def run_single_neuron_with_jointplot():
-    """
-    Creates a single collisions-to-density jointplot, i.e. a scatter
-    plot with the histograms of the two axes on its sides.
+def run_ur_topodist():
+    """Plots the branching density U(r) of every point on the
+    neural tree as a function of the topological distance of
+    that same point.
     """
     neuron_names = [
         "AP120410_s3c1",
@@ -203,16 +272,61 @@ def run_single_neuron_with_jointplot():
         "AP131105_s1c1",
     ]
     for neuron_name in neuron_names:
+        bdens_coll = _instantiate_bdens(neuron_name, branch_class=BranchDensityAndDist)
+        if bdens_coll:
+            bdens_coll.main()
+    plt.show()
+
+
+def run_ur_topodist_multiple_r():
+    """Plots the branching density U(r) of every point on the
+    neural tree as a function of the topological distance of
+    that same point. Does so for a single neuron over multiple
+    r's.
+    """
+    neuron_name = "AP120410_s3c1"
+    radii = range(1, 11)
+    for radius in radii:
+        bdens_coll = _instantiate_bdens(neuron_name, branch_class=BranchDensityAndDist, r=radius)
+        if bdens_coll:
+            bdens_coll.main()
+    plt.show()
+
+
+def run_single_neuron_with_jointplot():
+    """
+    Creates a single collisions-to-density jointplot, i.e. a scatter
+    plot with the histograms of the two axes on its sides.
+    """
+    neuron_names = [
+        "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120410_s1c1",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120507_s3c1",
+        # "AP120510_s1c1",
+        # "AP120522_s3c1",
+        # "AP120524_s2c1",
+        # "AP120614_s1c2",
+        # "AP130312_s1c1",
+        # "AP131105_s1c1",
+    ]
+    for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name)
         bdens_coll.main(plot=False)
         bdens_coll.plot_colls_dens_jointplot(neuron_name)
     plt.show()
 
 
-def _instantiate_bdens(neuron_name):
+def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=10):
     """
     Helper method to instantiate a BranchDensity instance,
-    as well as a BranchDensityAndCollisions instance.
+    as well as either a BranchDensityAndCollisions instance
+    or a BranchDensityAndDist instance.
+    branch_class can be either one of these classes.
     """
     neuron_fname = (
         pathlib.Path(__file__).resolve().parents[3]
@@ -232,7 +346,7 @@ def _instantiate_bdens(neuron_name):
         graph = graph_file_to_graph_object(neuron_graph)
     except FileNotFoundError:
         return
-    bdens_coll = BranchDensityAndCollisions(bdens, graph)
+    bdens_coll = branch_class(bdens, graph, r=r)
     return bdens_coll
 
 
@@ -251,7 +365,7 @@ def run_single_neuron_with_quantile():
         # "AP120524_s2c1",
         # "AP120614_s1c2",
         # "AP130312_s1c1",
-        "AP131105_s1c1",
+        "AP131105_s1c1"
     ]
     perc = 90
     for neuron_name in neuron_names:
@@ -259,7 +373,8 @@ def run_single_neuron_with_quantile():
         if not bdens_coll:
             continue
         colls = bdens_coll.get_top_colls_percentile(perc)
-        fname = (pathlib.Path(__file__).resolve().parents[3]
+        fname = (
+            pathlib.Path(__file__).resolve().parents[3]
             / "results"
             / "2019_2_10"
             / f"top_{100-perc}p_likely_colls_{neuron_name}.npy"
@@ -270,4 +385,6 @@ def run_single_neuron_with_quantile():
 if __name__ == "__main__":
     # run_multiple_neurons()
     # run_single_neuron_with_jointplot()
-    run_single_neuron_with_quantile()
+    # run_single_neuron_with_quantile()
+    # run_ur_topodist()
+    run_ur_topodist_multiple_r()

@@ -98,4 +98,15 @@ using Blender to show the collisions on top of each neuron. It seems that
 for the most part, these locations are on the dendritic tree of the neuron,
 rather than on its axon.
 
+* Yoav supplied the file ``calc_u_for_vascular.py`` which returns the :math:`U(r)`
+value for each point on the vascular tree. The script takes
+about 90 minutes to run for a single :math:`r` on Cortex. The next step is
+to pair each collision with the appropriate :math:`U(r)` value, just like
+I did for the neurons.
+
+* In ``compare_collisions_with_density.py`` I added a function `:func:run_ur_topodist()`
+which creates an instance of the class `:class:BranchDensityAndDist` which
+ultimately plots the density `:math:U(r)` as a function of the topological
+distance of a given point on the neural tree.
+
 
