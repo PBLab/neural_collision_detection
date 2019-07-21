@@ -115,10 +115,7 @@ class BranchDensityAndCollisions:
         point.
         :return:
         """
-        r = 10
-        normed_axon, normed_dend, dens_axon, dens_dend = self._prepare_colls_dens_data(
-            r=r
-        )
+        normed_axon, normed_dend, dens_axon, dens_dend = self._prepare_colls_dens_data()
         rect_scatter, rect_histx, rect_histy = self._set_fig_limits()
         fig = plt.figure(figsize=(8, 8))
         ax_scatter = fig.add_axes(rect_scatter)
@@ -146,11 +143,15 @@ class BranchDensityAndCollisions:
         ax_histx.set_xlim(ax_scatter.get_xlim())
         ax_histy.set_ylim(ax_scatter.get_ylim())
 
-        ax_scatter.set_xlabel(f"U(r={r})")
+        ax_scatter.set_xlabel(f"U(r={self.r})")
         ax_scatter.set_ylabel("P(collision)")
         ax_scatter.legend()
         fig.suptitle(
-            f"Collisions as a function of density for a single neuron {neuron_name} with r={r} um"
+            f"Collisions as a function of density for a single neuron {neuron_name} with r={self.r} um"
+        )
+        fig.savefig(
+            f"results/2019_2_10/colls_density_jointplot_r_{self.r}_{neuron_name}.pdf",
+            transparent=True,
         )
 
     def _set_fig_limits(self):
@@ -162,7 +163,6 @@ class BranchDensityAndCollisions:
         rect_histx = [left, bottom + height + spacing, width, 0.2]
         rect_histy = [left + width + spacing, bottom, 0.2, height]
         return rect_scatter, rect_histx, rect_histy
-
 
 
 @attr.s
@@ -202,9 +202,9 @@ class BranchDensityAndDist:
         dists_ax = np.zeros(self.graph.number_of_nodes())
         dists_dend = dists_ax.copy()
         for idx, node in enumerate(self.graph.nodes()):
-            if 'Axon' in node.tree_type:
+            if "Axon" in node.tree_type:
                 dists_ax[idx] = node.dist_to_body
-            elif 'Dend' in node.tree_type:
+            elif "Dend" in node.tree_type:
                 dists_dend[idx] = node.dist_to_body
 
         return dists_ax, dists_dend
@@ -216,13 +216,30 @@ class BranchDensityAndDist:
         fig, ax = plt.subplots()
         nonzero_ax = self.topodist_ax.nonzero()
         nonzero_dend = self.topodist_dend.nonzero()
-        ax.scatter(self.topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax], s=0.2, c='C2', alpha=0.3)
-        ax.scatter(self.topodist_dend[nonzero_dend], self.ur[self.r].iloc[nonzero_dend], s=0.2, c='C1', alpha=0.3)
-        ax.set_xlabel('Topological distance [um]')
-        ax.set_ylabel(f'U(r={self.r})')
-        ax.set_title(f"U(r) as a function of the topological distance of the node, {self.bdens.neuron_fname.stem}")
-        ax.legend(['Axon', 'Dendrite'])
-        fig.savefig(f'results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf', transparent=True)
+        ax.scatter(
+            self.topodist_ax[nonzero_ax],
+            self.ur[self.r].iloc[nonzero_ax],
+            s=0.2,
+            c="C2",
+            alpha=0.3,
+        )
+        ax.scatter(
+            self.topodist_dend[nonzero_dend],
+            self.ur[self.r].iloc[nonzero_dend],
+            s=0.2,
+            c="C1",
+            alpha=0.3,
+        )
+        ax.set_xlabel("Topological distance [um]")
+        ax.set_ylabel(f"U(r={self.r})")
+        ax.set_title(
+            f"U(r) as a function of the topological distance of the node, {self.bdens.neuron_fname.stem}"
+        )
+        ax.legend(["Axon", "Dendrite"])
+        fig.savefig(
+            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
+            transparent=True,
+        )
 
 
 def run_multiple_neurons():
@@ -287,7 +304,9 @@ def run_ur_topodist_multiple_r():
     neuron_name = "AP120410_s3c1"
     radii = range(1, 11)
     for radius in radii:
-        bdens_coll = _instantiate_bdens(neuron_name, branch_class=BranchDensityAndDist, r=radius)
+        bdens_coll = _instantiate_bdens(
+            neuron_name, branch_class=BranchDensityAndDist, r=radius
+        )
         if bdens_coll:
             bdens_coll.main()
     plt.show()
@@ -316,6 +335,22 @@ def run_single_neuron_with_jointplot():
     ]
     for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name)
+        bdens_coll.main(plot=False)
+        bdens_coll.plot_colls_dens_jointplot(neuron_name)
+    plt.show()
+
+
+def run_collisions_dens_jointplot_multiple_r():
+    """Creates a single collisions-to-density jointplot, i.e. a scatter
+    plot with the histograms of the two axes on its sides. It does
+    so for a single neuron with multiple U(r) radii.
+    """
+    neuron_name = "AP120410_s3c1"
+    radii = range(1, 11)
+    for radius in radii:
+        bdens_coll = _instantiate_bdens(
+            neuron_name, branch_class=BranchDensityAndCollisions, r=radius
+        )
         bdens_coll.main(plot=False)
         bdens_coll.plot_colls_dens_jointplot(neuron_name)
     plt.show()
@@ -387,4 +422,5 @@ if __name__ == "__main__":
     # run_single_neuron_with_jointplot()
     # run_single_neuron_with_quantile()
     # run_ur_topodist()
-    run_ur_topodist_multiple_r()
+    # run_ur_topodist_multiple_r()
+    run_collisions_dens_jointplot_multiple_r()
