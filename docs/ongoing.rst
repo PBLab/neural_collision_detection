@@ -107,9 +107,12 @@ I did for the neurons.
 * In ``compare_collisions_with_density.py`` I added a function `:func:run_ur_topodist()`
 which creates an instance of the class `:class:BranchDensityAndDist` which
 ultimately plots the density `:math:U(r)` as a function of the topological
-distance of a given point on the neural tree.
+distance of a given point on the neural tree. The same trendline that appears
+in the r=10 case is prominent in smaller R's as well.
 
 * In ``compare_collisions_with_density.py` I added a function `:func:run_run_collisions_dens_jointplot_multiple_r`
 which plots the collisions as a function of density jointplot for a single
-neuron with multiple R's (for U(r)).
+neuron with multiple R's (for U(r)). The "double hump" trend is visible in
+the different R's as well, suggesting that it's not an artifact of the r=10
+measurement, but a true characteristic of the distribution.
 
