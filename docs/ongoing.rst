@@ -109,4 +109,7 @@ which creates an instance of the class `:class:BranchDensityAndDist` which
 ultimately plots the density `:math:U(r)` as a function of the topological
 distance of a given point on the neural tree.
 
+* In ``compare_collisions_with_density.py` I added a function `:func:run_run_collisions_dens_jointplot_multiple_r`
+which plots the collisions as a function of density jointplot for a single
+neuron with multiple R's (for U(r)).
 
