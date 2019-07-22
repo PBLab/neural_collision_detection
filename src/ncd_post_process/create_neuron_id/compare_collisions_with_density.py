@@ -4,6 +4,7 @@ import enum
 import attr
 from attr.validators import instance_of
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx
 import numpy as np
 
@@ -11,6 +12,22 @@ from find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
 from ncd_post_process.analyze_graph import graph_file_to_graph_object
 
+neuron_names = [
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120410_s1c1",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+        "AP131105_s1c1",
+    ]
 
 class PlottingOptions(enum.Enum):
     HIST = "hist"
@@ -242,28 +259,102 @@ class BranchDensityAndDist:
         )
 
 
-def run_multiple_neurons():
+@attr.s
+class DensityCollisionsDistance:
+    """A class designed to show a 3D scatter plot, in which each
+    point on the neural tree is assigned three values - its
+    distance from the soma, the number of collisions and the density U(r) of
+    it.
     """
-    Creates a 2x2 scatter plot of four collisions-to-density
-    comparisons from four different neurons.
+    bdens = attr.ib(validator=instance_of(BranchDensity))
+    graph = attr.ib(validator=instance_of(nx.Graph))
+    r = attr.ib(default=10, validator=instance_of(int))
+    ur = attr.ib(init=False)
+    topodist_ax = attr.ib(init=False)
+    topodist_dend = attr.ib(init=False)
+    eucdist_ax = attr.ib(init=False)
+    eucdist_dend = attr.ib(init=False)
+
+    def main(self):
+        """ Main pipeline """
+        self.ur = self._get_density_from_bdens()
+        self.topodist_ax, self.topodist_dend = self._get_topodist_from_graph()
+        self._populate_ur_with_colls()
+        self._scatter()
+
+    def _get_density_from_bdens(self):
+        """Runs the main analysis pipeline of the BranchDensity class to
+        receive a DataFrame containing the density data per radius.
+        :return pd.DataFrame:
+        """
+        density = self.bdens.main()
+        return density
+
+    def _get_topodist_from_graph(self):
+        """Create an array of the topological distance of each
+        point on the graph.
+        """
+        dists_ax = np.zeros(self.graph.number_of_nodes())
+        dists_dend = dists_ax.copy()
+        for idx, node in enumerate(self.graph.nodes()):
+            if "Axon" in node.tree_type:
+                dists_ax[idx] = node.dist_to_body
+            elif "Dend" in node.tree_type:
+                dists_dend[idx] = node.dist_to_body
+
+        return dists_ax, dists_dend
+
+    def _populate_ur_with_colls(self):
+        self.ur["collisions"] = 0
+        for row_idx, node in enumerate(self.graph.nodes()):
+            self.ur.iloc[row_idx, -1] = node.collisions
+
+
+    def _scatter(self):
+        """Genereates a 3D scatter plot of the density, collision count and
+        distance of each neural point.
+        """
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        nonzero_ax = self.topodist_ax.nonzero()
+        nonzero_dend = self.topodist_dend.nonzero()
+        ax.scatter(
+            self.topodist_ax[nonzero_ax],
+            self.ur[self.r].iloc[nonzero_ax],
+            self.ur.loc[nonzero_ax, 'collisions'],
+            s=0.25,
+            c="C2",
+            alpha=0.5,
+        )
+        ax.scatter(
+            self.topodist_dend[nonzero_dend],
+            self.ur[self.r].iloc[nonzero_dend],
+            self.ur.loc[nonzero_dend, 'collisions'],
+            s=0.25,
+            c="C1",
+            alpha=0.5,
+        )
+        ax.set_xlabel("Topological distance [um]")
+        ax.set_ylabel(f"U(r={self.r})")
+        ax.set_zlabel(f"# Collisions")
+        ax.set_title(
+            f"# Collisions, U(r) as a function of topological distance, {self.bdens.neuron_fname.stem}"
+        )
+        ax.legend(["Axon", "Dendrite"])
+        fig.savefig(
+            f"results/2019_2_10/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
+            transparent=True,
+        )
+
+
+def run_ur_topodist_colls():
+    """Plots the number of collisions and U(r) as a function
+    of the topological distance of each point on the neural tree.
     """
-    neuron_names = [
-        "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120410_s1c1",
-        # "AP120416_s3c1",
-    ]
-
-    fig, axes = plt.subplots(2, 2)
-    for neuron_name, ax in zip(neuron_names, axes.flatten()):
-        bdens_coll = _instantiate_bdens(neuron_name)
-        bdens_coll.main(plot=False)
-        bdens_coll.plot_colls_dens_hist(ax)
-        ax.set_title(neuron_name)
-
-    fig.suptitle(
-        f"Collisions as a function of density for a single neuron with r={10} um"
-    )
+    for neuron_name in neuron_names:
+        bdens_coll_topodist = _instantiate_bdens(neuron_name, branch_class=DensityCollisionsDistance)
+        if bdens_coll_topodist:
+            bdens_coll_topodist.main()
     plt.show()
 
 
@@ -272,22 +363,6 @@ def run_ur_topodist():
     neural tree as a function of the topological distance of
     that same point.
     """
-    neuron_names = [
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120410_s1c1",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
-        "AP131105_s1c1",
-    ]
     for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name, branch_class=BranchDensityAndDist)
         if bdens_coll:
@@ -359,9 +434,9 @@ def run_collisions_dens_jointplot_multiple_r():
 def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=10):
     """
     Helper method to instantiate a BranchDensity instance,
-    as well as either a BranchDensityAndCollisions instance
-    or a BranchDensityAndDist instance.
-    branch_class can be either one of these classes.
+    as well as either a BranchDensityAndCollisions instance, a
+    BranchDensityAndDist instance or a DensityDistCollisions
+    instance. branch_class can be either one of these classes.
     """
     neuron_fname = (
         pathlib.Path(__file__).resolve().parents[3]
@@ -423,4 +498,5 @@ if __name__ == "__main__":
     # run_single_neuron_with_quantile()
     # run_ur_topodist()
     # run_ur_topodist_multiple_r()
-    run_collisions_dens_jointplot_multiple_r()
+    # run_collisions_dens_jointplot_multiple_r()
+    run_ur_topodist_colls()

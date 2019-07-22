@@ -25,18 +25,19 @@ def get_ncd_results(ncd_output_file, max_collisions):
 
 
 def process_main(results, output_fname, threshold_distance, vascular):
-	for res in results:
-		splitted = res.split(",")
+    for res in results:
+        splitted = res.split(",")
 
-		neuron_name = splitted[0].replace(".obj", "_balls.csv")
-		location = [int(splitted[1]), int(splitted[2]), int(splitted[3])]
-		rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
+        neuron_name = splitted[0].replace(".obj", "_balls.csv")
+        location = [int(splitted[1]), int(splitted[2]), int(splitted[3])]
+        rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
 
-		parent_folder = pathlib.Path(__file__).resolve().parents[2]
-		neuron_fname = str(parent_folder / "data" / "neurons" / neuron_name)
-		vascular_fname = str(parent_folder / "data" / "vascular" / "vascular_balls.csv")
+        parent_folder = pathlib.Path(__file__).resolve().parents[2]
+        # neuron_fname = str(parent_folder / "data" / "neurons" / neuron_name)
+        neuron_fname = str(parent_folder / "yoav" / neuron_name)
+        vascular_fname = str(parent_folder / "data" / "vascular" / "vascular_balls.csv")
 
-		aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
+        aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
 
 
 def process_main_from_mem(results: pd.DataFrame, output_fname, threshold_distance, vascular):

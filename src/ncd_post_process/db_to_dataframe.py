@@ -151,9 +151,7 @@ def save_results(data_dict, fname: pathlib.Path):
 
 
 def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
-    """
-    Wrapper script to run this module on multiple cores
-    """
+    """ Wrapper script to run this module on multiple cores """
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
     colls_translated = translate_colls(cols)
@@ -163,7 +161,7 @@ def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
 
 
 if __name__ == '__main__':
-    parent_folder = pathlib.Path(r'/data/simulated_morph_data/results/2019_2_10/')
+    parent_folder = pathlib.Path(r'/data/neural_collision_detection/results/2019_07_21/')
     all_args = [(parent_folder, file) for file in parent_folder.glob('agg_results_*_thresh_0')]
     with mp.Pool() as pool:
         pool.starmap(mp_run, all_args)

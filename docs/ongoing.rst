@@ -104,15 +104,20 @@ about 90 minutes to run for a single :math:`r` on Cortex. The next step is
 to pair each collision with the appropriate :math:`U(r)` value, just like
 I did for the neurons.
 
-* In ``compare_collisions_with_density.py`` I added a function `:func:run_ur_topodist()`
-which creates an instance of the class `:class:BranchDensityAndDist` which
-ultimately plots the density `:math:U(r)` as a function of the topological
+* In ``compare_collisions_with_density.py`` I added a function :func:`run_ur_topodist()`
+which creates an instance of the class :class:`BranchDensityAndDist` which
+ultimately plots the density :math:`U(r)` as a function of the topological
 distance of a given point on the neural tree. The same trendline that appears
 in the r=10 case is prominent in smaller R's as well.
 
-* In ``compare_collisions_with_density.py` I added a function `:func:run_run_collisions_dens_jointplot_multiple_r`
+* In ``compare_collisions_with_density.py`` I added a function
+:func:`run_collisions_dens_jointplot_multiple_r()`
 which plots the collisions as a function of density jointplot for a single
-neuron with multiple R's (for U(r)). The "double hump" trend is visible in
+neuron with multiple R's (for :math:`U(r)`). The "double hump" trend is visible in
 the different R's as well, suggesting that it's not an artifact of the r=10
 measurement, but a true characteristic of the distribution.
+
+* I installed blender at ``~/blender-2.79b-...`` to visualize large vascular
+3D models.
+
 
