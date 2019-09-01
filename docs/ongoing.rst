@@ -95,7 +95,8 @@ and :class:`blender/overlay_collisions.py`.
 :class:`BranchDensityAndCollisions` as a way to save to disk only the locations
 that had the highest chance to collide with blood vessels. I then followed by
 using Blender to show the collisions on top of each neuron. It seems that
-for the most part, these locations are on the dendritic tree of the neuron,
+for the most part, these locations are on
+ the dendritic tree of the neuron,
 rather than on its axon.
 
 * Yoav supplied the file ``calc_u_for_vascular.py`` which returns the :math:`U(r)`

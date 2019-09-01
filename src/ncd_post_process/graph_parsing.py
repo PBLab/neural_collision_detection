@@ -305,6 +305,54 @@ class NeuronToGraph:
         nx.write_gml(g, fname, repr)
 
 
+@attr.s
+class CsvNeuronToGraph:
+    """Creates a networkx graph instance from neurons in an .obj format """
+    neuron_fname = attr.ib(validator=instance_of(pathlib.Path))
+    results_folder = attr.ib(validator=instance_of(pathlib.Path))
+    thresh = attr.ib(instance_of(int))
+    neuron_coords = attr.ib(init=False)
+    parent_folder = attr.ib(init=False)
+    collisions = attr.ib(init=False)
+    neuronal_points = attr.ib(init=False)
+    closest_cell = attr.ib(init=False)
+    graph = attr.ib(init=False)
+    collisions_df = attr.ib(init=False)
+
+    def main(self):
+        """Main Pipeline"""
+        neuron_name, collisions_fname, image_graph_fname, graph_fname = self._filename_setup()
+        self.neuron_coords = self._load_neuron()
+        self.collisions = np.load(str(collisions_fname))["neuron_coords"]
+        self._connect_collisions_to_neural_coords(neuron_name)
+
+
+    def _filename_setup(self):
+        """Finds needed files for this class to run."""
+        neuron_name = self.neuron_fname.stem
+        collisions_fname = self.results_folder / f"normalized_agg_results_{neuron_name}_thresh_{self.thresh}.npz"
+        image_graph_fname = self.results_folder / f"image_graph_{neuron_name}.png"
+        graph_fname = self.results_folder / f"graph_{neuron_name}.gml"
+        return neuron_name, collisions_fname, image_graph_fname, graph_fname
+
+    def _load_neuron(self):
+        return pd.read_csv(self.neuron_fname, header=None, names=['x', 'y', 'z', 'r'])
+
+    def _connect_collisions_to_neural_coords(self, neuron_name):
+        """
+        For each point in the neural tree, find the closest collision
+        value. This doesn't yet deal with two collision locations that
+        are attributed to the same neural point.
+
+        Returns:
+        neural_points: Array of coordinates that make up the neuron.
+        closest_cell_idx: Index to the closest point on the cell contour to the given collision.
+        """
+        ntg = NeuronToGraph(neuron_name, str(self.results_folder), self.thresh)
+        closest_cell = connect_collisions_to_neural_points(self.collisions, self.neuron_coords, multiprocessed=False)
+        neural_collisions = ntg._coerce_collisions_to_neural_coords(self.neuron_coords, closest_cell)
+        collisions_df = ntg._make_collision_df(neural_collisions, )
+
 def connect_collisions_to_neural_points(
     collisions: np.ndarray, neuronal_points: np.ndarray,
     multiprocessed=False
@@ -318,6 +366,7 @@ def connect_collisions_to_neural_points(
     neural_points: Array of coordinates that make up the neuron.
     closest_cell_idx: Index to the closest point on the cell contour to the given collision.
     """
+    neuronal_points = neuronal_points.loc[:, 'x':'z']
     assert (
         collisions.shape[1] == neuronal_points.shape[1]
     )  # two 3D coordinate arrays
@@ -379,32 +428,36 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
 
 
 if __name__ == "__main__":
-    neuron_names = [
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
-        "AP131105_s1c1",
-    ]
-    result_folder = "2019_2_10"
+    neuron = pathlib.Path("yoav/artificial_neuron_balls.csv")
+    results_folder = pathlib.Path("results/2019_07_21")
     thresh = 0
-    with_collisions = True
-    with_plot = False
+    CsvNeuronToGraph(neuron, results_folder, thresh).main()
+    # neuron_names = [
+    #     "AP120410_s1c1",
+    #     "AP120410_s3c1",
+    #     "AP120412_s3c2",
+    #     "AP120416_s3c1",
+    #     "AP120419_s1c1",
+    #     "AP120420_s1c1",
+    #     "AP120420_s2c1",
+    #     "AP120507_s3c1",
+    #     "AP120510_s1c1",
+    #     "AP120522_s3c1",
+    #     "AP120524_s2c1",
+    #     "AP120614_s1c2",
+    #     "AP130312_s1c1",
+    #     "AP131105_s1c1",
+    # ]
+    # result_folder = "2019_2_10"
+    # thresh = 0
+    # with_collisions = True
+    # with_plot = False
 
-    args = [
-        (neuron_name, result_folder, thresh, with_collisions, with_plot)
-        for neuron_name in neuron_names
-    ]
-    with mp.Pool() as pool:
-        objs = pool.starmap(mp_main, args)
+    # args = [
+    #     (neuron_name, result_folder, thresh, with_collisions, with_plot)
+    #     for neuron_name in neuron_names
+    # ]
+    # with mp.Pool() as pool:
+    #     objs = pool.starmap(mp_main, args)
 
     # obj = [mp_main(*arg) for arg in args]  # single core execution
