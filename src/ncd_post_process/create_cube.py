@@ -1,6 +1,34 @@
 from __future__ import print_function
 import os, sys
 
+def create_box(x_low, x_high, y_low, y_high, z_low, z_high):
+	v = [
+			[x_low, y_low, z_low],
+			[x_high, y_low, z_low],
+			[x_high, y_high, z_low],
+			[x_low, y_high, z_low],
+			[x_low, y_low, z_high],
+			[x_high, y_low, z_high],
+			[x_high, y_high, z_high],
+			[x_low, y_high, z_high],
+		]
+
+	f = [
+			[1, 5, 6],
+			[1, 6, 2],
+			[2, 6, 7],
+			[2, 7, 3],
+			[3, 7, 8],
+			[3, 8, 4],
+			[4, 8, 5],
+			[4, 5, 1],
+			[6, 8, 7],
+			[6, 5, 8],
+			[4, 2, 3],
+			[4, 1, 2],
+		]
+	return (v, f)
+
 
 def create_box_obj(x_low, x_high, y_low, y_high, z_low, z_high, filename):
 	cube = """
@@ -48,7 +76,7 @@ def main(argv):
 
 	filename = argv[1]
 	r = float(argv[2])
-	x,y,z = [float(x) for x in argv[3].split(",")]
+	x,y,z = [float(x) for x in argv[3].split(",")][:3]
 
 	create_cube((x, y, z), r, filename)
 
