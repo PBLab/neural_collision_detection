@@ -8,27 +8,29 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 from find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
 from ncd_post_process.analyze_graph import graph_file_to_graph_object
 
 neuron_names = [
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120410_s1c1",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
-        "AP131105_s1c1",
-    ]
+    "AP120410_s3c1",
+    "AP120412_s3c2",
+    "AP120410_s1c1",
+    "AP120416_s3c1",
+    "AP120419_s1c1",
+    "AP120420_s1c1",
+    "AP120420_s2c1",
+    "AP120507_s3c1",
+    "AP120510_s1c1",
+    "AP120522_s3c1",
+    "AP120524_s2c1",
+    "AP120614_s1c2",
+    "AP130312_s1c1",
+    "AP131105_s1c1",
+]
+
 
 class PlottingOptions(enum.Enum):
     HIST = "hist"
@@ -205,6 +207,9 @@ class BranchDensityAndDist:
         nonzero_ax = self._get_nonzero_points_on_tree(self.topodist_ax)
         nonzero_dend = self._get_nonzero_points_on_tree(self.topodist_dend)
         self._plot_ur_topo(nonzero_ax, nonzero_dend)
+        avg_ax = self._running_avg(
+            topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax]
+        )
 
     def _get_density_from_bdens(self):
         """
@@ -270,6 +275,13 @@ class BranchDensityAndDist:
             transparent=True,
         )
 
+    def _running_avg(self, topodist: np.ndarray, ur: pd.Series, window=10):
+        """Calculates the running average of the density (hiddenness) of the
+        neuron as a function of the topological distance.
+        """
+        full_ur = ur.reindex(range(topodist.max())).interpolate()
+        mean = full_ur.rolling(window=window).mean()
+
 
 @attr.s
 class DensityCollisionsDistance:
@@ -278,6 +290,7 @@ class DensityCollisionsDistance:
     distance from the soma, the number of collisions and the density U(r) of
     it.
     """
+
     bdens = attr.ib(validator=instance_of(BranchDensity))
     graph = attr.ib(validator=instance_of(nx.Graph))
     r = attr.ib(default=10, validator=instance_of(int))
@@ -321,19 +334,18 @@ class DensityCollisionsDistance:
         for row_idx, node in enumerate(self.graph.nodes()):
             self.ur.iloc[row_idx, -1] = node.collisions
 
-
     def _scatter(self):
         """Genereates a 3D scatter plot of the density, collision count and
         distance of each neural point.
         """
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection="3d")
         nonzero_ax = self.topodist_ax.nonzero()
         nonzero_dend = self.topodist_dend.nonzero()
         ax.scatter(
             self.topodist_ax[nonzero_ax],
             self.ur[self.r].iloc[nonzero_ax],
-            self.ur.loc[nonzero_ax, 'collisions'],
+            self.ur.loc[nonzero_ax, "collisions"],
             s=0.25,
             c="C2",
             alpha=0.5,
@@ -341,7 +353,7 @@ class DensityCollisionsDistance:
         ax.scatter(
             self.topodist_dend[nonzero_dend],
             self.ur[self.r].iloc[nonzero_dend],
-            self.ur.loc[nonzero_dend, 'collisions'],
+            self.ur.loc[nonzero_dend, "collisions"],
             s=0.25,
             c="C1",
             alpha=0.5,
@@ -364,7 +376,9 @@ def run_ur_topodist_colls():
     of the topological distance of each point on the neural tree.
     """
     for neuron_name in neuron_names:
-        bdens_coll_topodist = _instantiate_bdens(neuron_name, branch_class=DensityCollisionsDistance)
+        bdens_coll_topodist = _instantiate_bdens(
+            neuron_name, branch_class=DensityCollisionsDistance
+        )
         if bdens_coll_topodist:
             bdens_coll_topodist.main()
     plt.show()
