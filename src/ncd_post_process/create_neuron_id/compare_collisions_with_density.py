@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx
 import numpy as np
 import pandas as pd
+import scipy.fftpack
 
 from find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
@@ -195,6 +196,7 @@ class BranchDensityAndDist:
     bdens = attr.ib(validator=instance_of(BranchDensity))
     graph = attr.ib(validator=instance_of(nx.Graph))
     r = attr.ib(default=10, validator=instance_of(int))
+    window = attr.ib(default=10, validator=instance_of(int))
     ur = attr.ib(init=False)
     topodist_ax = attr.ib(init=False)
     topodist_dend = attr.ib(init=False)
@@ -208,8 +210,10 @@ class BranchDensityAndDist:
         nonzero_dend = self._get_nonzero_points_on_tree(self.topodist_dend)
         self._plot_ur_topo(nonzero_ax, nonzero_dend)
         avg_ax = self._running_avg(
-            topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax]
+            topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax], window=self.window
         )
+        x, y = self._fft_ur(avg_ax, sample_freq=self.window)
+        self._plot_fft(x, y)
 
     def _get_density_from_bdens(self):
         """
@@ -280,8 +284,27 @@ class BranchDensityAndDist:
         neuron as a function of the topological distance.
         """
         full_ur = ur.reindex(range(topodist.max())).interpolate()
-        mean = full_ur.rolling(window=window).mean()
+        mean = full_ur.rolling(window=window).mean().dropna()
+        return mean
 
+    @staticmethod
+    def _fft_ur(data: Union[np.ndarray, pd.Series], sample_freq: float):
+        """Calculates the FFT of the given data.
+        sample_freq is the number of samples per second. """
+        n = data.shape[0]
+        half_of_n = np.int(n/2)
+        f = 1/sample_freq
+        x = np.linspace(0.0, 1.0/(2.0 * f), half_of_n)
+        fft = scipy.fftpack.fft(data)
+        positive_freqs = 2/n * np.abs(fft[:half_of_n])
+        return x, positive_freqs
+
+    def _plot_fft(self, x, y):
+        fig, ax = plt.subplots()
+        ax.plot(x, y)
+        ax.set_xlabel('Frequency [1/um]')
+        ax.set_ylabel('Power')
+        ax.set_title('FFT analysis of the density of the neuron')
 
 @attr.s
 class DensityCollisionsDistance:
