@@ -1,5 +1,6 @@
 import pathlib
 import enum
+from typing import Union
 
 import attr
 from attr.validators import instance_of
@@ -201,7 +202,9 @@ class BranchDensityAndDist:
     def main(self, plot=True):
         self.ur = self._get_density_from_bdens()
         self.topodist_ax, self.topodist_dend = self._get_topodist_from_graph()
-        self._plot_ur_topo()
+        nonzero_ax = self._get_nonzero_points_on_tree(self.topodist_ax)
+        nonzero_dend = self._get_nonzero_points_on_tree(self.topodist_dend)
+        self._plot_ur_topo(nonzero_ax, nonzero_dend)
 
     def _get_density_from_bdens(self):
         """
@@ -226,13 +229,22 @@ class BranchDensityAndDist:
 
         return dists_ax, dists_dend
 
-    def _plot_ur_topo(self):
+    def _get_nonzero_points_on_tree(self, tree: np.ndarray) -> np.ndarray:
+        """Returns all of the non-zero points on a given tree,
+        which is the axonal or dendritic tree of the neuron. Filtering
+        these zero points out is required when you wish to plot the
+        axonal and dendritic distribution of the hiddenness, for example.
+        """
+        nonzero = tree.nonzero()
+        return tree[nonzero]
+
+    def _plot_ur_topo(self, nonzero_ax: np.ndarray, nonzero_dend: np.ndarray):
         """Genereates a plot of the Branching Density U(r)
         as a function of the topological distance of the node.
+        Receives in advance the indices that mark the location of the
+        axonal and dendritic points on the trees containing the data.
         """
         fig, ax = plt.subplots()
-        nonzero_ax = self.topodist_ax.nonzero()
-        nonzero_dend = self.topodist_dend.nonzero()
         ax.scatter(
             self.topodist_ax[nonzero_ax],
             self.ur[self.r].iloc[nonzero_ax],
