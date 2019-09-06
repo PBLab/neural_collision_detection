@@ -10,6 +10,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.fftpack
+import scipy.spatial.distance
 
 from find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
@@ -209,9 +210,10 @@ class BranchDensityAndDist:
         nonzero_ax = self._get_nonzero_points_on_tree(self.topodist_ax)
         nonzero_dend = self._get_nonzero_points_on_tree(self.topodist_dend)
         self._plot_ur_topo(nonzero_ax, nonzero_dend)
-        avg_ax = self._running_avg(
-            topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax], window=self.window
+        full_ur = self._conform_ur_to_new_idx(
+            self.topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax]
         )
+        avg_ax = full_ur.rolling(window=self.window).mean().dropna()
         x, y = self._fft_ur(avg_ax, sample_freq=self.window)
         self._plot_fft(x, y)
 
@@ -244,8 +246,7 @@ class BranchDensityAndDist:
         these zero points out is required when you wish to plot the
         axonal and dendritic distribution of the hiddenness, for example.
         """
-        nonzero = tree.nonzero()
-        return tree[nonzero]
+        return tree.nonzero()
 
     def _plot_ur_topo(self, nonzero_ax: np.ndarray, nonzero_dend: np.ndarray):
         """Genereates a plot of the Branching Density U(r)
@@ -279,32 +280,61 @@ class BranchDensityAndDist:
             transparent=True,
         )
 
-    def _running_avg(self, topodist: np.ndarray, ur: pd.Series, window=10):
-        """Calculates the running average of the density (hiddenness) of the
-        neuron as a function of the topological distance.
+    def _conform_ur_to_new_idx(self, topodist: np.ndarray, ur: pd.Series, window=10):
+        """Creates a new index to U(r) based on the topological distance of each point with a higher, fixed resolution.
+        This operation preserves the current known information about the distance of each
+        point from the origin, but adds a bunch of new ones to make the grid
+        between 0 and the max existing topological distance uniform. This should allow us
+        to compute a better running average since the data is sampled uniformly.
         """
-        full_ur = ur.reindex(range(topodist.max())).interpolate()
+        topodist = self._remove_topodist_dups(topodist)
+        uniform_topodist = np.arange(topodist.max(), step=0.25)
+        dist = scipy.spatial.distance.cdist(
+            np.atleast_2d(topodist).T, np.atleast_2d(uniform_topodist).T
+        ).argmin(axis=1)
+        # The var dist contains the closest value in uniform_topodist to the old
+        # values in topodist. We'll now replace the values in the new index with
+        # the values of the old one, so that we do not change the given raw data.
+        uniform_topodist[dist] = topodist
+        ur_with_distance_as_idx = (
+            pd.DataFrame(ur.reset_index(drop=True))
+            .assign(topodist=topodist)
+            .set_index("topodist")
+            .reindex(uniform_topodist)
+        )
+        full_ur = ur_with_distance_as_idx.interpolate('cubic')
         mean = full_ur.rolling(window=window).mean().dropna()
         return mean
+
+    def _remove_topodist_dups(self, topodist: np.ndarray) -> np.ndarray:
+        """Finds duplicate values in the given floating-point array and
+        changes them by a small fraction to make all values unique."""
+        counts = pd.Series(topodist).value_counts()
+        counts = counts[counts == 2].reset_index()["index"]
+        for dupval in counts:
+            first_dup_idx = np.where(topodist == dupval)[0][0]
+            topodist[first_dup_idx] -= 0.001
+        return topodist
 
     @staticmethod
     def _fft_ur(data: Union[np.ndarray, pd.Series], sample_freq: float):
         """Calculates the FFT of the given data.
         sample_freq is the number of samples per second. """
         n = data.shape[0]
-        half_of_n = np.int(n/2)
-        f = 1/sample_freq
-        x = np.linspace(0.0, 1.0/(2.0 * f), half_of_n)
+        half_of_n = np.int(n / 2)
+        f = 1 / sample_freq
+        x = np.linspace(0.0, 1.0 / (2.0 * f), half_of_n)
         fft = scipy.fftpack.fft(data)
-        positive_freqs = 2/n * np.abs(fft[:half_of_n])
+        positive_freqs = 2 / n * np.abs(fft[:half_of_n])
         return x, positive_freqs
 
     def _plot_fft(self, x, y):
         fig, ax = plt.subplots()
         ax.plot(x, y)
-        ax.set_xlabel('Frequency [1/um]')
-        ax.set_ylabel('Power')
-        ax.set_title('FFT analysis of the density of the neuron')
+        ax.set_xlabel("Frequency [1/um]")
+        ax.set_ylabel("Power")
+        ax.set_title(f"FFT analysis of the density of neuron {self.bdens.neuron_fname.stem}")
+
 
 @attr.s
 class DensityCollisionsDistance:
