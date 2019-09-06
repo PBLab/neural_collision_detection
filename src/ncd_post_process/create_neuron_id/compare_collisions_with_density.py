@@ -39,6 +39,11 @@ class PlottingOptions(enum.Enum):
     JOINTPLOT = "joint"
 
 
+class NeuronType(enum.Enum):
+    AXON = "Axon"
+    DENDRITE = "Dendrite"
+
+
 @attr.s
 class BranchDensityAndCollisions:
     """
@@ -199,23 +204,45 @@ class BranchDensityAndDist:
     r = attr.ib(default=10, validator=instance_of(int))
     window = attr.ib(default=10, validator=instance_of(int))
     ur = attr.ib(init=False)
+    color = attr.ib(init=False)
     topodist_ax = attr.ib(init=False)
     topodist_dend = attr.ib(init=False)
     eucdist_ax = attr.ib(init=False)
     eucdist_dend = attr.ib(init=False)
 
+    def __attrs_post_init__(self):
+        self.color = {NeuronType.AXON: "C2",
+        NeuronType.DENDRITE: "C1"}
+
     def main(self, plot=True):
         self.ur = self._get_density_from_bdens()
-        self.topodist_ax, self.topodist_dend = self._get_topodist_from_graph()
-        nonzero_ax = self._get_nonzero_points_on_tree(self.topodist_ax)
-        nonzero_dend = self._get_nonzero_points_on_tree(self.topodist_dend)
-        self._plot_ur_topo(nonzero_ax, nonzero_dend)
-        full_ur = self._conform_ur_to_new_idx(
-            self.topodist_ax[nonzero_ax], self.ur[self.r].iloc[nonzero_ax]
+        fig_topodist, ax_topodist = plt.subplots()
+        fig_fft, ax_fft = plt.subplots()
+        self.topodist_axon, self.topodist_dend = self._get_topodist_from_graph()
+        self.pipeline_for_one(self.topodist_axon, ax_topodist, ax_fft, NeuronType.AXON)
+        self.pipeline_for_one(self.topodist_dend, ax_topodist, ax_fft, NeuronType.DENDRITE)
+        ax_topodist.legend(["Axon", "Dendrite"])
+        ax_fft.legend(["Axon", "Dendrite"])
+        fig_topodist.savefig(
+            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
+            transparent=True,
         )
-        avg_ax = full_ur.rolling(window=self.window).mean().dropna()
-        x, y = self._fft_ur(avg_ax, sample_freq=self.window)
-        self._plot_fft(x, y)
+        fig_fft.savefig(
+            f"results/2019_2_10/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
+            transparent=True,
+        )
+
+    def pipeline_for_one(self, topodist, ax_topodist, ax_fft, neuron_type):
+        """
+        The entirety of the processing pipeline for a single neuron type -
+        The axon or the dendrite.
+        """
+        nonzero = self._get_nonzero_points_on_tree(topodist)
+        self._plot_ur_topo(ax_topodist, topodist, nonzero, neuron_type)
+        full_ur = self._conform_ur_to_new_idx(topodist[nonzero], self.ur[self.r].iloc[nonzero])
+        avg = full_ur.rolling(window=self.window).mean().dropna()
+        x, y = self._fft_ur(avg, sample_freq=self.window)
+        self._plot_fft(x, y, ax_fft, neuron_type)
 
     def _get_density_from_bdens(self):
         """
@@ -248,36 +275,23 @@ class BranchDensityAndDist:
         """
         return tree.nonzero()
 
-    def _plot_ur_topo(self, nonzero_ax: np.ndarray, nonzero_dend: np.ndarray):
+    def _plot_ur_topo(self, ax: plt.Axes, topodist: np.ndarray, nonzero: np.ndarray, points_type: NeuronType):
         """Genereates a plot of the Branching Density U(r)
         as a function of the topological distance of the node.
         Receives in advance the indices that mark the location of the
         axonal and dendritic points on the trees containing the data.
         """
-        fig, ax = plt.subplots()
         ax.scatter(
-            self.topodist_ax[nonzero_ax],
-            self.ur[self.r].iloc[nonzero_ax],
+            topodist[nonzero],
+            self.ur[self.r].iloc[nonzero],
             s=0.2,
-            c="C2",
-            alpha=0.3,
-        )
-        ax.scatter(
-            self.topodist_dend[nonzero_dend],
-            self.ur[self.r].iloc[nonzero_dend],
-            s=0.2,
-            c="C1",
+            c=self.color[points_type],
             alpha=0.3,
         )
         ax.set_xlabel("Topological distance [um]")
         ax.set_ylabel(f"U(r={self.r})")
         ax.set_title(
             f"U(r) as a function of the topological distance of the node, {self.bdens.neuron_fname.stem}"
-        )
-        ax.legend(["Axon", "Dendrite"])
-        fig.savefig(
-            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
-            transparent=True,
         )
 
     def _conform_ur_to_new_idx(self, topodist: np.ndarray, ur: pd.Series, window=10):
@@ -310,10 +324,12 @@ class BranchDensityAndDist:
         """Finds duplicate values in the given floating-point array and
         changes them by a small fraction to make all values unique."""
         counts = pd.Series(topodist).value_counts()
-        counts = counts[counts == 2].reset_index()["index"]
+        counts = counts[counts >= 2].reset_index()["index"]
+        delta = np.arange(0.01, 0., -0.001)
         for dupval in counts:
-            first_dup_idx = np.where(topodist == dupval)[0][0]
-            topodist[first_dup_idx] -= 0.001
+            dup_indices = np.where(topodist == dupval)[0]
+            for idx, cur_delta in zip(dup_indices, delta):
+                topodist[idx] -= cur_delta
         return topodist
 
     @staticmethod
@@ -328,9 +344,8 @@ class BranchDensityAndDist:
         positive_freqs = 2 / n * np.abs(fft[:half_of_n])
         return x, positive_freqs
 
-    def _plot_fft(self, x, y):
-        fig, ax = plt.subplots()
-        ax.plot(x, y)
+    def _plot_fft(self, x, y, ax: plt.Axes, neuron_type: NeuronType):
+        ax.plot(x, y, c=self.color[neuron_type])
         ax.set_xlabel("Frequency [1/um]")
         ax.set_ylabel("Power")
         ax.set_title(f"FFT analysis of the density of neuron {self.bdens.neuron_fname.stem}")
