@@ -12,26 +12,30 @@ def create_parser():
     parser.add_argument("vertices")
     parser.add_argument("faces")
     parser.add_argument("output")
-    parser.add_argument("--expand", help="Ratio to expand neuron. For example: 1.15,1.15,1.40")
+    parser.add_argument(
+        "--expand", help="Ratio to expand neuron. For example: 1.15,1.15,1.40"
+    )
     return parser
+
 
 def main_commandline():
     parser = create_parser()
     args = parser.parse_args()
-    x_expand, y_expand, z_expand = 1,1,1
+    x_expand, y_expand, z_expand = 1, 1, 1
     if args.expand is not None:
         x_expand, y_expand, z_expand = [float(x) for x in args.expand.split(",")]
 
     output_fname = args.output
 
     tr = Triangulation(args.faces, args.vertices)
-    #tr.print_stats()
+    # tr.print_stats()
 
     creator = tr.get_obj_creator()
     creator.create_obj_file(output_fname, x_expand, y_expand, z_expand)
     print("\tDone!")
 
-def main_lib(faces, vertices, output_fname, x_expand = 1, y_expand = 1, z_expand = 1):
+
+def main_lib(faces, vertices, output_fname, x_expand=1, y_expand=1, z_expand=1):
     """ Call the CSV to OBJ converter from a different functions,
     usually the batch converter """
     tr = Triangulation(faces, vertices)

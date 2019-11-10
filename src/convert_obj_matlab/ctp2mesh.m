@@ -2,8 +2,9 @@
 %ctp2mesh - generates tirangular mesh representation of center point list where ctpList is x,y,z,r.
 load(filename)
 
-ctpList = [neuron.vectorizedStructure.AllVerts ...
-    neuron.vectorizedStructure.AllRadii];
+% For vasculature, the filename is "au" instead of "neuron"
+% ctpList = [neuron.vectorizedStructure.AllVerts ...
+%     neuron.vectorizedStructure.AllRadii];
 
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));
@@ -19,7 +20,7 @@ maxXYZ = max(ctpList(:,1:3));
 im = zeros(round(maxXYZ+maxR),'uint8');
 
 %precompute balls of differnt radii
-minR = min(ctpList(:,4));
+minR = max(min(ctpList(:,4)), 1);
 
 balls = struct('box',[],'linIdx',[]); %entry into this structure are the actual radii as they are integers.
 for iR = ceil(minR):round(maxR)

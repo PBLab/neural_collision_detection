@@ -2,6 +2,11 @@
 Ongoing Work
 ------------
 
+* I re-ran ``ctp2mesh.mat`` and ``write_mesh_to_disk.m`` to make sure that
+  vascular object we've been working with is indeed the full object that can
+  be created.
+  
+
 * The latest advancement in the collisions business is achieved in the class
   :class:`ncd_post_process.collisions_as_func_of_dist.CollisionsAndDistance`.
   This class takes an existing neuronal graph and adds information for each of
