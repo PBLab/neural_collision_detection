@@ -1,7 +1,6 @@
 import os, sys
 from helper import generate_grid
 
-
 def main(argv):
 	print ("Hello")
 
@@ -14,8 +13,8 @@ def main(argv):
 
 	WORLD_SIZE = 1000
 
-	VASCULAR_R = 4
-	VASCULAR_D = 30
+	VASCULAR_R = 2
+	VASCULAR_D = 10
 
 	res = []
 

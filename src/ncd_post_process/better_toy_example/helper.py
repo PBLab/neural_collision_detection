@@ -1,7 +1,7 @@
 #!/state/partition1/apps/python/anaconda2/bin/python
 import sys
-sys.path.append("..")
-from create_cube import *
+# sys.path.append("..")
+from ncd_post_process.create_cube import *
 import numpy as np
 
 

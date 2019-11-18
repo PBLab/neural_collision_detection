@@ -3,8 +3,8 @@
 load(filename)
 
 % For vasculature, the filename is "au" instead of "neuron"
-% ctpList = [neuron.vectorizedStructure.AllVerts ...
-%     neuron.vectorizedStructure.AllRadii];
+ctpList = [neuron.vectorizedStructure.AllVerts ...
+    neuron.vectorizedStructure.AllRadii];
 
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));
