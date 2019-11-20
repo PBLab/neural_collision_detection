@@ -18,8 +18,13 @@ relevant_columns = [
     data.loc["z distances", :].iloc[1, :],
     data.loc["Aggregated", :].iloc[1, :],
 ]
-stats = []
-for column in relevant_columns:
-    stats.append(scipy.stats.shapiro(column))
 
-print(stats)
+shapiro_result = []
+fit_result = []
+
+for column in relevant_columns:
+    shapiro_result.append(scipy.stats.shapiro(column))
+    fit_result.append(scipy.stats.norm.fit(column))
+
+print(shapiro_result)
+print(fit_result)

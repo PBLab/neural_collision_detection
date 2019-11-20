@@ -22,6 +22,8 @@ __pycache__/
 *.xml
 data/
 results/
+!results/for_article
+!results/for_article/*
 *.mp4
 *.pdf
 datajoint/
