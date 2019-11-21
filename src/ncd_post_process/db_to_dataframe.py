@@ -161,8 +161,8 @@ def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
 
 
 if __name__ == '__main__':
-    parent_folder = pathlib.Path(r'/data/neural_collision_detection/results/2019_07_21/')
-    all_args = [(parent_folder, file) for file in parent_folder.glob('agg_results_*_thresh_0')]
+    parent_folder = pathlib.Path(r'/data/neural_collision_detection/results/for_article/fig1')
+    all_args = [(parent_folder, file) for file in parent_folder.glob('*agg_thresh_0.csv')]
     with mp.Pool() as pool:
         pool.starmap(mp_run, all_args)
 
