@@ -54,7 +54,7 @@ class CollisionsAndDistance:
         Transform the graph into an ordered 1D vector.
         This is done using Python lists and not array since the
         exact number of nodes is hard to define for each graph,
-        which means that we need its sizr to be dynamic.
+        which means that we need its size to be dynamic.
          """
         nodes_array = []
         for node in self.nrn_to_graph.graph.nodes():

@@ -7,7 +7,7 @@ Ongoing Work
   a neuron's density is increased at some topological distance d, at that
   d the number of collisions will also increase.
 
-* I also made many corrections to the manuscript that Yoav "started".
+* I also made many corrections to the manuscript that Yoav started.
   I labeled the versions before major changes.
 
 * Discussion items for next meeting:
@@ -48,6 +48,7 @@ Ongoing Work
   that the interpolation step described above is useless - it's overfitting
   the collision location. We will currently stay with the original implementation of
   the number of collisions as a function of distance which is located in
+  ``collisions_vs_dist_naive.py``.
 
 .. image:: work.jpg
 
