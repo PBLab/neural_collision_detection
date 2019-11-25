@@ -2,6 +2,13 @@
 Ongoing Work
 ------------
 
+* I created the base for figure 2 in the article from code in
+  ``collisions_vs_dist_naive.py``. It's a class which runs on existing
+  graphs generated in ``analyze_graphs.py``, and finds and plots the
+  density of the collisions as a function of the topological distance.
+  This class now correctly calculates the "neural density" and normalizes
+  the collision counts by them.
+
 * Pablo wants me to check the "neural density". This metric checks how much
   "neuron" exists at at a certain distance from the soma. We expect that if
   a neuron's density is increased at some topological distance d, at that
