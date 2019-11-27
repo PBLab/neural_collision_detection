@@ -1,13 +1,20 @@
 ------------
 Ongoing Work
 ------------
+* I made changes to ``collisions_vs_dist_naive.py``, and it now can create
+  the hexbin plots of all neurons one after the other, i.e. not jointplots.
+  This is for the second part of figure 2.
+
+* I decided to discard one neuron, "AP131105_s1c1", due to a very low collision
+  number which hinders its statistics and visualization.
 
 * I created the base for figure 2 in the article from code in
   ``collisions_vs_dist_naive.py``. It's a class which runs on existing
   graphs generated in ``analyze_graphs.py``, and finds and plots the
   density of the collisions as a function of the topological distance.
   This class now correctly calculates the "neural density" and normalizes
-  the collision counts by them.
+  the collision counts by them. For the two large plots I used neurons
+  "AP130312_s1c1" (layer 2/3) and "AP120412_s3c2" (layer 5).
 
 * Pablo wants me to check the "neural density". This metric checks how much
   "neuron" exists at at a certain distance from the soma. We expect that if

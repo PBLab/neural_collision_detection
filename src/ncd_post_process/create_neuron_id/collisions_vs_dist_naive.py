@@ -45,6 +45,7 @@ class CollisionsDistNaive:
     num_of_nodes = attr.ib(init=False)
     parsed_axon = attr.ib(init=False)
     parsed_dend = attr.ib(init=False)
+    labels_and_colors = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.num_of_nodes = self.graph.number_of_nodes()
@@ -54,6 +55,8 @@ class CollisionsDistNaive:
         dist_dend = dist_ax.copy()
         self.parsed_axon = pd.DataFrame({"coll": coll_ax, "dist": dist_ax})
         self.parsed_dend = pd.DataFrame({"coll": coll_dend, "dist": dist_dend})
+        self.labels_and_colors = {"axon": ("C2", "Axonal", "Greens"), "dend": ("C1", "Dendritic", "Oranges")}
+
 
     @classmethod
     def from_graph(cls, fname: pathlib.Path, neuron: str):
@@ -108,20 +111,26 @@ class CollisionsDistNaive:
         normed = norm_colls(bincounts, dist_int, data["coll"].to_numpy())
         return normed
 
-    def plot_all(self):
-        """Small wrapper for plotting with all configs."""
+    def plot_all_jointplots(self):
+        """Small wrapper for plotting the full jointplot of
+        all cells and both axons and dendrites."""
         for data, neurite in zip(
             (self.parsed_axon, self.parsed_dend), ("axon", "dend")
         ):
             self._plot_jointplot(data, neurite, with_norm=False)
             self._plot_jointplot(data, neurite, with_norm=True)
 
+    def plot_all_hexbins(self):
+        """Small wrapper for plotting the only the hexbin
+        all cells and both axons and dendrites."""
+        for data, neurite in zip((self.parsed_axon, self.parsed_dend), ("axon", "dend")):
+            self._plot_hexbin(data, neurite, with_norm=True)
+
     def _plot_jointplot(self, data, neurite, with_norm=False):
         """Creates a jointplot with hexagons which show the probability of collision
         as a function of the topological distance from the soma.
         """
-        labels_and_colors = {"axon": ("C2", "Axonal"), "dend": ("C1", "Dendritic")}
-        new_ycol_name = f"{labels_and_colors[neurite][1]} chance for collision"
+        new_ycol_name = f"{self.labels_and_colors[neurite][1]} chance for collision"
         data = data.copy().rename(
             {
                 "dist": "Length of branch [um]",
@@ -143,82 +152,42 @@ class CollisionsDistNaive:
             data=data,
             kind="hex",
             height=8,
-            color=labels_and_colors[neurite][0],
+            color=self.labels_and_colors[neurite][0],
         )
         plt.subplots_adjust(left=0.11)
         ax.savefig(
             fname, transparent=True, dpi=300,
         )
 
+    def _plot_hexbin(self, data, neurite, with_norm=False):
+        """Plots a hexbin plot of the data."""
+        new_ycol_name = f"{self.labels_and_colors[neurite][1]} chance for collision"
+        data = data.copy().rename(
+            {
+                "dist": "Length of branch [um]",
+                "coll": new_ycol_name,
+                "coll_normed": f"{new_ycol_name} (normalized)",
+            },
+            axis=1,
+        )
+        if with_norm:
+            y_col = new_ycol_name + " (normalized)"
+            normed = "normed"
+        else:
+            y_col = new_ycol_name
+            normed = "not_normed"
 
-@attr.s
-class AggregateDistributions:
-    """Sum up all of the neuron's collision density into two groups -
-    layer 2/3 and the rest - and show the distributions.
-    """
+        x = data["Length of branch [um]"]
+        y = data[y_col]
+        ymin = 0
+        ymax = max(y.max() * 1.1, y.mean() * 4)
+        extent = (x.min(), x.max(), ymin, ymax)
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.hexbin(x, y, gridsize=30, cmap=self.labels_and_colors[neurite][2], mincnt=1, extent=extent)
+        ax.axis('off')
 
-    l23_neurons = attr.ib(validator=instance_of(list))
-    rest_of_neurons = attr.ib(validator=instance_of(list))
-    colors = attr.ib(init=False)
-
-    def run_all_cells(self):
-        """Main class method."""
-        l23_ax_lines, l23_dend_lines, rest_ax_lines, rest_dend_lines = [], [], [], []
-        for idx, neuron in enumerate(self.l23_neurons):
-            print(neuron)
-            lines = self.run_on_single_cell(neuron, idx, is_23=True)
-            if lines:
-                l23_ax_lines.append(lines[0])
-                l23_dend_lines.append(lines[1])
-
-        for idx, neuron in enumerate(self.rest_of_neurons):
-            print(neuron)
-            lines = self.run_on_single_cell(neuron, idx, is_23=False)
-            if lines:
-                rest_ax_lines.append(lines[0])
-                rest_dend_lines.append(lines[1])
-
-        fig, axes = plt.subplots(4, 1, sharex=True)
-        for ax, lines in zip(
-            axes, (l23_ax_lines, rest_ax_lines, l23_dend_lines, rest_dend_lines)
-        ):
-            self._create_figure(ax, lines)
-
-        return axes
-
-    def run_on_single_cell(self, name, idx, is_23):
-        """Short pipeline to process single cell graphs."""
-        try:
-            coll_dist = CollisionsDistNaive.from_graph(name_to_graph_fname(name), name)
-        except FileNotFoundError:
-            return
-        coll_dist.run()
-        line_ax = self._gen_line2d(coll_dist, "axon", idx, is_23)
-        line_dend = self._gen_line2d(coll_dist, "dend", idx, is_23)
-        return (line_ax, line_dend)
-
-    def _gen_line2d(self, coll_dist, neurite, idx, is_23):
-        data = getattr(coll_dist, "parsed_" + neurite)
-        x_data = np.linspace(0, 1000, len(data))
-        y_data = data["coll_normed"] - data["coll_normed"].min()
-        y_data /= data["coll_normed"].max()
-        linewidth = 2
-        linestyle = "-" if is_23 else "--"
-        color = "C2" if neurite == "axon" else "C1"
-        return plt.Line2D(x_data, y_data, linewidth, linestyle, color)
-
-    def _create_figure(self, ax, lines):
-        """Adds a mpl.Line2D to the given axes, and changes their appearance."""
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        ax.get_xaxis().tick_bottom()
-        ax.get_yaxis().tick_left()
-        ax.set_xlabel("Length of branch [AU]")
-        ax.set_yticks([])
-        ax.set_xticks([])
-        ax.set_ylim((0, 1))
-        [ax.add_line(line) for line in lines]
+        fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_only_hexbin_{normed}_{neurite}.png"
+        fig.savefig(fname, transparent=True, dpi=300)
 
 
 @numba.jit(nopython=True, parallel=True)
@@ -257,18 +226,19 @@ if __name__ == "__main__":
         "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    rest_of_neurons = neuron_names.copy()
-    l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
-    l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
+    # rest_of_neurons = neuron_names.copy()
+    # l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
+    # l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
 
-    # for neuron in neuron_names:
-    #     graph_fname = name_to_graph_fname(neuron)
-    #     try:
-    #         coll_dist = CollisionsDistNaive.from_graph(graph_fname, neuron)
-    #     except FileNotFoundError:
-    #         continue
-    #     coll_dist.run()
-    #     coll_dist.plot_all()
-    agg = AggregateDistributions(l23_neurons, rest_of_neurons)
-    ax = agg.run_all_cells()
+    for neuron in neuron_names:
+        graph_fname = name_to_graph_fname(neuron)
+        try:
+            coll_dist = CollisionsDistNaive.from_graph(graph_fname, neuron)
+        except FileNotFoundError:
+            continue
+        coll_dist.run()
+    #     coll_dist.plot_all_jointplots()
+        coll_dist.plot_all_hexbins()
+    # agg = AggregateDistributions(l23_neurons, rest_of_neurons)
+    # ax = agg.run_all_cells()
     plt.show(block=False)
