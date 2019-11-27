@@ -29,3 +29,4 @@ results/
 datajoint/
 *egg*
 docs/_build/*
+**/.ipynb_checkpoints/

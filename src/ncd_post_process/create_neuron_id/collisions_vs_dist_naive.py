@@ -24,6 +24,9 @@ class CollisionsDistNaive:
     interpolate the neural coordinates, it uses the raw output from the
     Neurolucida files as its input.
 
+    To use it, run the "run" method to first create the necessary data structures.
+    The "plot_all()" method can show the data and write it to disk.
+
     Parameters
     ----------
     graph : nx.Graph
@@ -53,7 +56,7 @@ class CollisionsDistNaive:
         self.parsed_dend = pd.DataFrame({"coll": coll_dend, "dist": dist_dend})
 
     @classmethod
-    def from_graph(cls, fname: pathlib.Path):
+    def from_graph(cls, fname: pathlib.Path, neuron: str):
         """Instantiate from an existing graph file by deserializing it."""
         try:
             graph = nx.readwrite.gml.read_gml(
@@ -62,15 +65,13 @@ class CollisionsDistNaive:
         except FileNotFoundError:
             raise
         else:
-            return cls(graph)
+            return cls(graph, neuron)
 
     def run(self):
         """Run analysis pipeline."""
         self._populate_collisions()
-        for data, neurite in zip((self.parsed_axon, self.parsed_dend), ("axon", "dend")):
-            self._plot_jointplot(data, neurite)
-            data["coll_normed"] = self._normalize_by_density(data)
-            self._plot_jointplot(data, neurite, with_norm=True)
+        self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
+        self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
 
     def _populate_collisions(self):
         """Traverse a specific graph and find the number of
@@ -80,11 +81,15 @@ class CollisionsDistNaive:
         idx_axon, idx_dend = 0, 0
         for node in self.graph.nodes():
             if node.tree_type == "Axon":
-                self.parsed_axon.loc[idx_axon, "coll"] = node.collisions
+                self.parsed_axon.loc[idx_axon, "coll"] = (
+                    node.collisions / self.normalize_collisions_by
+                )
                 self.parsed_axon.loc[idx_axon, "dist"] = node.dist_to_body
                 idx_axon += 1
             else:
-                self.parsed_dend.loc[idx_dend, "coll"] = node.collisions
+                self.parsed_dend.loc[idx_dend, "coll"] = (
+                    node.collisions / self.normalize_collisions_by
+                )
                 self.parsed_dend.loc[idx_dend, "dist"] = node.dist_to_body
                 idx_dend += 1
 
@@ -101,21 +106,30 @@ class CollisionsDistNaive:
         dist_int = data["dist"].to_numpy().astype(np.int64)
         bincounts = np.bincount(dist_int, minlength=dist_int.max())
         normed = norm_colls(bincounts, dist_int, data["coll"].to_numpy())
-        return normed / self.normalize_collisions_by
+        return normed
+
+    def plot_all(self):
+        """Small wrapper for plotting with all configs."""
+        for data, neurite in zip(
+            (self.parsed_axon, self.parsed_dend), ("axon", "dend")
+        ):
+            self._plot_jointplot(data, neurite, with_norm=False)
+            self._plot_jointplot(data, neurite, with_norm=True)
 
     def _plot_jointplot(self, data, neurite, with_norm=False):
         """Creates a jointplot with hexagons which show the probability of collision
         as a function of the topological distance from the soma.
         """
-        labels_and_colors = {'axon': ("C2", "Axonal"), 'dend': ("C1", "Dendritic")}
+        labels_and_colors = {"axon": ("C2", "Axonal"), "dend": ("C1", "Dendritic")}
         new_ycol_name = f"{labels_and_colors[neurite][1]} chance for collision"
         data = data.copy().rename(
-            {"dist": "Length of branch [um]", "coll": new_ycol_name, "coll_normed": f"{new_ycol_name} (normalized)"}, axis=1
+            {
+                "dist": "Length of branch [um]",
+                "coll": new_ycol_name,
+                "coll_normed": f"{new_ycol_name} (normalized)",
+            },
+            axis=1,
         )
-        data.loc[:, new_ycol_name] = (
-            data.loc[:, new_ycol_name] / self.normalize_collisions_by
-        )
-        plt.rcParams.update({"font.size": 22})
         if with_norm:
             y_col = new_ycol_name + " (normalized)"
             fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_normed_{neurite}.pdf"
@@ -133,10 +147,78 @@ class CollisionsDistNaive:
         )
         plt.subplots_adjust(left=0.11)
         ax.savefig(
-            fname,
-            transparent=True,
-            dpi=300,
+            fname, transparent=True, dpi=300,
         )
+
+
+@attr.s
+class AggregateDistributions:
+    """Sum up all of the neuron's collision density into two groups -
+    layer 2/3 and the rest - and show the distributions.
+    """
+
+    l23_neurons = attr.ib(validator=instance_of(list))
+    rest_of_neurons = attr.ib(validator=instance_of(list))
+    colors = attr.ib(init=False)
+
+    def run_all_cells(self):
+        """Main class method."""
+        l23_ax_lines, l23_dend_lines, rest_ax_lines, rest_dend_lines = [], [], [], []
+        for idx, neuron in enumerate(self.l23_neurons):
+            print(neuron)
+            lines = self.run_on_single_cell(neuron, idx, is_23=True)
+            if lines:
+                l23_ax_lines.append(lines[0])
+                l23_dend_lines.append(lines[1])
+
+        for idx, neuron in enumerate(self.rest_of_neurons):
+            print(neuron)
+            lines = self.run_on_single_cell(neuron, idx, is_23=False)
+            if lines:
+                rest_ax_lines.append(lines[0])
+                rest_dend_lines.append(lines[1])
+
+        fig, axes = plt.subplots(4, 1, sharex=True)
+        for ax, lines in zip(
+            axes, (l23_ax_lines, rest_ax_lines, l23_dend_lines, rest_dend_lines)
+        ):
+            self._create_figure(ax, lines)
+
+        return axes
+
+    def run_on_single_cell(self, name, idx, is_23):
+        """Short pipeline to process single cell graphs."""
+        try:
+            coll_dist = CollisionsDistNaive.from_graph(name_to_graph_fname(name), name)
+        except FileNotFoundError:
+            return
+        coll_dist.run()
+        line_ax = self._gen_line2d(coll_dist, "axon", idx, is_23)
+        line_dend = self._gen_line2d(coll_dist, "dend", idx, is_23)
+        return (line_ax, line_dend)
+
+    def _gen_line2d(self, coll_dist, neurite, idx, is_23):
+        data = getattr(coll_dist, "parsed_" + neurite)
+        x_data = np.linspace(0, 1000, len(data))
+        y_data = data["coll_normed"] - data["coll_normed"].min()
+        y_data /= data["coll_normed"].max()
+        linewidth = 2
+        linestyle = "-" if is_23 else "--"
+        color = "C2" if neurite == "axon" else "C1"
+        return plt.Line2D(x_data, y_data, linewidth, linestyle, color)
+
+    def _create_figure(self, ax, lines):
+        """Adds a mpl.Line2D to the given axes, and changes their appearance."""
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.get_xaxis().tick_bottom()
+        ax.get_yaxis().tick_left()
+        ax.set_xlabel("Length of branch [AU]")
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_ylim((0, 1))
+        [ax.add_line(line) for line in lines]
 
 
 @numba.jit(nopython=True, parallel=True)
@@ -150,7 +232,15 @@ def norm_colls(bincounts, distances, collisions):
     return normed_collisions
 
 
+def name_to_graph_fname(neuron):
+    return (
+        pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+        / f"graph_{neuron}_with_collisions.gml"
+    )
+
+
 if __name__ == "__main__":
+    plt.rcParams.update({"font.size": 22})
     neuron_names = [
         "AP120410_s1c1",
         "AP120410_s3c1",
@@ -167,19 +257,18 @@ if __name__ == "__main__":
         "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    # fig, ax = plt.subplots(2, 2)
-    # fig.suptitle('Collisions as a function of topological distance from soma\nAxon collisions in blue, dendritic in orange')
-    # for neuron, axx in zip(neuron_names, ax.flatten()):
-    for neuron in neuron_names:
-        graph_fname = (
-            pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
-            / f"graph_{neuron}_with_collisions.gml"
-        )
-        try:
-            coll_dist = CollisionsDistNaive.from_graph(graph_fname)
-        except FileNotFoundError:
-            continue
-        coll_dist.neuron_name = neuron
-        coll_dist.run()
-    # fig.tight_layout()
+    rest_of_neurons = neuron_names.copy()
+    l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
+    l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
+
+    # for neuron in neuron_names:
+    #     graph_fname = name_to_graph_fname(neuron)
+    #     try:
+    #         coll_dist = CollisionsDistNaive.from_graph(graph_fname, neuron)
+    #     except FileNotFoundError:
+    #         continue
+    #     coll_dist.run()
+    #     coll_dist.plot_all()
+    agg = AggregateDistributions(l23_neurons, rest_of_neurons)
+    ax = agg.run_all_cells()
     plt.show(block=False)
