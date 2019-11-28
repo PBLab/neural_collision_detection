@@ -1,10 +1,13 @@
  function [M_surf,M_caps,offsetXYZ] = ctp2mesh(filename)
 %ctp2mesh - generates tirangular mesh representation of center point list where ctpList is x,y,z,r.
-load(filename)
+raw_data = load(filename);
+if endsWith(filename, '.mat')
+    ctpList = [neuron.vectorizedStructure.AllVerts ...
+        neuron.vectorizedStructure.AllRadii];
+elseif endsWith(filename, '.csv')
+    ctpList = raw_data;
+end
 
-% For vasculature, the filename is "au" instead of "neuron"
-ctpList = [neuron.vectorizedStructure.AllVerts ...
-    neuron.vectorizedStructure.AllRadii];
 
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));

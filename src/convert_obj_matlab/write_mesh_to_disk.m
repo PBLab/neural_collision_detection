@@ -1,4 +1,6 @@
 function write_mesh_to_disk(M_surf, M_caps, offsetXYZ, fname)
+% fname should be the name of the neuron, without a prefix, with a suffix
+% of .obj
 faces = [M_surf.faces; M_caps.faces];
 vertices = [M_surf.vertices; M_caps.vertices];
 csv_fname = strcat(fname(1:end-3), 'csv');

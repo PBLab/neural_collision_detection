@@ -81,10 +81,9 @@ class OverlayCollisions:
         allnan_rows = np.where(np.all(np.isnan(collisions), axis=1))[0]
         collisions = np.delete(collisions, allnan_rows, axis=0)
         return collisions
-    
+
     def _gen_bins(self, l: tuple):
         """ Histograms the collisions into l-sized bins """
-        print(np.isnan(self.collisions).sum())
         max_x, min_x = np.max(self.collisions[:, 0]), np.min(self.collisions[:, 0])
         max_y, min_y = np.max(self.collisions[:, 1]), np.min(self.collisions[:, 1])
         max_z, min_z = np.max(self.collisions[:, 2]), np.min(self.collisions[:, 2])
@@ -149,23 +148,32 @@ class OverlayCollisions:
             name = "collisions"
             mesh = bpy.data.meshes.new(name + "_Mesh")
             obj = bpy.data.objects.new(name, mesh)
-            bpy.context.collection.objects.link(obj)
-            bpy.context.view_layer.objects.active = obj
+            bpy.context.scene.objects.link(obj)
             # obj.select_set('SELECT')
             mesh.from_pydata(voxel_verts, [], voxel_faces)
-            mesh.validate(verbose=True)
             mesh.update(calc_edges=True)
             # apply material
             mat = bpy.data.materials.new(name + "_Mat")
-            mat.diffuse_color = [val * norm, 0.0, 0.0, 1.0]
+            mat.diffuse_color = [val * norm, 0.0, 0.0]
+            mat.diffuse_shader = "LAMBERT"
+            mat.diffuse_intensity = 1.0
             mat.specular_color = [0.0, 0.0, 0.0]
+            mat.specular_shader = "COOKTORR"
+            mat.specular_intensity = 1.0
+            mat.alpha = val * norm * 2  # * 0.5
+            mat.ambient = 1.0
             # mat.transparency_method = 'Z_TRANSPARENCY'
             obj.data.materials.append(mat)
+
+            # set layers
+            layers = [False] * 20
+            layers[(bpy.context.scene["MyDrawTools_BaseLayer"] + OPS_LAYER) % 20] = True
+            obj.layers = layers
 
 
 if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
-    fname = r"/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
+    fname = r"/data/neural_collision_detection/results/for_article/fig1/normed_coll.npz"
     downsample_factor = 1
     OverlayCollisions.from_all_collisions(fname=fname, binsize=l).run()
