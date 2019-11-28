@@ -38,7 +38,7 @@ class OverlayCollisions:
         Main pipeline. Any needed pre-processing steps happen in
         the classmethods that instatiate this object.
         """
-        hist, edges = self._gen_bins(collisions, l)
+        hist, edges = self._gen_bins(self.binsize)
         nonzero_hist, bin_starts, bin_ends = self._filter_relevant_bins(hist, edges)
         self._create_verts_faces_and_draw(
             nonzero_hist, bin_starts, bin_ends, OPS_LAYER=4
@@ -72,10 +72,19 @@ class OverlayCollisions:
         fname = pathlib.Path(fname)
         assert fname.exists()
         collisions = np.load(fname)["neuron_coords"][::downsample_factor, :]
+        collisions = cls._filter_nans(collisions)
         return cls(collisions, binsize)
 
+    @staticmethod
+    def _filter_nans(collisions):
+        """Remove all-nan collisions from the array."""
+        allnan_rows = np.where(np.all(np.isnan(collisions), axis=1))[0]
+        collisions = np.delete(collisions, allnan_rows, axis=0)
+        return collisions
+    
     def _gen_bins(self, l: tuple):
         """ Histograms the collisions into l-sized bins """
+        print(np.isnan(self.collisions).sum())
         max_x, min_x = np.max(self.collisions[:, 0]), np.min(self.collisions[:, 0])
         max_y, min_y = np.max(self.collisions[:, 1]), np.min(self.collisions[:, 1])
         max_z, min_z = np.max(self.collisions[:, 2]), np.min(self.collisions[:, 2])
@@ -140,31 +149,23 @@ class OverlayCollisions:
             name = "collisions"
             mesh = bpy.data.meshes.new(name + "_Mesh")
             obj = bpy.data.objects.new(name, mesh)
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
+            bpy.context.view_layer.objects.active = obj
+            # obj.select_set('SELECT')
             mesh.from_pydata(voxel_verts, [], voxel_faces)
+            mesh.validate(verbose=True)
             mesh.update(calc_edges=True)
             # apply material
             mat = bpy.data.materials.new(name + "_Mat")
-            mat.diffuse_color = [val * norm, 0.0, 0.0]
-            mat.diffuse_shader = "LAMBERT"
-            mat.diffuse_intensity = 1.0
+            mat.diffuse_color = [val * norm, 0.0, 0.0, 1.0]
             mat.specular_color = [0.0, 0.0, 0.0]
-            mat.specular_shader = "COOKTORR"
-            mat.specular_intensity = 1.0
-            mat.alpha = val * norm * 2  # * 0.5
-            mat.ambient = 1.0
             # mat.transparency_method = 'Z_TRANSPARENCY'
             obj.data.materials.append(mat)
-
-            # set layers
-            layers = [False] * 20
-            layers[(bpy.context.scene["MyDrawTools_BaseLayer"] + OPS_LAYER) % 20] = True
-            obj.layers = layers
 
 
 if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
-    fname = r"/mnt/qnap/neural_collision_detection/results/2019_2_10/top_10p_likely_colls_AP131105_s1c1.npy"
+    fname = r"/mnt/qnap/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
     downsample_factor = 1
-    OverlayCollisions.from_top_collisions(fname=fname, binsize=l)
+    OverlayCollisions.from_all_collisions(fname=fname, binsize=l).run()
