@@ -1,9 +1,14 @@
 ------------
 Ongoing Work
 ------------
+
+
 * I made changes to ``collisions_vs_dist_naive.py``, and it now can create
   the hexbin plots of all neurons one after the other, i.e. not jointplots.
-  This is for the second part of figure 2.
+  This is for the second part of figure 2. I'm also currently not aggregating
+  the histograms in this figure, since I simply wasn't able to. I created a
+  jupyter notebook and an "AggregatedData" class. I deleted the class and
+  the notebook is currently not used for anything.
 
 * I decided to discard one neuron, "AP131105_s1c1", due to a very low collision
   number which hinders its statistics and visualization.

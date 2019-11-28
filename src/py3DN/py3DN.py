@@ -8,7 +8,7 @@
 import sys
 
 # CHANGE THIS LINE FOR YOUR INSTALATION DIRECTORY
-sys.path.append('/home/hagaihargil/Code/py3DN')
+sys.path.append('/data/neural_collision_detection/src/py3DN')
 
 import DataContainers
 import NeuroLucidaXMLParser

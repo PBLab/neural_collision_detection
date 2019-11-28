@@ -166,6 +166,6 @@ class OverlayCollisions:
 if __name__ == "__main__":
     # Should only be run under Blender
     l = (5, 5, 5)  # in um
-    fname = r"/mnt/qnap/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
+    fname = r"/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
     downsample_factor = 1
     OverlayCollisions.from_all_collisions(fname=fname, binsize=l).run()
