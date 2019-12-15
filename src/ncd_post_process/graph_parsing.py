@@ -129,8 +129,8 @@ class NeuronToGraph:
                 self.closest_cell = connect_collisions_to_neural_points(
                     self.collisions, self.neuronal_points, self.inner_multiprocess
                 )
-                neural_collisions = self._coerce_collisions_to_neural_coords(
-                    self.neuronal_points, self.closest_cell
+                neural_collisions = self.coerce_collisions_to_neural_coords(
+                    len(self.neuronal_points), self.closest_cell
                 )
 
             else:
@@ -188,8 +188,9 @@ class NeuronToGraph:
                 idx += 1
         return neuronal_points
 
-    def _coerce_collisions_to_neural_coords(
-        self, neuronal_points, closest_cell_idx: np.ndarray
+    @staticmethod
+    def coerce_collisions_to_neural_coords(
+        num_neuronal_points: int, closest_cell_idx: np.ndarray
     ):
         """
         Counts the number of collisions per neuronal coordinate on the neuronal tree.
@@ -199,7 +200,7 @@ class NeuronToGraph:
         :param np.ndarray mindist: A 1D array with the length of the entire collisions array
         assi
         """
-        neural_collisions = np.zeros(neuronal_points.shape[0], dtype=np.uint64)
+        neural_collisions = np.zeros(num_neuronal_points, dtype=np.uint64)
         uniques, counts = np.unique(closest_cell_idx, return_counts=True)
         neural_collisions[uniques] = counts
         return neural_collisions
@@ -350,11 +351,12 @@ class CsvNeuronToGraph:
         """
         ntg = NeuronToGraph(neuron_name, str(self.results_folder), self.thresh)
         closest_cell = connect_collisions_to_neural_points(self.collisions, self.neuron_coords, multiprocessed=False)
-        neural_collisions = ntg._coerce_collisions_to_neural_coords(self.neuron_coords, closest_cell)
+        neural_collisions = ntg.coerce_collisions_to_neural_coords(len(self.neuron_coords), closest_cell)
         collisions_df = ntg._make_collision_df(neural_collisions, )
 
+
 def connect_collisions_to_neural_points(
-    collisions: np.ndarray, neuronal_points: np.ndarray,
+    collisions: np.ndarray, neuronal_points: pd.DataFrame,
     multiprocessed=False
 ):
     """
@@ -363,7 +365,6 @@ def connect_collisions_to_neural_points(
     are attributed to the same neural point.
 
     Returns:
-    neural_points: Array of coordinates that make up the neuron.
     closest_cell_idx: Index to the closest point on the cell contour to the given collision.
     """
     neuronal_points = neuronal_points.loc[:, 'x':'z']

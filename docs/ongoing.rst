@@ -1,7 +1,28 @@
 ------------
 Ongoing Work
 ------------
+* The script ``for_article/fig1/find_collisions_distribution.py`` generates
+  an image of the toy neuron with the probability of collisions overlayed
+  on top of it. In the process of making it we found that the smaller branches
+  of the neuron collided less with the vasculature. This may be the result of
+  the scale of these branches being smaller than the typical distance between
+  the vascular pipes in the toy data. Thus we'll be running ncd on the toy
+  case but with different spaces between vascular grids. We'll then make a fig,
+  possibly a supp, with the different collision distributions on top of the
+  neuron with different typical vascular distances. We'll calculate the mean
+  size of the neuron in its last segment (possibly using fractals) and show
+  that whenever that neural distance is less than the distance between two
+  vascular pipes in the grid, the chance for a collision in these distal areas
+  of the neuron is minimal.
 
+* I was able to finally make the ``overlay_collisions.py`` script work in
+  Blender 2.80 (as well as 2.79), but it came at a cost of corrupting the
+  existing ``artificial_neuron.obj`` file that was created. So I had to
+  make a new one (git didn't track it) and run NCD on it. The real issue
+  was with the data that was created by NCD - the collisions were probably
+  too far off, so Blender just placed them in the center. They were also
+  not rotated, it seems. This is why it was a good idea to re-run the pipeline
+  with the newly generated obj.
 
 * I made changes to ``collisions_vs_dist_naive.py``, and it now can create
   the hexbin plots of all neurons one after the other, i.e. not jointplots.

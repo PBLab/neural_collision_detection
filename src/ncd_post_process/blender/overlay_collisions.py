@@ -87,9 +87,9 @@ class OverlayCollisions:
         max_x, min_x = np.max(self.collisions[:, 0]), np.min(self.collisions[:, 0])
         max_y, min_y = np.max(self.collisions[:, 1]), np.min(self.collisions[:, 1])
         max_z, min_z = np.max(self.collisions[:, 2]), np.min(self.collisions[:, 2])
-        bins_x = int(np.ceil(max_x - min_x / l[0]))
-        bins_y = int(np.ceil(max_y - min_y / l[1]))
-        bins_z = int(np.ceil(max_z - min_z / l[2]))
+        bins_x = int(np.ceil((max_x - min_x) / l[0]))
+        bins_y = int(np.ceil((max_y - min_y) / l[1]))
+        bins_z = int(np.ceil((max_z - min_z) / l[2]))
         hist, edges = np.histogramdd(self.collisions, bins=(bins_x, bins_y, bins_z))
         return hist, edges
 
@@ -173,7 +173,8 @@ class OverlayCollisions:
 
 if __name__ == "__main__":
     # Should only be run under Blender
-    l = (5, 5, 5)  # in um
-    fname = r"/data/neural_collision_detection/results/for_article/fig1/normed_coll.npz"
+    l = (1, 1, 1)  # in um
+    # fname = r"/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
+    fname = r"/data/neural_collision_detection/a.npz"
     downsample_factor = 1
     OverlayCollisions.from_all_collisions(fname=fname, binsize=l).run()

@@ -10,6 +10,10 @@ output
 *.ASC
 *.mat
 *.csv
+*.png
+*.PNG
+*.svg
+*.SVG
 Eigen
 *.obj
 .mypy_cache/
@@ -20,8 +24,9 @@ __pycache__/
 *.json
 *.nfs*
 *.xml
+*.ncd
 data/
-results/
+results/2019*/
 !results/for_article
 !results/for_article/*
 *.mp4
@@ -30,3 +35,5 @@ datajoint/
 *egg*
 docs/_build/*
 **/.ipynb_checkpoints/
+dask-worker-space/
+results/for_article/neuron_id.svg
