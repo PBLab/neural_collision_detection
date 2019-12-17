@@ -1,3 +1,4 @@
+"""Unneeded currently"""
 import pathlib
 
 from dask.distributed import Client
@@ -124,8 +125,6 @@ if __name__ == '__main__':
     # hist_and_edges = gen_hist(collisions, binsize)
     # hist_and_metadata = filter_relevant_bins(hist_and_edges)
     # points_and_color = hist_into_points(hist_and_metadata)
-    # surface.compute()
-    # # points_and_color.compute()
     # surface_with_collisions = client.submit(add_colls_data_to_surface, surface, neural_collisions)
     # surface_with_collisions = surface_with_collisions.result()
     # colors = np.zeros((len(surface_with_collisions[0]), 4))

@@ -12,9 +12,9 @@ import pandas as pd
 import scipy.fftpack
 import scipy.spatial.distance
 
-from find_branching_density import BranchDensity
+from ncd_post_process.create_neuron_id.find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
-from ncd_post_process.analyze_graph import graph_file_to_graph_object
+from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import CollisionsDistNaive
 
 neuron_names = [
     "AP120410_s3c1",
@@ -177,8 +177,9 @@ class BranchDensityAndCollisions:
             f"Collisions as a function of density for a single neuron {neuron_name} with r={self.r} um"
         )
         fig.savefig(
-            f"results/2019_2_10/colls_density_jointplot_r_{self.r}_{neuron_name}.pdf",
+            f"results/2019_2_10/colls_density_jointplot_r_{self.r}_{neuron_name}.png",
             transparent=True,
+            dpi=300,
         )
 
     def _set_fig_limits(self):
@@ -211,8 +212,7 @@ class BranchDensityAndDist:
     eucdist_dend = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.color = {NeuronType.AXON: "C2",
-        NeuronType.DENDRITE: "C1"}
+        self.color = {NeuronType.AXON: "C2", NeuronType.DENDRITE: "C1"}
 
     def main(self, plot=True):
         self.ur = self._get_density_from_bdens()
@@ -220,16 +220,18 @@ class BranchDensityAndDist:
         fig_fft, ax_fft = plt.subplots()
         self.topodist_axon, self.topodist_dend = self._get_topodist_from_graph()
         self.pipeline_for_one(self.topodist_axon, ax_topodist, ax_fft, NeuronType.AXON)
-        self.pipeline_for_one(self.topodist_dend, ax_topodist, ax_fft, NeuronType.DENDRITE)
+        self.pipeline_for_one(
+            self.topodist_dend, ax_topodist, ax_fft, NeuronType.DENDRITE
+        )
         ax_topodist.legend(["Axon", "Dendrite"])
         ax_fft.legend(["Axon", "Dendrite"])
         fig_topodist.savefig(
-            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
-            transparent=True,
+            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            transparent=True, dpi=300
         )
         fig_fft.savefig(
-            f"results/2019_2_10/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
-            transparent=True,
+            f"results/2019_2_10/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            transparent=True, dpi=300
         )
 
     def pipeline_for_one(self, topodist, ax_topodist, ax_fft, neuron_type):
@@ -239,7 +241,9 @@ class BranchDensityAndDist:
         """
         nonzero = self._get_nonzero_points_on_tree(topodist)
         self._plot_ur_topo(ax_topodist, topodist, nonzero, neuron_type)
-        full_ur = self._conform_ur_to_new_idx(topodist[nonzero], self.ur[self.r].iloc[nonzero])
+        full_ur = self._conform_ur_to_new_idx(
+            topodist[nonzero], self.ur[self.r].iloc[nonzero]
+        )
         avg = full_ur.rolling(window=self.window).mean().dropna()
         x, y = self._fft_ur(avg, sample_freq=self.window)
         self._plot_fft(x, y, ax_fft, neuron_type)
@@ -275,7 +279,13 @@ class BranchDensityAndDist:
         """
         return tree.nonzero()
 
-    def _plot_ur_topo(self, ax: plt.Axes, topodist: np.ndarray, nonzero: np.ndarray, points_type: NeuronType):
+    def _plot_ur_topo(
+        self,
+        ax: plt.Axes,
+        topodist: np.ndarray,
+        nonzero: np.ndarray,
+        points_type: NeuronType,
+    ):
         """Genereates a plot of the Branching Density U(r)
         as a function of the topological distance of the node.
         Receives in advance the indices that mark the location of the
@@ -316,7 +326,7 @@ class BranchDensityAndDist:
             .set_index("topodist")
             .reindex(uniform_topodist)
         )
-        full_ur = ur_with_distance_as_idx.interpolate('cubic')
+        full_ur = ur_with_distance_as_idx.interpolate("cubic")
         mean = full_ur.rolling(window=window).mean().dropna()
         return mean
 
@@ -325,7 +335,7 @@ class BranchDensityAndDist:
         changes them by a small fraction to make all values unique."""
         counts = pd.Series(topodist).value_counts()
         counts = counts[counts >= 2].reset_index()["index"]
-        delta = np.arange(0.01, 0., -0.001)
+        delta = np.arange(0.01, 0.0, -0.001)
         for dupval in counts:
             dup_indices = np.where(topodist == dupval)[0]
             for idx, cur_delta in zip(dup_indices, delta):
@@ -348,7 +358,9 @@ class BranchDensityAndDist:
         ax.plot(x, y, c=self.color[neuron_type])
         ax.set_xlabel("Frequency [1/um]")
         ax.set_ylabel("Power")
-        ax.set_title(f"FFT analysis of the density of neuron {self.bdens.neuron_fname.stem}")
+        ax.set_title(
+            f"FFT analysis of the density of neuron {self.bdens.neuron_fname.stem}"
+        )
 
 
 @attr.s
@@ -434,8 +446,8 @@ class DensityCollisionsDistance:
         )
         ax.legend(["Axon", "Dendrite"])
         fig.savefig(
-            f"results/2019_2_10/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.pdf",
-            transparent=True,
+            f"results/2019_2_10/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            transparent=True, dpi=300
         )
 
 
@@ -461,7 +473,7 @@ def run_ur_topodist():
         bdens_coll = _instantiate_bdens(neuron_name, branch_class=BranchDensityAndDist)
         if bdens_coll:
             bdens_coll.main()
-    plt.show()
+    plt.show(block=False)
 
 
 def run_ur_topodist_multiple_r():
@@ -478,7 +490,7 @@ def run_ur_topodist_multiple_r():
         )
         if bdens_coll:
             bdens_coll.main()
-    plt.show()
+    plt.show(block=False)
 
 
 def run_single_neuron_with_jointplot():
@@ -488,25 +500,26 @@ def run_single_neuron_with_jointplot():
     """
     neuron_names = [
         "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120410_s1c1",
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
-        # "AP120507_s3c1",
-        # "AP120510_s1c1",
-        # "AP120522_s3c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
-        # "AP130312_s1c1",
-        # "AP131105_s1c1",
+        "AP120412_s3c2",
+        "AP120410_s1c1",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+        "AP131105_s1c1",
     ]
     for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name)
-        bdens_coll.main(plot=False)
-        bdens_coll.plot_colls_dens_jointplot(neuron_name)
-    plt.show()
+        if bdens_coll:
+            bdens_coll.main(plot=False)
+            bdens_coll.plot_colls_dens_jointplot(neuron_name)
+    plt.show(block=False)
 
 
 def run_collisions_dens_jointplot_multiple_r():
@@ -520,9 +533,10 @@ def run_collisions_dens_jointplot_multiple_r():
         bdens_coll = _instantiate_bdens(
             neuron_name, branch_class=BranchDensityAndCollisions, r=radius
         )
-        bdens_coll.main(plot=False)
-        bdens_coll.plot_colls_dens_jointplot(neuron_name)
-    plt.show()
+        if bdens_coll:
+            bdens_coll.main(plot=False)
+            bdens_coll.plot_colls_dens_jointplot(neuron_name)
+    plt.show(block=False)
 
 
 def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=10):
@@ -547,7 +561,7 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
         / f"graph_{neuron_name}_with_collisions.gml"
     )
     try:
-        graph = graph_file_to_graph_object(neuron_graph)
+        graph = CollisionsDistNaive.from_graph(neuron_graph, neuron_name).graph
     except FileNotFoundError:
         return
     bdens_coll = branch_class(bdens, graph, r=r)
@@ -556,19 +570,19 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
 
 def run_single_neuron_with_quantile():
     neuron_names = [
-        # "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120410_s1c1",
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
-        # "AP120507_s3c1",
-        # "AP120510_s1c1",
-        # "AP120522_s3c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
-        # "AP130312_s1c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120410_s1c1",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
         "AP131105_s1c1"
     ]
     perc = 90
@@ -587,10 +601,9 @@ def run_single_neuron_with_quantile():
 
 
 if __name__ == "__main__":
-    # run_multiple_neurons()
-    # run_single_neuron_with_jointplot()
-    # run_single_neuron_with_quantile()
+    run_single_neuron_with_jointplot()
+    run_single_neuron_with_quantile()
     run_ur_topodist()
     # run_ur_topodist_multiple_r()
     # run_collisions_dens_jointplot_multiple_r()
-    # run_ur_topodist_colls()
+    run_ur_topodist_colls()

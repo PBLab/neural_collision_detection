@@ -1,6 +1,18 @@
 ------------
 Ongoing Work
 ------------
+
+* I detected a bug in the topological distance caluclation - I wasn't handling
+  correctly the cases in which there's a large jump between one point to the
+  next one, which caused the calculated distance values to be way too big.
+  I fixed it in ``graph_parsing.py``, and re-ran all of the scripts using the
+  distance data. In addition I re-wrote the collisions vs distance plot inside
+  ``collisions_vs_dist_naive.py``.
+
+* I created a mock fig2 file ("fig2mock.svg") that describes the way we want
+  to see figure 2 in the article. It's slightly different than the current one,
+  although it uses mostly the same data.
+
 * The script ``for_article/fig1/find_collisions_distribution.py`` generates
   an image of the toy neuron with the probability of collisions overlayed
   on top of it. In the process of making it we found that the smaller branches

@@ -116,7 +116,12 @@ class NeuronToGraph:
         The nodes will contain 0 as their collision value.
         """
         self.parent_folder = pathlib.Path(__file__).resolve().parents[2]
-        neuron_fname, collisions_fname, image_graph_fname, graph_fname = self._filename_setup(
+        (
+            neuron_fname,
+            collisions_fname,
+            image_graph_fname,
+            graph_fname,
+        ) = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
         with load_neuron(self.parent_folder / "py3DN", neuron_fname) as neuron:
@@ -186,7 +191,7 @@ class NeuronToGraph:
             for point in tree.rawpoint:
                 neuronal_points[idx] = point.P
                 idx += 1
-        return neuronal_points
+        return pd.DataFrame(neuronal_points, columns=["x", "y", "z"])
 
     @staticmethod
     def coerce_collisions_to_neural_coords(
@@ -257,12 +262,12 @@ class NeuronToGraph:
             for point in tree.rawpoint[2:]:
                 prev_node = new_node
                 del new_node
-                weight = (
-                    mytools.Get_FiberDistance_Between_RawPoints(
-                        tree, prev_node.ppid, point.ppid
+                try:
+                    weight = mytools.Get_FiberDistance_Between_RawPoints(
+                        tree, 0, point.ppid
                     )
-                    + prev_node.dist_to_body
-                )
+                except IndexError:
+                    weight = np.float64(0)
                 new_node = CollisionNode(
                     ord_number=pair_number + 1,
                     loc=tuple(point.P),
@@ -309,6 +314,7 @@ class NeuronToGraph:
 @attr.s
 class CsvNeuronToGraph:
     """Creates a networkx graph instance from neurons in an .obj format """
+
     neuron_fname = attr.ib(validator=instance_of(pathlib.Path))
     results_folder = attr.ib(validator=instance_of(pathlib.Path))
     thresh = attr.ib(instance_of(int))
@@ -322,22 +328,29 @@ class CsvNeuronToGraph:
 
     def main(self):
         """Main Pipeline"""
-        neuron_name, collisions_fname, image_graph_fname, graph_fname = self._filename_setup()
+        (
+            neuron_name,
+            collisions_fname,
+            image_graph_fname,
+            graph_fname,
+        ) = self._filename_setup()
         self.neuron_coords = self._load_neuron()
         self.collisions = np.load(str(collisions_fname))["neuron_coords"]
         self._connect_collisions_to_neural_coords(neuron_name)
 
-
     def _filename_setup(self):
         """Finds needed files for this class to run."""
         neuron_name = self.neuron_fname.stem
-        collisions_fname = self.results_folder / f"normalized_agg_results_{neuron_name}_thresh_{self.thresh}.npz"
+        collisions_fname = (
+            self.results_folder
+            / f"normalized_agg_results_{neuron_name}_thresh_{self.thresh}.npz"
+        )
         image_graph_fname = self.results_folder / f"image_graph_{neuron_name}.png"
         graph_fname = self.results_folder / f"graph_{neuron_name}.gml"
         return neuron_name, collisions_fname, image_graph_fname, graph_fname
 
     def _load_neuron(self):
-        return pd.read_csv(self.neuron_fname, header=None, names=['x', 'y', 'z', 'r'])
+        return pd.read_csv(self.neuron_fname, header=None, names=["x", "y", "z", "r"])
 
     def _connect_collisions_to_neural_coords(self, neuron_name):
         """
@@ -350,14 +363,17 @@ class CsvNeuronToGraph:
         closest_cell_idx: Index to the closest point on the cell contour to the given collision.
         """
         ntg = NeuronToGraph(neuron_name, str(self.results_folder), self.thresh)
-        closest_cell = connect_collisions_to_neural_points(self.collisions, self.neuron_coords, multiprocessed=False)
-        neural_collisions = ntg.coerce_collisions_to_neural_coords(len(self.neuron_coords), closest_cell)
-        collisions_df = ntg._make_collision_df(neural_collisions, )
+        closest_cell = connect_collisions_to_neural_points(
+            self.collisions, self.neuron_coords, multiprocessed=False
+        )
+        neural_collisions = ntg.coerce_collisions_to_neural_coords(
+            len(self.neuron_coords), closest_cell
+        )
+        collisions_df = ntg._make_collision_df(neural_collisions,)
 
 
 def connect_collisions_to_neural_points(
-    collisions: np.ndarray, neuronal_points: pd.DataFrame,
-    multiprocessed=False
+    collisions: np.ndarray, neuronal_points: pd.DataFrame, multiprocessed=False
 ):
     """
     For each point in the neural tree, find the closest collision
@@ -367,13 +383,11 @@ def connect_collisions_to_neural_points(
     Returns:
     closest_cell_idx: Index to the closest point on the cell contour to the given collision.
     """
-    neuronal_points = neuronal_points.loc[:, 'x':'z']
-    assert (
-        collisions.shape[1] == neuronal_points.shape[1]
-    )  # two 3D coordinate arrays
-    splits = np.linspace(
-        0, collisions.shape[0], num=100, endpoint=False, dtype=np.int
-    )[1:]
+    neuronal_points = neuronal_points.loc[:, "x":"z"]
+    assert collisions.shape[1] == neuronal_points.shape[1]  # two 3D coordinate arrays
+    splits = np.linspace(0, collisions.shape[0], num=100, endpoint=False, dtype=np.int)[
+        1:
+    ]
     split_colls = np.split(collisions, splits)
     neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
 
@@ -414,51 +428,49 @@ def load_neuron(py3dn_folder: pathlib.Path, fname: pathlib.Path):
 
 
 def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=False):
-    """
-    Run the pipeline in a parallel manner
-    """
-    graphed_neuron = NeuronToGraph(
-        neuron_name=neuron_name,
-        result_folder=result_folder,
-        thresh=thresh,
-        with_collisions=with_collisions,
-        with_plot=with_plot,
-    )
-    graphed_neuron.run()
-    return graphed_neuron
+    """Run the pipeline in a parallel manner."""
+    try:
+        graphed_neuron = NeuronToGraph(
+            neuron_name=neuron_name,
+            result_folder=result_folder,
+            thresh=thresh,
+            with_collisions=with_collisions,
+            with_plot=with_plot,
+        )
+        graphed_neuron.run()
+        return graphed_neuron
+    except FileNotFoundError:
+        return
 
 
 if __name__ == "__main__":
-    neuron = pathlib.Path("yoav/artificial_neuron_balls.csv")
-    results_folder = pathlib.Path("results/2019_07_21")
+    neuron_names = [
+        "AP120410_s1c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+        "AP131105_s1c1",
+    ]
+    result_folder = "2019_2_10"
     thresh = 0
-    CsvNeuronToGraph(neuron, results_folder, thresh).main()
-    # neuron_names = [
-    #     "AP120410_s1c1",
-    #     "AP120410_s3c1",
-    #     "AP120412_s3c2",
-    #     "AP120416_s3c1",
-    #     "AP120419_s1c1",
-    #     "AP120420_s1c1",
-    #     "AP120420_s2c1",
-    #     "AP120507_s3c1",
-    #     "AP120510_s1c1",
-    #     "AP120522_s3c1",
-    #     "AP120524_s2c1",
-    #     "AP120614_s1c2",
-    #     "AP130312_s1c1",
-    #     "AP131105_s1c1",
-    # ]
-    # result_folder = "2019_2_10"
-    # thresh = 0
-    # with_collisions = True
-    # with_plot = False
+    with_collisions = True
+    with_plot = False
 
-    # args = [
-    #     (neuron_name, result_folder, thresh, with_collisions, with_plot)
-    #     for neuron_name in neuron_names
-    # ]
-    # with mp.Pool() as pool:
-    #     objs = pool.starmap(mp_main, args)
+    args = [
+        (neuron_name, result_folder, thresh, with_collisions, with_plot)
+        for neuron_name in neuron_names
+    ]
+    # multicore execution
+    with mp.Pool() as pool:
+        objs = pool.starmap(mp_main, args)
 
     # obj = [mp_main(*arg) for arg in args]  # single core execution
