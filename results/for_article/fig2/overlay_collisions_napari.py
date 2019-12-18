@@ -23,10 +23,10 @@ def transform_coll_to_color(df, cmap='viridis', transparency=1.):
 
 
 if __name__ == "__main__":
+    neuron_name = "AP120510_s1c1"
     fname = pathlib.Path(
-        "/data/neural_collision_detection/results/2019_2_10/graph_AP130312_s1c1_with_collisions.gml"
+        f"/data/neural_collision_detection/results/2019_2_10/graph_{neuron_name}_with_collisions.gml"
     )
-    neuron_name = "AP130312_s1c1"
     g = CollisionsDistNaive.from_graph(fname, neuron_name)
     g.run()
     nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]

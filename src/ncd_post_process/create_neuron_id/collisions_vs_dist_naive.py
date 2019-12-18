@@ -195,10 +195,10 @@ class CollisionsDistNaive:
         )
         if with_norm:
             y_col = new_ycol_name + " (normalized)"
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_normed_{neurite}.png"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_normed_{neurite}.png"
         else:
             y_col = new_ycol_name
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_no_normed_{neurite}.png"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_no_normed_{neurite}.png"
 
         ax = sns.jointplot(
             "Length of branch [um]",
@@ -209,6 +209,10 @@ class CollisionsDistNaive:
             color=self.labels_and_colors[neurite][0],
         )
         plt.subplots_adjust(left=0.11)
+        data_sorted = data.sort_values(["Length of branch [um]"])
+        avg_x_data = data_sorted["Length of branch [um]"]
+        avg_y_data = data_sorted[y_col].rolling(10).mean()
+        ax.ax_joint.plot(avg_x_data, avg_y_data, c='k', alpha=0.3)
         ax.savefig(
             fname, transparent=True, dpi=300,
         )
@@ -237,7 +241,7 @@ class CollisionsDistNaive:
         ymax = max(y.max() * 1.1, y.mean() * 4)
         extent = (x.min(), x.max(), ymin, ymax)
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.hexbin(
+        h = ax.hexbin(
             x,
             y,
             gridsize=30,
@@ -277,10 +281,17 @@ def mp_main(neuron):
     except FileNotFoundError:
         return
     coll_dist.run()
-    # coll_dist.plot_all_jointplots()
-    # coll_dist.plot_all_hexbins()
-    coll_dist.scatter()
+    coll_dist.plot_all_jointplots()
+    coll_dist.plot_all_hexbins()
+    # coll_dist.scatter()
     return coll_dist
+
+
+def filter_l23_neurons(neuron_names):
+    rest_of_neurons = neuron_names.copy()
+    l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
+    l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
+    return l23_neurons, rest_of_neurons
 
 
 if __name__ == "__main__":
@@ -301,9 +312,7 @@ if __name__ == "__main__":
         "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    # rest_of_neurons = neuron_names.copy()
-    # l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
-    # l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
+    # l23_neurons, rest_of_neurons = filter_l23_neurons(neuron_names)
 
     # multicore exec
     with mp.Pool() as pool:
@@ -311,6 +320,4 @@ if __name__ == "__main__":
 
     # _ = [mp_main(neuron) for neuron in neuron_names]  # single core
 
-    # agg = AggregateDistributions(l23_neurons, rest_of_neurons)
-    # ax = agg.run_all_cells()
     plt.show(block=False)

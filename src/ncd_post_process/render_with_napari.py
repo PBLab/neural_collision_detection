@@ -24,7 +24,7 @@ def create_napari_surface(obj_fname):
     and returns it as a napari-configured Surface that can be easily rendered.
     """
     obj = pd.read_csv(obj_fname, sep=' ', header=None, index_col=0, names=['h', 'x', 'y', 'z'])
-    vertices = obj.loc["v", :]
+    vertices = obj.loc["v", :].to_numpy()
     faces = obj.loc["f", :].to_numpy().astype(np.uint64) - 1
     values = np.ones((len(vertices), ))
     return (vertices, faces, values, len(vertices))

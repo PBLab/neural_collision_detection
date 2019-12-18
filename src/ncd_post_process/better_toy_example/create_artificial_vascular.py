@@ -49,7 +49,7 @@ def main(fname_csv, fname_obj, WORLD_SIZE, VASCULAR_D, VASCULAR_R):
 
 
 def write_to_disk(res):
-    np.savetxt(fname_csv, res, delimiter=',')
+    np.savetxt(fname_csv, res, delimiter=',', fmt='%d')
     # with open(fname_csv, "w") as f:
     #     for r in res:
     #         f.write(b"%i,%i,%i,%i\n" % (r[0], r[1], r[2], r[3]))
