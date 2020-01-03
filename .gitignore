@@ -36,4 +36,5 @@ datajoint/
 docs/_build/*
 **/.ipynb_checkpoints/
 dask-worker-space/
+*.txt
 results/for_article/neuron_id.svg

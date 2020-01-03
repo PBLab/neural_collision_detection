@@ -194,7 +194,7 @@ if __name__ == "__main__":
         r"/data/neural_collision_detection/results/for_article/fig1"
     )
     all_args = [
-        (parent_folder, file) for file in parent_folder.glob("*agg_thresh_0.csv")
+        (parent_folder, file) for file in parent_folder.glob("artificial_*yoav*.txt")
     ]
     with mp.Pool() as pool:
         pool.starmap(mp_run, all_args)
