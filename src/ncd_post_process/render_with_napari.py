@@ -115,8 +115,8 @@ if __name__ == '__main__':
     client = Client(processes=False)
     neuron_obj_fname = '/data/neural_collision_detection/results/for_article/fig1/artificial_neuron.obj'
     surface = client.submit(create_napari_surface, neuron_obj_fname)
-    colls_fname = '/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0_yoav_script.npz'
-    collisions = client.submit(load_collisions, colls_fname, 1, 'vasc_coords')
+    colls_fname = '/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz'
+    collisions = client.submit(load_collisions, colls_fname, 1, 'neuron_coords')
     collisions = client.submit(filter_nans, collisions)
     # surface = surface.result()
     # closest_idx = client.submit(connect_collisions_to_neural_points, collisions, surface[0])

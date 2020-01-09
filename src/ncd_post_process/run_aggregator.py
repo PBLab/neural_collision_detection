@@ -94,8 +94,8 @@ def main(argv):
     results_per_process = 1.0 * len(ncd_results) / process_count
     processes = []
     last_idx = 0
-    parent_folder = pathlib.Path(__file__).resolve().parents[2]
-    vascular_fname = str(parent_folder / "data" / "vascular/vascular_balls.csv")
+    # was ../../data/vascular/vascular_balls.csv
+    vascular_fname = str(pathlib.Path(r"/data/neural_collision_detection/results/for_article/fig1/artificial_vascular.csv"))
     vascular = get_vascular(vascular_fname)
 
     for i in range(process_count):
