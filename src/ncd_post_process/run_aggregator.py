@@ -32,9 +32,8 @@ def process_main(results, output_fname, threshold_distance, vascular):
         rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
 
         parent_folder = pathlib.Path(__file__).resolve().parents[2]
-        # neuron_fname = str(parent_folder / "data" / "neurons" / neuron_name)
-        neuron_fname = str(parent_folder / "yoav" / neuron_name)
-        vascular_fname = str(parent_folder / "data" / "vascular" / "vascular_balls.csv")
+        neuron_fname = str(parent_folder / "results" / "for_article" / "fig1" / neuron_name)
+        vascular_fname = str(parent_folder / "results" / "for_article" / "fig1" / "artificial_vascular.csv")
 
         aggregate(vascular_fname, neuron_fname, location, rotation, output_fname, threshold_distance, vascular)
 
@@ -95,7 +94,8 @@ def main(argv):
     processes = []
     last_idx = 0
     # was ../../data/vascular/vascular_balls.csv
-    vascular_fname = str(pathlib.Path(r"/data/neural_collision_detection/results/for_article/fig1/artificial_vascular.csv"))
+    vascular_fname = pathlib.Path(r"/data/neural_collision_detection/results/for_article/fig1/artificial_vascular.csv")
+    print(f"Vascular fname: ", vascular_fname)
     vascular = get_vascular(vascular_fname)
 
     for i in range(process_count):

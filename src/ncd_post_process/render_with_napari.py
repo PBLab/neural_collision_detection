@@ -114,11 +114,12 @@ def add_colls_data_to_surface(surface, neural_collisions):
 if __name__ == '__main__':
     client = Client(processes=False)
     neuron_obj_fname = '/data/neural_collision_detection/results/for_article/fig1/artificial_neuron.obj'
+    # neuron_obj_fname = '/data/neural_collision_detection/yoav/artificial_270120/neuron.obj'
     surface = client.submit(create_napari_surface, neuron_obj_fname)
     colls_fname = '/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz'
     collisions = client.submit(load_collisions, colls_fname, 1, 'neuron_coords')
     collisions = client.submit(filter_nans, collisions)
-    # surface = surface.result()
+    surface = surface.result()
     # closest_idx = client.submit(connect_collisions_to_neural_points, collisions, surface[0])
     # neural_collisions = client.submit(NeuronToGraph.coerce_collisions_to_neural_coords, surface[3], closest_idx)
     # binsize = (1, 1, 1)
@@ -132,8 +133,9 @@ if __name__ == '__main__':
     # colors[:, 3] = surface_with_collisions[2]
     # colors = ColorArray(colors)
     # colors = [color.rgba.ravel() for color in colors]
-
+    # raw_neuron = pd.read_csv('/data/neural_collision_detection/results/for_article/fig1/artificial_vascular.csv', header=None)
     with napari.gui_qt():
-        viewer = napari.view_points(collisions.result()[::10], size=1, face_color='white')
-        # viewer = napari.view_points(points_and_color[0], )
-    #     viewer.add_image(hist_and_edges.hist)
+        # viewer = napari.view_points(collisions.result()[::10], size=1, face_color='pink')
+        # viewer = napari.view_points(raw_neuron.iloc[::10, :3].to_numpy(), size=1, face_color='white')
+        viewer = napari.view_surface(surface, colormap='magenta')
+        viewer.theme = 'light'

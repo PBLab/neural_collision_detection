@@ -10,9 +10,9 @@ BRANCH_LENGTH_STEP_BOTTOM = 8
 
 def populate_res(res, start, vec, branch_length, vec_diff_angle, branch_length_stop):
     if branch_length <= 0:
-    	return
+        return
     for i in range(1, branch_length + 1):
-    	res.append((start[0] + vec[0]*i, start[1] + vec[1]*i, start[2] + vec[2]*i, NEURON_R))
+        res.append((start[0] + vec[0]*i, start[1] + vec[1]*i, start[2] + vec[2]*i, NEURON_R))
     end = (start[0] + vec[0]*branch_length, start[1] + vec[1] * branch_length, start[2] + vec[2] * branch_length)
     cos_angle = math.cos(vec_diff_angle)
     sin_angle = math.sin(vec_diff_angle)
@@ -29,8 +29,8 @@ def populate_res(res, start, vec, branch_length, vec_diff_angle, branch_length_s
 def main(argv):
     print ("Hello")
     if len(argv) != 2:
-    	print ("Usage: %s <output_file>" % argv[0])
-    	return 1
+        print ("Usage: %s <output_file>" % argv[0])
+        return 1
     fname = argv[1]
     WORLD_X_SIZE = 500
     WORLD_Y_SIZE = 500

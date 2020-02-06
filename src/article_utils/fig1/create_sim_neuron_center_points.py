@@ -7,7 +7,6 @@ cell centers in its borders.
 
 import pandas as pd
 
-
 vasc_fname = '/data/neural_collision_detection/yoav/new/artificial_vascular.csv'
 df = pd.read_csv(vasc_fname, header=None)
 for col in df.columns:
