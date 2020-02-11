@@ -20,7 +20,16 @@ import mytools
 # Define basic types of points and trees - can't use an
 # Enum or class due to memory constraints
 POINTTYPE = ["standard", "node", "endpoint"]
-TREETYPE = ["Axon", "Dendrite"]
+TREETYPE = [
+    "Axon0",
+    "Axon1",
+    "Dendrite0",
+    "Dendrite1",
+    "Dendrite2",
+    "Dendrite3",
+    "Dendrite4",
+    "Dendrite5",
+]
 
 
 @attr.s(frozen=True, slots=True)
@@ -115,7 +124,7 @@ class NeuronToGraph:
         with the actual collision value inside the node's attributes. Else,
         The nodes will contain 0 as their collision value.
         """
-        self.parent_folder = pathlib.Path(__file__).resolve().parents[2]
+        self.parent_folder = pathlib.Path('/data/neural_collision_detection')
         (
             neuron_fname,
             collisions_fname,
@@ -234,8 +243,9 @@ class NeuronToGraph:
         )
         print("Starting the tree parsing...")
         pair_number = 0
-        for tree in neuron.tree:
-            print(f"Parsing tree {tree.type}")
+        for tree_idx, tree in enumerate(neuron.tree):
+            tree_type = f"{tree.type}{tree_idx}"
+            print(f"Parsing tree {tree_type}")
             parent_node = CollisionNode(
                 ord_number=0,
                 loc=tuple(tree.rawpoint[0].P),
@@ -243,7 +253,7 @@ class NeuronToGraph:
                 ptype="standard",
                 collisions=collisions[pair_number],
                 radius=tree.rawpoint[0].r,
-                tree_type=tree.type,
+                tree_type=tree_type,
                 dist_to_body=np.float64(0),
             )
             new_node = CollisionNode(
@@ -253,7 +263,7 @@ class NeuronToGraph:
                 ptype=tree.rawpoint[1].ptype,
                 collisions=collisions[1],
                 radius=tree.rawpoint[1].r,
-                tree_type=tree.type,
+                tree_type=tree_type,
                 dist_to_body=np.float64(0),
             )
             weight = np.float64(0)
@@ -275,7 +285,7 @@ class NeuronToGraph:
                     ptype=point.ptype,
                     collisions=collisions[pair_number],
                     radius=point.r,
-                    tree_type=tree.type,
+                    tree_type=tree_type,
                     dist_to_body=weight,
                 )
 
@@ -445,22 +455,22 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
 
 if __name__ == "__main__":
     neuron_names = [
-        # "AP120410_s1c1",
-        # "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
+        "AP120410_s1c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
         "AP120507_s3c1",
-        # "AP120510_s1c1",
-        # "AP120522_s3c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
-        # "AP130312_s1c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    result_folder = "2020_02_10"
+    result_folder = "2019_2_10"
     thresh = 0
     with_collisions = True
     with_plot = False

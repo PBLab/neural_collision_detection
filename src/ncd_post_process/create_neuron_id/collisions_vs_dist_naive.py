@@ -69,26 +69,24 @@ class CollisionsDistNaive:
     num_of_nodes = attr.ib(init=False)
     parsed_axon = attr.ib(init=False)
     parsed_dend = attr.ib(init=False)
+    all_colls = attr.ib(init=False)
     labels_and_colors = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.num_of_nodes = self.graph.number_of_nodes()
         coll_ax = np.zeros(self.num_of_nodes, dtype=np.uint64)
-        coll_dend = coll_ax.copy()
         dist_ax = np.zeros(self.num_of_nodes, dtype=np.float64)
-        dist_dend = dist_ax.copy()
-        self.parsed_axon = pd.DataFrame(
-            {"coll": coll_ax, "dist": dist_ax, "x": dist_ax, "y": dist_ax, "z": dist_ax}
-        )
-        self.parsed_dend = pd.DataFrame(
-            {
-                "coll": coll_dend,
-                "dist": dist_dend,
-                "x": dist_dend,
-                "y": dist_dend,
-                "z": dist_dend,
-            }
-        )
+        df_columns = {
+            "coll": coll_ax,
+            "dist": dist_ax,
+            "x": dist_ax,
+            "y": dist_ax,
+            "z": dist_ax,
+        }
+        self.parsed_axon = pd.DataFrame(df_columns)
+        self.parsed_dend = pd.DataFrame(df_columns)
+        df_columns["type"] = ""
+        self.all_colls = pd.DataFrame(df_columns)
         self.labels_and_colors = {
             "axon": ("C2", "Axonal", "Greens"),
             "dend": ("C1", "Dendritic", "Oranges"),
@@ -111,6 +109,7 @@ class CollisionsDistNaive:
         self._populate_collisions()
         self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
         self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
+        self.all_colls["coll_normed"] = self._normalize_by_density(self.all_colls)
 
     def _populate_collisions(self):
         """Traverse a specific graph and find the number of
@@ -118,20 +117,21 @@ class CollisionsDistNaive:
         from the cell body.
         """
         idx_axon, idx_dend = 0, 0
-        for node in self.graph.nodes():
-            if node.tree_type == "Axon":
-                self.parsed_axon.loc[idx_axon, "coll"] = (
-                    node.collisions / self.normalize_collisions_by
-                )
-                self.parsed_axon.loc[idx_axon, "dist"] = node.dist_to_body
-                self.parsed_axon.loc[idx_axon, "x":"z"] = node.loc
+        for idx, node in enumerate(self.graph.nodes()):
+            row_data = (
+                node.collisions / self.normalize_collisions_by,
+                node.dist_to_body,
+                node.loc[0],
+                node.loc[1],
+                node.loc[2],
+                node.tree_type,
+            )
+            self.all_colls.loc[idx, :] = row_data
+            if 'Axon' in node.tree_type:
+                self.parsed_axon.loc[idx_axon, :] = row_data[:-1]
                 idx_axon += 1
             else:
-                self.parsed_dend.loc[idx_dend, "coll"] = (
-                    node.collisions / self.normalize_collisions_by
-                )
-                self.parsed_dend.loc[idx_dend, "dist"] = node.dist_to_body
-                self.parsed_dend.loc[idx_dend, "x":"z"] = node.loc
+                self.parsed_dend.loc[idx_dend, :] = row_data[:-1]
                 idx_dend += 1
 
         self.parsed_axon = self.parsed_axon.loc[:idx_axon, :]

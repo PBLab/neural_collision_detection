@@ -27,6 +27,7 @@ __pycache__/
 *.ncd
 data/
 results/2019*/
+results/2020*/
 !results/for_article
 !results/for_article/*
 *.mp4

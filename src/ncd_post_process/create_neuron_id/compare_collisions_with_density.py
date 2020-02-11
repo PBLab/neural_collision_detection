@@ -547,15 +547,15 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
     instance. branch_class can be either one of these classes.
     """
     neuron_fname = (
-        pathlib.Path(__file__).resolve().parents[3]
+        pathlib.Path('/data/neural_collision_detection')
         / "data"
         / "neurons"
         / f"{neuron_name}.xml"
     )
-    py3dn_folder = pathlib.Path(__file__).resolve().parents[2] / "py3DN"
+    py3dn_folder = pathlib.Path('/data/neural_collision_detection') / "py3DN"
     bdens = BranchDensity(neuron_fname, py3dn_folder)
     neuron_graph = (
-        pathlib.Path(__file__).resolve().parents[3]
+        pathlib.Path('/data/neural_collision_detection')
         / "results"
         / "2019_2_10"
         / f"graph_{neuron_name}_with_collisions.gml"
@@ -592,7 +592,7 @@ def run_single_neuron_with_quantile():
             continue
         colls = bdens_coll.get_top_colls_percentile(perc)
         fname = (
-            pathlib.Path(__file__).resolve().parents[3]
+            pathlib.Path('/data/neural_collision_detection')
             / "results"
             / "2019_2_10"
             / f"top_{100-perc}p_likely_colls_{neuron_name}.npy"
@@ -601,9 +601,9 @@ def run_single_neuron_with_quantile():
 
 
 if __name__ == "__main__":
-    run_single_neuron_with_jointplot()
+    # run_single_neuron_with_jointplot()
     run_single_neuron_with_quantile()
-    run_ur_topodist()
+    # run_ur_topodist()
     # run_ur_topodist_multiple_r()
     # run_collisions_dens_jointplot_multiple_r()
-    run_ur_topodist_colls()
+    # run_ur_topodist_colls()
