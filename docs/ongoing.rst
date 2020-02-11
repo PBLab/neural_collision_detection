@@ -2,6 +2,21 @@
 Ongoing Work
 ------------
 
+* I tried re-running the analysis pipeline on the two layer II/III neurons that
+  show a very low number of collisions (507 and 131) and it seems that this
+  result stands. Not sure what to make of it.
+  
+* In ``show_collisions_dist.py`` I tried to look at the cumulative sum of the collisions,
+  to see if I detect any pattern in the distributions of neurons in different
+  layers, but I couldn't find such. The average running sum of the neurons in II/III
+  vs. the rest also didn't reveal much.
+
+* I completed the work on the first figure and the two supplemental figures
+  that accompany it - one of the computational pipeline and the other of the
+  different type of toy neuron that tests the collision numbers. The code is
+  now in ``src/article_utils/`` while the data it uses and generates is in
+  ``results/for_article``.
+
 * I detected a bug in the topological distance caluclation - I wasn't handling
   correctly the cases in which there's a large jump between one point to the
   next one, which caused the calculated distance values to be way too big.

@@ -20,22 +20,22 @@ from ncd_post_process.graph_parsing import CollisionNode
 
 
 plt.rcParams.update({"font.size": 22})
-neuron_names = [
-    "AP120410_s1c1",
-    "AP120410_s3c1",
-    "AP120412_s3c2",
-    "AP120416_s3c1",
-    "AP120419_s1c1",
-    "AP120420_s1c1",
-    "AP120420_s2c1",
-    "AP120507_s3c1",
-    "AP120510_s1c1",
-    "AP120522_s3c1",
-    "AP120524_s2c1",
-    "AP120614_s1c2",
-    "AP130312_s1c1",
-    "AP131105_s1c1",
-]
+neuron_names = {
+    # "AP120410_s1c1": "V",
+    # "AP120410_s3c1": "V",
+    # "AP120412_s3c2": "V",
+    # "AP120416_s3c1": "IV",
+    # "AP120419_s1c1": "VI",
+    # "AP120420_s1c1": "IV",
+    # "AP120420_s2c1": "II/II",
+    "AP120507_s3c1": "II/II",
+    # "AP120510_s1c1": "II/II",
+    # "AP120522_s3c1": "I",
+    # "AP120524_s2c1": "II/II",
+    # "AP120614_s1c2": "V",
+    # "AP130312_s1c1": "II/II",
+    "AP131105_s1c1": "II/II",
+}
 
 
 @attr.s
@@ -63,6 +63,9 @@ class CollisionsDistNaive:
     graph = attr.ib(validator=instance_of(nx.Graph))
     neuron_name = attr.ib(default="neuron", validator=instance_of(str))
     normalize_collisions_by = attr.ib(default=100_000, validator=instance_of(int))
+    results_folder = attr.ib(
+        default=pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+    )
     num_of_nodes = attr.ib(init=False)
     parsed_axon = attr.ib(init=False)
     parsed_dend = attr.ib(init=False)
@@ -92,7 +95,7 @@ class CollisionsDistNaive:
         }
 
     @classmethod
-    def from_graph(cls, fname: pathlib.Path, neuron: str):
+    def from_graph(cls, fname: pathlib.Path, neuron: str, **kwargs):
         """Instantiate from an existing graph file by deserializing it."""
         try:
             graph = nx.readwrite.gml.read_gml(
@@ -101,7 +104,7 @@ class CollisionsDistNaive:
         except FileNotFoundError:
             raise
         else:
-            return cls(graph, neuron)
+            return cls(graph, neuron, **kwargs)
 
     def run(self):
         """Run analysis pipeline."""
@@ -195,7 +198,7 @@ class CollisionsDistNaive:
         ax.set_ylabel("Collisions" if normed == "" else "P(Collisions)")
         ax.set_xlabel("Topodist [um]")
         ax.figure.savefig(
-            f"/data/neural_collision_detection/results/2019_2_10/colls_dist{normed}_{self.neuron_name}.png",
+            self.results_folder / f"colls_dist{normed}_{self.neuron_name}.png",
             transparent=True,
             dpi=300,
         )
@@ -232,7 +235,7 @@ class CollisionsDistNaive:
         data_sorted = data.sort_values(["Length of branch [um]"])
         avg_x_data = data_sorted["Length of branch [um]"]
         avg_y_data = data_sorted[y_col].rolling(window_size).mean()
-        ax.ax_joint.plot(avg_x_data, avg_y_data, c='k', alpha=0.3)
+        ax.ax_joint.plot(avg_x_data, avg_y_data, c="k", alpha=0.3)
         ax.savefig(
             fname, transparent=True, dpi=300,
         )
@@ -281,21 +284,29 @@ def plot_running_avg_for_all():
     dendrites, L23 and L5 neurons.
     """
     l23_neurons, rest_of_neurons = filter_l23_neurons(neuron_names)
-    l23_neurons = ((l23_neuron, 'Layer II/III') for l23_neuron in l23_neurons)
-    rest_of_neurons = ((rest, 'Layer I/IV/V/VI') for rest in rest_of_neurons)
+    l23_neurons = ((l23_neuron, "II/III") for l23_neuron in l23_neurons)
+    rest_of_neurons = ((rest, "I/IV/V/VI") for rest in rest_of_neurons)
     all_neurons = itertools.chain.from_iterable((l23_neurons, rest_of_neurons))
     analyzed_data = []
     for neuron, layer in all_neurons:
         coll_dist = _neuron_to_obj(neuron)
         if not coll_dist:
             continue
+        print(neuron)
         coll_dist.run()
-        for df, neurite in zip((coll_dist.parsed_axon, coll_dist.parsed_dend), ("Axon", "Dendrite")):
-            df = df.sort_values('dist')
-            df["Average Collision Number"] = df["coll_normed"].rolling(30).mean()
-            df["Neuron Type"] = neurite
-            df["Layer"] = layer
-            analyzed_data.append(df.loc[:, ['Neurite', 'Average Collision Number', 'Layer']].reset_index())
+        for df, neurite in zip(
+            (coll_dist.parsed_axon, coll_dist.parsed_dend), ("Axon", "Dendrite")
+        ):
+            df = df.sort_values("dist")
+            df["avg_coll"] = df["coll_normed"].rolling(30).mean()
+            df["cumsum"] = df["coll_normed"].cumsum()
+            df["type"] = neurite
+            df["layer"] = layer
+            df["name"] = neuron
+            df = df.astype(
+                {"type": "category", "layer": "category", "name": "category"}
+            )
+            analyzed_data.append(df)
     return analyzed_data
 
 
@@ -310,19 +321,23 @@ def norm_colls(bincounts, distances, collisions):
     return normed_collisions
 
 
-def _name_to_graph_fname(neuron):
-    return (
-        pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
-        / f"graph_{neuron}_with_collisions.gml"
-    )
+def _name_to_graph_fname(
+    neuron, folder=pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+):
+    return folder / f"graph_{neuron}_with_collisions.gml"
 
 
-def _neuron_to_obj(neuron):
+def _neuron_to_obj(
+    neuron,
+    results_folder=pathlib.Path("/data/neural_collision_detection/results/2019_2_10"),
+):
     """Parses a filename containing a graph repr of a neuron
     into an CollisionsDistNative object"""
-    graph_fname = _name_to_graph_fname(neuron)
+    graph_fname = _name_to_graph_fname(neuron, results_folder)
     try:
-        coll_dist = CollisionsDistNaive.from_graph(graph_fname, neuron)
+        coll_dist = CollisionsDistNaive.from_graph(
+            graph_fname, neuron, results_folder=results_folder
+        )
         return coll_dist
     except FileNotFoundError:
         return
@@ -330,7 +345,8 @@ def _neuron_to_obj(neuron):
 
 def mp_main(neuron):
     """Run all functions in a parallel manner."""
-    coll_dist = _neuron_to_obj(neuron)
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_10")
+    coll_dist = _neuron_to_obj(neuron, results_folder)
     if not coll_dist:
         return
     coll_dist.run()
@@ -355,7 +371,7 @@ if __name__ == "__main__":
     #     res = pool.map(mp_main, neuron_names)
 
     # single core
-    # _ = [mp_main(neuron) for neuron in neuron_names]
+    _ = [mp_main(neuron) for neuron in neuron_names]
 
-    plot_running_avg_for_all()
+    # plot_running_avg_for_all()
     plt.show(block=False)

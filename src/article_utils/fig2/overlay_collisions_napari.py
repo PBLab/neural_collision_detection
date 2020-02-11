@@ -8,7 +8,7 @@ from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
 )
 
 
-def transform_coll_to_color(df, cmap='viridis', transparency=1.):
+def transform_coll_to_color(df, cmap="viridis", transparency=1.0):
     """Use an existing DF with the collision counts and locations
     and find the value of the collision color for each of the
     rows in that DF.
@@ -23,7 +23,7 @@ def transform_coll_to_color(df, cmap='viridis', transparency=1.):
 
 
 if __name__ == "__main__":
-    neuron_name = "AP120510_s1c1"
+    neuron_name = "AP120410_s1c1"  # "AP120510_s1c1"
     fname = pathlib.Path(
         f"/data/neural_collision_detection/results/2019_2_10/graph_{neuron_name}_with_collisions.gml"
     )
@@ -37,5 +37,17 @@ if __name__ == "__main__":
     nc_dend = transform_coll_to_color(nc_dend, "orange", alpha_factor)
 
     with napari.gui_qt():
-        v = napari.view_points(nc_dend.loc[:, "x":"z"].to_numpy(), size=nc_dend.loc[:, "coll_stretch"] * scale_factor, edge_width=0, face_color=nc_dend.loc[:, "r":"a"].to_numpy())
-        v.add_points(nc_ax.loc[:, "x":"z"].to_numpy(), size=nc_ax.loc[:, "coll_stretch"] * scale_factor, edge_width=0, face_color=nc_ax.loc[:, "r":"a"].to_numpy())
+        v = napari.view_points(
+            nc_dend.loc[:, "x":"z"].to_numpy(),
+            size=nc_dend.loc[:, "coll_stretch"] * scale_factor,
+            edge_width=0,
+            face_color=nc_dend.loc[:, "r":"a"].to_numpy(),
+            name=f"{neuron_name}_dend",
+        )
+        v.add_points(
+            nc_ax.loc[:, "x":"z"].to_numpy(),
+            size=nc_ax.loc[:, "coll_stretch"] * scale_factor,
+            edge_width=0,
+            face_color=nc_ax.loc[:, "r":"a"].to_numpy(),
+            name=f"{neuron_name}_ax",
+        )

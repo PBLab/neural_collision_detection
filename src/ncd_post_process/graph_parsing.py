@@ -445,22 +445,22 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
 
 if __name__ == "__main__":
     neuron_names = [
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
+        # "AP120410_s1c1",
+        # "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
         "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
+        # "AP120510_s1c1",
+        # "AP120522_s3c1",
+        # "AP120524_s2c1",
+        # "AP120614_s1c2",
+        # "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    result_folder = "2019_2_10"
+    result_folder = "2020_02_10"
     thresh = 0
     with_collisions = True
     with_plot = False
