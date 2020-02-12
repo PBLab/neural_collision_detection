@@ -136,6 +136,7 @@ class CollisionsDistNaive:
 
         self.parsed_axon = self.parsed_axon.loc[:idx_axon, :]
         self.parsed_dend = self.parsed_dend.loc[:idx_dend, :]
+        self.all_colls["type"] = self.all_colls["type"].astype('category')
 
     def _normalize_by_density(self, data):
         """Takes the parsed graph data and normalizes the collision counts by the
