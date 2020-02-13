@@ -7,7 +7,8 @@ static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
 
 CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-									const std::string& output_directory, bool minimal_only, bool bound_checks, bool should_output_collisions)
+									const std::string& output_directory, bool minimal_only, bool bound_checks, bool should_output_collisions,
+									bool should_rotate)
 {
 	_m1 = m1;
 	_m2 = m2;
@@ -18,6 +19,7 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 	_minimal_only = minimal_only;
 	_bound_checks = bound_checks;
 	_should_output_collision_files = should_output_collisions;
+	_should_rotate = should_rotate;
 
 	LOG_INFO("Creating model1...\n");
 	_fm1 = _m1->fcl_model();
@@ -126,8 +128,16 @@ static void* thread_main_impl(thread_params_t* params)
 }
 
 
-void calc_ranges(char main_axis, int* min_x, int* max_x, int* min_y, int* max_y, int* min_z, int* max_z)
+void calc_ranges(char main_axis, int* min_x, int* max_x, int* min_y, int* max_y, int* min_z, int* max_z, bool should_rotate)
 {
+	if (!should_rotate)
+	{
+		*min_x = *max_x = 0;
+		*min_y = *max_y = 0;
+		*min_z = *max_z = 0;
+		return;
+	}
+
 	switch(main_axis)
 	{
 	case 'x':
@@ -232,7 +242,7 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 {
 	LOG_INFO("Checking collisions at (%i, %i, %i), using %i threads\n", x_pos, y_pos, z_pos, _num_of_threads);
 	int min_x, max_x, min_y, max_y, min_z, max_z;
-	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z);
+	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z, _should_rotate);
 	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z, x_pos, y_pos, z_pos);
 
 	pthread_t * thread_ids = new pthread_t[_num_of_threads];

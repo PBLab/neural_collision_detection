@@ -55,7 +55,7 @@ void Program::logic()
 		LOG_INFO("Creating output directory\n");
 		mkdir(_output_directory, 0700);
 	}
-	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks, _should_output_collisions);
+	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks, _should_output_collisions, _should_rotate);
 	if (_mode == MODE__VERIFY)
 	{
 		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
@@ -155,7 +155,7 @@ void Program::parse_args(int argc, char** argv)
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzbsvl:m:r:o:h", long_options, &option_index);
+		c = getopt_long(argc, argv, "f:V:N:t:i:c:qzbsvnl:m:r:o:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -216,6 +216,9 @@ void Program::parse_args(int argc, char** argv)
 		case 's':
 			_should_output_collisions = true;
 			break;
+		case 'n':
+			_should_rotate = false;
+			break;
 		case '?':
 		case 'h':
 		default:
@@ -261,6 +264,7 @@ void Program::print_usage()
 	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
 	printf("\t-s, --output-collisions\tOutput files containing the collision points [Regular/Batch mode] [default - don't output]\n");
+	printf("\t-n, --no-rotation\t Don't rotate the neuron [default - rotate]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 }
