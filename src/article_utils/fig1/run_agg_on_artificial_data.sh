@@ -1,0 +1,1 @@
+python src/ncd_post_process/run_aggregator.py results/for_article/fig1/artificial_neuron_results.csv 1000 0 results/for_article/fig1/artificial_neuron_results_agg_thresh_0.csv
