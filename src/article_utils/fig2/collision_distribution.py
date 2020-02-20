@@ -52,7 +52,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="z_abs",
-            y="coll",
+            y="coll_normed",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -61,7 +61,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="y_abs",
-            y="coll",
+            y="coll_normed",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -70,7 +70,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="x_abs",
-            y="coll",
+            y="coll_normed",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -79,7 +79,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="dist_to_origin",
-            y="coll",
+            y="coll_normed",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
