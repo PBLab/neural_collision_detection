@@ -1,4 +1,4 @@
-python run_aggregator.py ../../results/2020_02_14/ncd_results_AP120410_s1c1 1000 0 ../../results_2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv
+python run_aggregator.py ../../results/2020_02_14/ncd_results_AP120410_s1c1 1000 0 ../../results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv
 python run_aggregator.py ../../results/2020_02_14/ncd_results_AP120410_s3c1 1000 0 ../../results/2020_02_14/agg_results_AP120410_s3c1_thresh_0.csv
 python run_aggregator.py ../../results/2020_02_14/ncd_results_AP120412_s3c2 1000 0 ../../results/2020_02_14/agg_results_AP120412_s3c2_thresh_0.csv
 python run_aggregator.py ../../results/2020_02_14/ncd_results_AP120416_s3c1 1000 0 ../../results/2020_02_14/agg_results_AP120416_s3c1_thresh_0.csv

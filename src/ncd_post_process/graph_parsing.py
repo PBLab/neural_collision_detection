@@ -13,6 +13,7 @@ import pandas as pd
 from attr.validators import instance_of, in_
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
+import numba as nb
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "py3DN"))
 import mytools
@@ -46,7 +47,7 @@ class CollisionNode:
     :param str ptype: Type of point, one of POINTTYPE's values
     :param float radius: Radius of point
     :param str tree_type: Type of tree, one of TREETYPE's values
-    :param np.uint64 collisions: Number of collisions on the node.
+    :param np.float64 collision_chance: Probability of collision for the node
     :param np.float64 dist_to_body: topological distance to the cell body
     """
 
@@ -56,7 +57,7 @@ class CollisionNode:
     ptype = attr.ib(validator=in_(POINTTYPE))
     radius = attr.ib(validator=instance_of(float))
     tree_type = attr.ib(validator=in_(TREETYPE))
-    collisions = attr.ib(default=np.uint64(0), validator=instance_of(np.uint64))
+    collision_chance = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
     dist_to_body = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
 
     @classmethod
@@ -67,7 +68,7 @@ class CollisionNode:
         Usually used when deserializing data.
         """
         all_matches_regex = re.compile(
-            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), dist_to_body=(.+?)\)"
+            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), coll_prob=(.+?), dist_to_body=(.+?)\)"
         )
         matches = all_matches_regex.findall(string)[0]
         ord_number = int(matches[0])
@@ -77,10 +78,19 @@ class CollisionNode:
         radius = float(matches[4])
         tree_type = matches[5]
         collisions = np.uint64(matches[6])
-        dist_to_body = np.float64(matches[7])
+        coll_prob = np.float64(matches[7])
+        dist_to_body = np.float64(matches[8])
 
         return cls(
-            ord_number, loc, ppid, ptype, radius, tree_type, collisions, dist_to_body
+            ord_number,
+            loc,
+            ppid,
+            ptype,
+            radius,
+            tree_type,
+            collisions,
+            coll_prob,
+            dist_to_body,
         )
 
 
@@ -112,10 +122,12 @@ class NeuronToGraph:
     parent_folder = attr.ib(init=False)
     num_of_nodes = attr.ib(init=False)
     collisions = attr.ib(init=False)
+    coll_prob = attr.ib(init=False)
     neuronal_points = attr.ib(init=False)
     closest_cell = attr.ib(init=False)
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
+    closest_coll = attr.ib(init=False)
 
     def run(self):
         """
@@ -124,7 +136,7 @@ class NeuronToGraph:
         with the actual collision value inside the node's attributes. Else,
         The nodes will contain 0 as their collision value.
         """
-        self.parent_folder = pathlib.Path('/data/neural_collision_detection')
+        self.parent_folder = pathlib.Path("/data/neural_collision_detection")
         (
             neuron_fname,
             collisions_fname,
@@ -139,18 +151,21 @@ class NeuronToGraph:
                 self.num_of_nodes, neuron
             )
             if self.with_collisions:
-                self.collisions = np.load(str(collisions_fname))["neuron_coords"]
-                self.closest_cell = connect_collisions_to_neural_points(
+                self.collisions = np.load(str(collisions_fname))["unique_coords"]
+                self.coll_prob = np.load(str(collisions_fname))["coll_prob"]
+                self.closest_coll = connect_collisions_to_neural_points(
                     self.collisions, self.neuronal_points, self.inner_multiprocess
                 )
-                neural_collisions = self.coerce_collisions_to_neural_coords(
-                    len(self.neuronal_points), self.closest_cell
+                coll_prob = coerce_collisions_to_neural_coords(
+                    len(self.neuronal_points),
+                    self.closest_coll,
+                    self.coll_prob,
                 )
 
             else:
-                neural_collisions = np.zeros(self.num_of_nodes, dtype=np.uint64)
+                coll_prob = np.zeros(self.num_of_nodes, dtype=np.float64)
             self.collision_df = self._make_collision_df(
-                neural_collisions, neuron, self.num_of_nodes
+                coll_prob, neuron, self.num_of_nodes,
             )
 
         self.graph = self._generate_graph(self.collision_df)
@@ -202,23 +217,6 @@ class NeuronToGraph:
                 idx += 1
         return pd.DataFrame(neuronal_points, columns=["x", "y", "z"])
 
-    @staticmethod
-    def coerce_collisions_to_neural_coords(
-        num_neuronal_points: int, closest_cell_idx: np.ndarray
-    ):
-        """
-        Counts the number of collisions per neuronal coordinate on the neuronal tree.
-        If there are duplicate collisions it finds the neuronal coordinate which was closest to the
-        collision point and discards the other point.
-        Parameters:
-        :param np.ndarray mindist: A 1D array with the length of the entire collisions array
-        assi
-        """
-        neural_collisions = np.zeros(num_neuronal_points, dtype=np.uint64)
-        uniques, counts = np.unique(closest_cell_idx, return_counts=True)
-        neural_collisions[uniques] = counts
-        return neural_collisions
-
     def _make_collision_df(self, collisions, neuron, num_of_nodes) -> pd.DataFrame:
         """
         Traverses the neuronal tree and the corresponding
@@ -251,7 +249,7 @@ class NeuronToGraph:
                 loc=tuple(tree.rawpoint[0].P),
                 ppid=-1,
                 ptype="standard",
-                collisions=collisions[pair_number],
+                collision_chance=collisions[pair_number],
                 radius=tree.rawpoint[0].r,
                 tree_type=tree_type,
                 dist_to_body=np.float64(0),
@@ -261,7 +259,7 @@ class NeuronToGraph:
                 loc=tuple(tree.rawpoint[1].P),
                 ppid=0,
                 ptype=tree.rawpoint[1].ptype,
-                collisions=collisions[1],
+                collision_chance=collisions[1],
                 radius=tree.rawpoint[1].r,
                 tree_type=tree_type,
                 dist_to_body=np.float64(0),
@@ -283,7 +281,7 @@ class NeuronToGraph:
                     loc=tuple(point.P),
                     ppid=point.ppid,
                     ptype=point.ptype,
-                    collisions=collisions[pair_number],
+                    collision_chance=collisions[pair_number],
                     radius=point.r,
                     tree_type=tree_type,
                     dist_to_body=weight,
@@ -335,6 +333,7 @@ class CsvNeuronToGraph:
     closest_cell = attr.ib(init=False)
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
+    coll_prob = attr.ib(init=False)
 
     def main(self):
         """Main Pipeline"""
@@ -345,7 +344,8 @@ class CsvNeuronToGraph:
             graph_fname,
         ) = self._filename_setup()
         self.neuron_coords = self._load_neuron()
-        self.collisions = np.load(str(collisions_fname))["neuron_coords"]
+        self.collisions = np.load(str(collisions_fname))["unique_coords"]
+        self.coll_prob = np.load(str(collisions_fname))["coll_prob"]
         self._connect_collisions_to_neural_coords(neuron_name)
 
     def _filename_setup(self):
@@ -373,13 +373,13 @@ class CsvNeuronToGraph:
         closest_cell_idx: Index to the closest point on the cell contour to the given collision.
         """
         ntg = NeuronToGraph(neuron_name, str(self.results_folder), self.thresh)
-        closest_cell = connect_collisions_to_neural_points(
+        closest_coll = connect_collisions_to_neural_points(
             self.collisions, self.neuron_coords, multiprocessed=False
         )
-        neural_collisions = ntg.coerce_collisions_to_neural_coords(
-            len(self.neuron_coords), closest_cell
+        coll_prob = coerce_collisions_to_neural_coords(
+            len(self.neuron_coords), self.coll_prob, closest_coll,
         )
-        collisions_df = ntg._make_collision_df(neural_collisions,)
+        collisions_df = ntg._make_collision_df(coll_prob)
 
 
 def connect_collisions_to_neural_points(
@@ -390,33 +390,22 @@ def connect_collisions_to_neural_points(
     value. This doesn't yet deal with two collision locations that
     are attributed to the same neural point.
 
-    Returns:
-    closest_cell_idx: Index to the closest point on the cell contour to the given collision.
+    Returns
+    -------
+        closest_coll_idx: Index to the closest collision for that given neural point
     """
     neuronal_points = neuronal_points.loc[:, "x":"z"]
     assert collisions.shape[1] == neuronal_points.shape[1]  # two 3D coordinate arrays
-    splits = np.linspace(0, collisions.shape[0], num=100, endpoint=False, dtype=np.int)[
-        1:
-    ]
-    split_colls = np.split(collisions, splits)
-    neuronal_points_iterable = (neuronal_points for idx in range(len(splits)))
-
-    if multiprocessed:
-        zipped_args = zip(split_colls, neuronal_points_iterable)
-        with mp.Pool() as pool:
-            closest_cell_idx = pool.starmap(dist_and_min, zipped_args)
-    else:
-        closest_cell_idx = [
-            dist_and_min(coll, npoint)
-            for coll, npoint in zip(split_colls, neuronal_points_iterable)
-        ]
-    closest_cell_idx = np.concatenate(closest_cell_idx)
-    return closest_cell_idx
+    return dist_and_min(collisions, neuronal_points)
 
 
 def dist_and_min(colls, neuronal_points):
+    """Calculates the distance between each collision and neural point, and
+    returns the minimal
+
+    """
     dist = scipy.spatial.distance.cdist(colls, neuronal_points)
-    return dist.argmin(axis=1)
+    return dist.argmin(axis=0)
 
 
 @contextlib.contextmanager
@@ -437,6 +426,40 @@ def load_neuron(py3dn_folder: pathlib.Path, fname: pathlib.Path):
         sys.path.pop(-1)
 
 
+@nb.njit
+def coerce_collisions_to_neural_coords(
+    num_neuronal_points: int, closest_coll_idx: np.ndarray, coll_prob: np.ndarray,
+):
+    """Finds the collision probability of each neuronal point.
+
+    This jitted function finds all the collision probabilities that are associated with
+    the current neural point, averages them out and assigns this value to this neural
+    coordinate.
+
+    Parametres
+    ----------
+    num_neuronal_points : int
+        Number of points the neuron is made of
+    closest_coll_idx : np.ndarray
+        An array with the length of num_neural_points, with its values indexing the
+    collision array for the closest collision to that neural point
+    coll_prob : np.ndarray
+    An array with the length of the number of collisions which contains the
+    probability of each collision
+
+    Returns
+    -------
+    result : np.ndarray
+        An array with the length of num_neuronal_points containing the calculated
+        probability of collision for each neural point
+    """
+    prob_per_point = np.zeros(num_neuronal_points)
+    for idx, closest_coll in enumerate(closest_coll_idx):
+        relevant_locs = closest_coll_idx == closest_coll
+        prob_per_point[idx] = np.mean(coll_prob[relevant_locs])
+    return prob_per_point
+
+
 def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=False):
     """Run the pipeline in a parallel manner."""
     try:
@@ -450,6 +473,7 @@ def mp_main(neuron_name, results_folder, thresh, with_collisions, with_plot=Fals
         graphed_neuron.run()
         return graphed_neuron
     except FileNotFoundError:
+        print(f"File {neuron_name} not found")
         return
 
 
@@ -470,7 +494,7 @@ if __name__ == "__main__":
         "AP130312_s1c1",
         "AP131105_s1c1",
     ]
-    result_folder = "2019_2_10"
+    result_folder = "2020_02_14"
     thresh = 0
     with_collisions = True
     with_plot = False
