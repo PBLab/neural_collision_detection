@@ -9,7 +9,8 @@ class CollisionManager
 {
 public:
 	CollisionManager(const Model* m1, const Model* m2, const std::string& neuron_filename, int num_of_threads, int max_num_of_collisions,
-				   	 const std::string& output_directory, bool minimal_only, bool bound_checks, bool should_output_collisions);
+				   	 const std::string& output_directory, bool minimal_only, bool bound_checks, bool should_output_collisions,
+					 bool should_rotate);
 	~CollisionManager();
 	void check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename);
 	void check_all_collisions(const std::string& locations_filename, char main_axis, const std::string& output_filename);
@@ -37,6 +38,7 @@ private:
 	bool _minimal_only = false;
 	bool _bound_checks = true;
 	bool _should_output_collision_files = true;
+	bool _should_rotate = true;
 };
 
 

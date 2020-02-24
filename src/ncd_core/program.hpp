@@ -45,6 +45,7 @@ private:
 	bool _minimal_only = false;
 	bool _bound_checks = true;
 	bool _should_output_collisions = false;
+	bool _should_rotate = true;
 	RunningMode _mode = MODE__NOMODE;
 
 	time_t _start_time;
