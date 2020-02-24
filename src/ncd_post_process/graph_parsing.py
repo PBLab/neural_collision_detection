@@ -68,7 +68,7 @@ class CollisionNode:
         Usually used when deserializing data.
         """
         all_matches_regex = re.compile(
-            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collisions=(\d+), coll_prob=(.+?), dist_to_body=(.+?)\)"
+            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collision_chance=(.+?), dist_to_body=(.+?)\)"
         )
         matches = all_matches_regex.findall(string)[0]
         ord_number = int(matches[0])
@@ -77,9 +77,8 @@ class CollisionNode:
         ptype = matches[3]
         radius = float(matches[4])
         tree_type = matches[5]
-        collisions = np.uint64(matches[6])
-        coll_prob = np.float64(matches[7])
-        dist_to_body = np.float64(matches[8])
+        collision_chance = np.float64(matches[6])
+        dist_to_body = np.float64(matches[7])
 
         return cls(
             ord_number,
@@ -88,8 +87,7 @@ class CollisionNode:
             ptype,
             radius,
             tree_type,
-            collisions,
-            coll_prob,
+            collision_chance,
             dist_to_body,
         )
 
@@ -145,6 +143,7 @@ class NeuronToGraph:
         ) = self._filename_setup(
             self.parent_folder, self.neuron_name, self.result_folder, self.thresh
         )
+        # TODO: Find out why AP120412_s3c2 has weird probabilities in its graph
         with load_neuron(self.parent_folder / "py3DN", neuron_fname) as neuron:
             self.num_of_nodes = self._get_num_of_nodes(neuron)
             self.neuronal_points = self._extract_neuronal_coords(
@@ -432,9 +431,13 @@ def coerce_collisions_to_neural_coords(
 ):
     """Finds the collision probability of each neuronal point.
 
-    This jitted function finds all the collision probabilities that are associated with
-    the current neural point, averages them out and assigns this value to this neural
-    coordinate.
+    This jitted function iterates over the neuron and assigns the collision probability
+    of the closest collision to an array with the length of the neuron.
+
+    Note
+    ----
+    The implementation is currently straight forward due to a few bugs in the past. The
+    function is currently being evaluated for correctness.
 
     Parametres
     ----------
@@ -442,10 +445,10 @@ def coerce_collisions_to_neural_coords(
         Number of points the neuron is made of
     closest_coll_idx : np.ndarray
         An array with the length of num_neural_points, with its values indexing the
-    collision array for the closest collision to that neural point
+        collision array for the closest collision to that neural point
     coll_prob : np.ndarray
-    An array with the length of the number of collisions which contains the
-    probability of each collision
+        An array with the length of the number of collisions which contains the
+        probability of each collision
 
     Returns
     -------
@@ -455,8 +458,7 @@ def coerce_collisions_to_neural_coords(
     """
     prob_per_point = np.zeros(num_neuronal_points)
     for idx, closest_coll in enumerate(closest_coll_idx):
-        relevant_locs = closest_coll_idx == closest_coll
-        prob_per_point[idx] = np.mean(coll_prob[relevant_locs])
+        prob_per_point[idx] = coll_prob[closest_coll]
     return prob_per_point
 
 

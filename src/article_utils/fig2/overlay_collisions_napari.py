@@ -48,20 +48,18 @@ def show_collisions_with_napari(g: CollisionsDistNaive, viewer: napari.Viewer):
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
     neuron_names = [
-        # "AP120507_s3c1",
-        # "AP131105_s1c1",
-        # "AP120410_s1c1",
-        # "AP120410_s3c1",
-        # 'AP120412_s3c2',@
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
-        # "AP120510_s1c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
+        "AP120410_s1c1",
+        "AP120410_s3c1",
+        'AP120412_s3c2',
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120510_s1c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
         "AP130312_s1c1",
     ]
     alpha_factor = 0.5
@@ -74,26 +72,26 @@ if __name__ == "__main__":
             fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
             g = CollisionsDistNaive.from_graph(fname, neuron_name)
             g.run()
-            # show_collisions_with_napari(g, viewer)
-            nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
-            nc_dend = g.parsed_dend.loc[:, ["coll", "x", "y", "z"]]
-            nc_ax = transform_coll_to_color(nc_ax, "greens", alpha_factor)
-            nc_dend = transform_coll_to_color(nc_dend, "orange", alpha_factor)
+            show_collisions_with_napari(g, viewer)
+            # nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
+            # nc_dend = g.parsed_dend.loc[:, ["coll", "x", "y", "z"]]
+            # nc_ax = transform_coll_to_color(nc_ax, "greens", alpha_factor)
+            # nc_dend = transform_coll_to_color(nc_dend, "orange", alpha_factor)
             # top_ax, top_dend, top_all = find_top_collision_sites(g)
-            viewer.add_points(
-                nc_dend.loc[:, "x":"z"].to_numpy(),
-                size=nc_dend.loc[:, "coll_stretch"] * scale_factor,
-                edge_width=0,
-                face_color=nc_dend.loc[:, "r":"a"].to_numpy(),
-                name=f"{neuron_name}_dend",
-            )
-            viewer.add_points(
-                nc_ax.loc[:, "x":"z"].to_numpy(),
-                size=nc_ax.loc[:, "coll_stretch"] * scale_factor,
-                edge_width=0,
-                face_color=nc_ax.loc[:, "r":"a"].to_numpy(),
-                name=f"{neuron_name}_ax",
-            )
+            # viewer.add_points(
+            #     nc_dend.loc[:, "x":"z"].to_numpy(),
+            #     size=nc_dend.loc[:, "coll_stretch"] * scale_factor,
+            #     edge_width=0,
+            #     face_color=nc_dend.loc[:, "r":"a"].to_numpy(),
+            #     name=f"{neuron_name}_dend",
+            # )
+            # viewer.add_points(
+            #     nc_ax.loc[:, "x":"z"].to_numpy(),
+            #     size=nc_ax.loc[:, "coll_stretch"] * scale_factor,
+            #     edge_width=0,
+            #     face_color=nc_ax.loc[:, "r":"a"].to_numpy(),
+            #     name=f"{neuron_name}_ax",
+            # )
             # viewer.add_points(
             #     nc_ax.loc[top_ax, "x":"z"],
             #     size=4,

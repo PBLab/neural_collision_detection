@@ -1,3 +1,8 @@
+"""This file generates a figure with 4 axes showing the collision distribution
+as a function of the distance from the main axis of the neuron to each of the 3
+axes (x, y, z), with the fourth subplot showing the collision chance as a function
+of the distance to the soma.
+"""
 import pathlib
 
 import numpy as np
@@ -52,7 +57,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="z_abs",
-            y="coll_normed",
+            y="coll",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -61,7 +66,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="y_abs",
-            y="coll_normed",
+            y="coll",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -70,7 +75,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="x_abs",
-            y="coll_normed",
+            y="coll",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -79,7 +84,7 @@ def plot_colls_distance_correlation(folder):
         sns.scatterplot(
             data=g.all_colls,
             x="dist_to_origin",
-            y="coll_normed",
+            y="coll",
             hue="type",
             palette=palette[:num_elems],
             alpha=0.4,
@@ -87,7 +92,7 @@ def plot_colls_distance_correlation(folder):
         )
         fig.tight_layout()
         fig.savefig(
-            str(folder / f"{neuron_name}_all_collisions_vs_distances.pdf"),
+            str(folder / f"{neuron_name}_all_collisions_vs_distances.png"),
             transparent=True,
             dpi=300,
         )
@@ -95,7 +100,5 @@ def plot_colls_distance_correlation(folder):
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
-    g = plot_colls_distance_correlation(results_folder)
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_10")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
     g = plot_colls_distance_correlation(results_folder)

@@ -21,19 +21,19 @@ from ncd_post_process.graph_parsing import CollisionNode
 
 plt.rcParams.update({"font.size": 22})
 neuron_names = {
-    # "AP120410_s1c1": "V",
-    # "AP120410_s3c1": "V",
-    # "AP120412_s3c2": "V",
-    # "AP120416_s3c1": "IV",
-    # "AP120419_s1c1": "VI",
-    # "AP120420_s1c1": "IV",
-    # "AP120420_s2c1": "II/II",
+    "AP120410_s1c1": "V",
+    "AP120410_s3c1": "V",
+    "AP120412_s3c2": "V",
+    "AP120416_s3c1": "IV",
+    "AP120419_s1c1": "VI",
+    "AP120420_s1c1": "IV",
+    "AP120420_s2c1": "II/II",
     "AP120507_s3c1": "II/II",
-    # "AP120510_s1c1": "II/II",
-    # "AP120522_s3c1": "I",
-    # "AP120524_s2c1": "II/II",
-    # "AP120614_s1c2": "V",
-    # "AP130312_s1c1": "II/II",
+    "AP120510_s1c1": "II/II",
+    "AP120522_s3c1": "I",
+    "AP120524_s2c1": "II/II",
+    "AP120614_s1c2": "V",
+    "AP130312_s1c1": "II/II",
     "AP131105_s1c1": "II/II",
 }
 
@@ -64,7 +64,7 @@ class CollisionsDistNaive:
     neuron_name = attr.ib(default="neuron", validator=instance_of(str))
     normalize_collisions_by = attr.ib(default=100_000, validator=instance_of(int))
     results_folder = attr.ib(
-        default=pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+        default=pathlib.Path("/data/neural_collision_detection/results/2019_2_14")
     )
     num_of_nodes = attr.ib(init=False)
     parsed_axon = attr.ib(init=False)
@@ -107,9 +107,9 @@ class CollisionsDistNaive:
     def run(self):
         """Run analysis pipeline."""
         self._populate_collisions()
-        self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
-        self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
-        self.all_colls["coll_normed"] = self._normalize_by_density(self.all_colls)
+        # self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
+        # self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
+        # self.all_colls["coll_normed"] = self._normalize_by_density(self.all_colls)
 
     def _populate_collisions(self):
         """Traverse a specific graph and find the number of
@@ -119,7 +119,7 @@ class CollisionsDistNaive:
         idx_axon, idx_dend = 0, 0
         for idx, node in enumerate(self.graph.nodes()):
             row_data = (
-                node.collisions / self.normalize_collisions_by,
+                node.collision_chance,
                 node.dist_to_body,
                 node.loc[0],
                 node.loc[1],
@@ -157,7 +157,7 @@ class CollisionsDistNaive:
             (self.parsed_axon, self.parsed_dend), ("axon", "dend")
         ):
             self._plot_jointplot(data, neurite, with_norm=False)
-            self._plot_jointplot(data, neurite, with_norm=True)
+            # self._plot_jointplot(data, neurite, with_norm=True)
 
     def plot_all_hexbins(self):
         """Small wrapper for plotting the only the hexbin
@@ -165,7 +165,7 @@ class CollisionsDistNaive:
         for data, neurite in zip(
             (self.parsed_axon, self.parsed_dend), ("axon", "dend")
         ):
-            self._plot_hexbin(data, neurite, with_norm=True)
+            self._plot_hexbin(data, neurite, with_norm=False)
 
     def scatter(self):
         """Scatter the axon and dendrite collisions"""
@@ -177,26 +177,26 @@ class CollisionsDistNaive:
             self.parsed_dend["dist"], self.parsed_dend["coll"], c="C1", s=0.3, alpha=0.5
         )
         self._format_scatter_plot(ax)
-        fig, ax = plt.subplots()
-        ax.scatter(
-            self.parsed_axon["dist"],
-            self.parsed_axon["coll_normed"],
-            c="C2",
-            s=0.3,
-            alpha=0.5,
-        )
-        ax.scatter(
-            self.parsed_dend["dist"],
-            self.parsed_dend["coll_normed"],
-            c="C1",
-            s=0.3,
-            alpha=0.5,
-        )
-        self._format_scatter_plot(ax, "_normed")
+        # fig, ax = plt.subplots()
+        # ax.scatter(
+        #     self.parsed_axon["dist"],
+        #     self.parsed_axon["coll_normed"],
+        #     c="C2",
+        #     s=0.3,
+        #     alpha=0.5,
+        # )
+        # ax.scatter(
+        #     self.parsed_dend["dist"],
+        #     self.parsed_dend["coll_normed"],
+        #     c="C1",
+        #     s=0.3,
+        #     alpha=0.5,
+        # )
+        # self._format_scatter_plot(ax, "_normed")
 
     def _format_scatter_plot(self, ax, normed=""):
         ax.set_title(f"Collisions vs topodist {self.neuron_name}")
-        ax.set_ylabel("Collisions" if normed == "" else "P(Collisions)")
+        ax.set_ylabel("P(Collisions)")
         ax.set_xlabel("Topodist [um]")
         ax.figure.savefig(
             self.results_folder / f"colls_dist{normed}_{self.neuron_name}.png",
@@ -346,14 +346,15 @@ def _neuron_to_obj(
 
 def mp_main(neuron):
     """Run all functions in a parallel manner."""
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_10")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
     coll_dist = _neuron_to_obj(neuron, results_folder)
     if not coll_dist:
+        print(f"Can't find obj for neuron {neuron}")
         return
     coll_dist.run()
-    coll_dist.plot_all_jointplots()
+    # coll_dist.plot_all_jointplots()
     # coll_dist.plot_all_hexbins()
-    # coll_dist.scatter()
+    coll_dist.scatter()
     return coll_dist
 
 
@@ -368,11 +369,11 @@ if __name__ == "__main__":
     # l23_neurons, rest_of_neurons = filter_l23_neurons(neuron_names)
 
     # multicore exec
-    # with mp.Pool() as pool:
-    #     res = pool.map(mp_main, neuron_names)
+    with mp.Pool() as pool:
+        res = pool.map(mp_main, neuron_names)
 
     # single core
-    _ = [mp_main(neuron) for neuron in neuron_names]
+    # _ = [mp_main(neuron) for neuron in neuron_names]
 
     # plot_running_avg_for_all()
-    plt.show(block=False)
+    plt.show(block=True)

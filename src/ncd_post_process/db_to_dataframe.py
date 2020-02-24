@@ -269,7 +269,6 @@ if __name__ == "__main__":
         (parent_folder, file)
         for file in parent_folder.glob("agg_results_*thresh_0.csv")
     ]
-    all_args = (parent_folder, next(parent_folder.glob("agg_results_AP120410_s1c1_thresh_0.csv")))
-    # with mp.Pool() as pool:
-    #     colls = pool.starmap(mp_run, all_args)
-    colls = mp_run(*all_args)
+    with mp.Pool() as pool:
+        colls = pool.starmap(mp_run, all_args)
+    # colls = mp_run(*all_args[0])

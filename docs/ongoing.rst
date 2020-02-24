@@ -2,6 +2,11 @@
 Ongoing Work
 ------------
 
+* In preparation for the 23/2/2020 meeting I changed the way we calculate the
+  probabilities as listed below. We decided to also dive a bit deeper to try and
+  find out why the collision probablities of dendrites and axons are so different
+  even when they're nearly co-localized.
+
 * After the latest meeting I re-ran NCD again on the neurons due to a change we
   did to the binary - we're now only capturing the best orientation in each
   location, and not the top 10. This was done to improve our calculation for
