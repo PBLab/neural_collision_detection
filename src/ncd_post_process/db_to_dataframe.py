@@ -215,7 +215,7 @@ def save_results(
         }
     )
     np.savez(str(fname.with_suffix(".npz")), **data_dict)
-    # scipy.io.savemat(str(fname.with_suffix(".mat")), data_dict)
+    scipy.io.savemat(str(fname.with_suffix(".mat")), data_dict)
 
 
 def count_collisions(colls, num_of_locs: int):

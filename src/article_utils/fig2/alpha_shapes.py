@@ -34,7 +34,7 @@ x_style = dict(
 y_style = dict(
     zeroline=False,
     range=[y.min(), y.max()],
-    tickvals=np.linspace(y.min(), y.max(), 4)[1:].round(1),
+    tickvals=np.linspace(y.min(), y.max(), 4)[1:].round(1)
 )
 z_style = dict(
     zeroline=False, range=[z.min(), z.max()], tickvals=np.linspace(z.min(), z.max(), 5).round(1)
@@ -49,7 +49,7 @@ layout = Layout(
 )
 
 
-fig = Figure(data=Data([points, simplexes]), layout=layout)
+# fig = Figure(data=[points, simplexes], layout=layout)
 
 # fig.show(renderer='svg')
-fig.show()
+# fig.show()

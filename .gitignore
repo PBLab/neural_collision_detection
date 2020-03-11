@@ -39,3 +39,4 @@ docs/_build/*
 dask-worker-space/
 *.txt
 results/for_article/neuron_id.svg
+*~
