@@ -48,7 +48,6 @@ layout = Layout(
     scene=lScene(xaxis=x_style, yaxis=y_style, zaxis=z_style),
 )
 
-
 # fig = Figure(data=[points, simplexes], layout=layout)
 
 # fig.show(renderer='svg')

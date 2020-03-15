@@ -1,5 +1,5 @@
 points = [0, 0, 1; -1, 0, 0; 1, 0, 0; 0, 1, 0; 0, -1, 0; 0, 0, 0; 0.25, 0.25, 0; -0.25, 0.25, 0; 0.25, -0.25, 0; -0.25, -0.25, 0];
-shp = alphaShape(points, 1.72);
+shp = alphaShape(points, Inf);
 crit = criticalAlpha(shp, 'one-region');
 spec = shp.alphaSpectrum;
 all_boundaries = shp.boundaryFacets;

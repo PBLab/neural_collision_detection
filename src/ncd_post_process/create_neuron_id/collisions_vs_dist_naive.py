@@ -82,6 +82,7 @@ class CollisionsDistNaive:
             "x": dist_ax,
             "y": dist_ax,
             "z": dist_ax,
+            "alpha": dist_ax,
         }
         self.parsed_axon = pd.DataFrame(df_columns)
         self.parsed_dend = pd.DataFrame(df_columns)
@@ -107,9 +108,6 @@ class CollisionsDistNaive:
     def run(self):
         """Run analysis pipeline."""
         self._populate_collisions()
-        # self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
-        # self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
-        # self.all_colls["coll_normed"] = self._normalize_by_density(self.all_colls)
 
     def _populate_collisions(self):
         """Traverse a specific graph and find the number of
@@ -124,6 +122,7 @@ class CollisionsDistNaive:
                 node.loc[0],
                 node.loc[1],
                 node.loc[2],
+                node.alpha,
                 node.tree_type,
             )
             self.all_colls.loc[idx, :] = row_data

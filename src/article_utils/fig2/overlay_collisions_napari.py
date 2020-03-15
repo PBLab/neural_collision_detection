@@ -2,6 +2,7 @@ import pathlib
 import numpy as np
 import vispy.color
 import napari
+import pandas as pd
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
@@ -33,14 +34,19 @@ def find_top_collision_sites(g: CollisionsDistNaive, quantile=0.9):
     return ax.to_numpy(), dend.to_numpy(), all_.to_numpy()
 
 
-def show_collisions_with_napari(g: CollisionsDistNaive, viewer: napari.Viewer):
+def show_collisions_with_napari(points: pd.DataFrame, viewer: napari.Viewer, neuron_name: str):
+    """Plot the collisions of the neuron with the given napari viewer.
 
+    This function receives the points to be plotted, the viewer instance to be used
+    and the name of the current neuron (to be used as the layer's label) and shows
+    them all together. The given dataframe is assumed to have a 'type' categorical
+    index which contains information on the type of neurite this collision is located
+    on top of."""
     colors = ['green', 'orange', 'red', 'yellow', 'purple']
-    points = g.all_colls.set_index('type')
     points["color"] = ""
     for color, type_ in zip(colors, points.index.categories):
         points.loc[type_, "color"] = color
-        viewer.add_points(points.loc[type_, "x":"z"], size=2, edge_width=0, face_color=color, name=f"{g.neuron_name}_{type_}")
+        viewer.add_points(points.loc[type_, "x":"z"], size=2, edge_width=0, face_color=color, name=f"{neuron_name}_{type_}")
 
     # colls = points.loc[:, "x":"z"].to_numpy()
     # colls_colors = points.loc[:, "color"].to_numpy().tolist()
@@ -72,7 +78,8 @@ if __name__ == "__main__":
             fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
             g = CollisionsDistNaive.from_graph(fname, neuron_name)
             g.run()
-            show_collisions_with_napari(g, viewer)
+            points = g.all_colls.set_index('type')
+            show_collisions_with_napari(points, viewer, neuron_name)
             # nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
             # nc_dend = g.parsed_dend.loc[:, ["coll", "x", "y", "z"]]
             # nc_ax = transform_coll_to_color(nc_ax, "greens", alpha_factor)

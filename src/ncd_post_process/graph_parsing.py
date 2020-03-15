@@ -14,6 +14,7 @@ from attr.validators import instance_of, in_
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
 import numba as nb
+from scipy.io import loadmat
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "py3DN"))
 import mytools
@@ -49,6 +50,7 @@ class CollisionNode:
     :param str tree_type: Type of tree, one of TREETYPE's values
     :param np.float64 collision_chance: Probability of collision for the node
     :param np.float64 dist_to_body: topological distance to the cell body
+    :param np.float64 alpha: Highest alpha value that contains this point
     """
 
     ord_number = attr.ib(validator=instance_of(int))
@@ -59,6 +61,7 @@ class CollisionNode:
     tree_type = attr.ib(validator=in_(TREETYPE))
     collision_chance = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
     dist_to_body = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
+    alpha = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
 
     @classmethod
     def from_str(cls, string):
@@ -68,7 +71,7 @@ class CollisionNode:
         Usually used when deserializing data.
         """
         all_matches_regex = re.compile(
-            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collision_chance=(.+?), dist_to_body=(.+?)\)"
+            r"ord_number=(\d+), loc=(\(.+?\)), ppid=(.+?), ptype='(\w+)', radius=(.+?), tree_type='(\w+)', collision_chance=(.+?), dist_to_body=(.+?), alpha=(.+?)\)"
         )
         matches = all_matches_regex.findall(string)[0]
         ord_number = int(matches[0])
@@ -79,6 +82,7 @@ class CollisionNode:
         tree_type = matches[5]
         collision_chance = np.float64(matches[6])
         dist_to_body = np.float64(matches[7])
+        alpha = np.float64(matches[8])
 
         return cls(
             ord_number,
@@ -89,6 +93,7 @@ class CollisionNode:
             tree_type,
             collision_chance,
             dist_to_body,
+            alpha,
         )
 
 
@@ -126,6 +131,7 @@ class NeuronToGraph:
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
     closest_coll = attr.ib(init=False)
+    alpha = attr.ib(init=False)
 
     def run(self):
         """
@@ -155,16 +161,19 @@ class NeuronToGraph:
                 self.closest_coll = connect_collisions_to_neural_points(
                     self.collisions, self.neuronal_points, self.inner_multiprocess
                 )
+                self.alpha = loadmat(
+                    collisions_fname.with_name(
+                        f"{self.neuron_name}_balls_alpha_values.mat"
+                    )
+                )["first_alpha_per_point"].ravel()
                 coll_prob = coerce_collisions_to_neural_coords(
-                    len(self.neuronal_points),
-                    self.closest_coll,
-                    self.coll_prob,
+                    len(self.neuronal_points), self.closest_coll, self.coll_prob,
                 )
 
             else:
                 coll_prob = np.zeros(self.num_of_nodes, dtype=np.float64)
             self.collision_df = self._make_collision_df(
-                coll_prob, neuron, self.num_of_nodes,
+                coll_prob, neuron, self.num_of_nodes, self.alpha
             )
 
         self.graph = self._generate_graph(self.collision_df)
@@ -216,7 +225,9 @@ class NeuronToGraph:
                 idx += 1
         return pd.DataFrame(neuronal_points, columns=["x", "y", "z"])
 
-    def _make_collision_df(self, collisions, neuron, num_of_nodes) -> pd.DataFrame:
+    def _make_collision_df(
+        self, collisions, neuron, num_of_nodes, alpha
+    ) -> pd.DataFrame:
         """
         Traverses the neuronal tree and the corresponding
         collisions and generates a DF that will be transformed
@@ -228,6 +239,7 @@ class NeuronToGraph:
         :param np.ndarray collisions: All measured collisions of
         the neuron, including the zeros.
         :param Neuron neuron: A serialized neuron from py3DN.
+        :param np.ndarray alpha: Alpha value per neuronal point.
         """
         assert num_of_nodes == collisions.shape[0]
 
@@ -252,6 +264,7 @@ class NeuronToGraph:
                 radius=tree.rawpoint[0].r,
                 tree_type=tree_type,
                 dist_to_body=np.float64(0),
+                alpha=alpha[0],
             )
             new_node = CollisionNode(
                 ord_number=1,
@@ -262,6 +275,7 @@ class NeuronToGraph:
                 radius=tree.rawpoint[1].r,
                 tree_type=tree_type,
                 dist_to_body=np.float64(0),
+                alpha=alpha[1],
             )
             weight = np.float64(0)
             df.iloc[pair_number] = [parent_node, new_node, weight]
@@ -284,6 +298,7 @@ class NeuronToGraph:
                     radius=point.r,
                     tree_type=tree_type,
                     dist_to_body=weight,
+                    alpha=alpha[pair_number],
                 )
 
                 df.iloc[pair_number] = [prev_node, new_node, weight]
@@ -333,6 +348,7 @@ class CsvNeuronToGraph:
     graph = attr.ib(init=False)
     collisions_df = attr.ib(init=False)
     coll_prob = attr.ib(init=False)
+    alpha = attr.ib(init=False)
 
     def main(self):
         """Main Pipeline"""
@@ -345,6 +361,7 @@ class CsvNeuronToGraph:
         self.neuron_coords = self._load_neuron()
         self.collisions = np.load(str(collisions_fname))["unique_coords"]
         self.coll_prob = np.load(str(collisions_fname))["coll_prob"]
+        self.alpha = loadmat(alpha_fname)["first_alpa_per_collision"].ravel()
         self._connect_collisions_to_neural_coords(neuron_name)
 
     def _filename_setup(self):
