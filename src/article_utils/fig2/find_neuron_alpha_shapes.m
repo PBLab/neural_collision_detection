@@ -6,10 +6,7 @@ function first_alpha_per_point = find_neuron_alpha_shapes(fname, neuron_name)
 % shape.
     neuron = read_neuron_data(fname);
     shape = alphaShape(neuron);
-    alphas = fliplr(shape.alphaSpectrum);
-    alphas(end) = alphas(1) + 0.000001;
-    samples = 1:min(10000, size(alphas, 1));
-    alphas = alphas(samples);
+    alphas = get_alpha_values_to_process(shape);
     table_size = [size(neuron, 1), size(alphas, 1)];
     collisions_with_all_alphas = create_collision_table(alphas, table_size);
     is_hidden = ~logical(1:length(neuron))';
@@ -18,7 +15,7 @@ function first_alpha_per_point = find_neuron_alpha_shapes(fname, neuron_name)
     % number of columns in it.
     for alpha = collisions_with_all_alphas.Properties.VariableNames
         shape.Alpha = str2double(alpha{1});
-        rows_of_hidden_colls = find_hidden_collisions(shape, length(neuron));
+        rows_of_hidden_colls = find_hidden_collisions(shape, neuron);
         is_hidden(rows_of_hidden_colls) = true;
         collisions_with_all_alphas.(alpha{1}) = is_hidden;
         is_hidden(:) = false;
