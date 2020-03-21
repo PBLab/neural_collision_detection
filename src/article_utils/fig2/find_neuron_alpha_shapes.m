@@ -6,9 +6,9 @@ function first_alpha_per_point = find_neuron_alpha_shapes(fname, neuron_name)
 % shape.
     neuron = read_neuron_data(fname);
     shape = alphaShape(neuron);
-    alphas = shape.alphaSpectrum;
-    alphas(end) = alphas(end) + 0.000001;
-    samples = uint32(linspace(1, length(alphas), min(1000, size(alphas, 1))));
+    alphas = fliplr(shape.alphaSpectrum);
+    alphas(end) = alphas(1) + 0.000001;
+    samples = 1:min(10000, size(alphas, 1));
     alphas = alphas(samples);
     table_size = [size(neuron, 1), size(alphas, 1)];
     collisions_with_all_alphas = create_collision_table(alphas, table_size);
