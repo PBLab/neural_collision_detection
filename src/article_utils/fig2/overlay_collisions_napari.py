@@ -34,19 +34,40 @@ def find_top_collision_sites(g: CollisionsDistNaive, quantile=0.9):
     return ax.to_numpy(), dend.to_numpy(), all_.to_numpy()
 
 
-def show_collisions_with_napari(points: pd.DataFrame, viewer: napari.Viewer, neuron_name: str):
+def show_collisions_with_napari(
+    points: pd.DataFrame, viewer: napari.Viewer, neuron_name: str, size=None
+):
     """Plot the collisions of the neuron with the given napari viewer.
 
     This function receives the points to be plotted, the viewer instance to be used
     and the name of the current neuron (to be used as the layer's label) and shows
     them all together. The given dataframe is assumed to have a 'type' categorical
     index which contains information on the type of neurite this collision is located
-    on top of."""
-    colors = ['green', 'orange', 'red', 'yellow', 'purple']
+    on top of.
+
+    Parameters
+    ----------
+    size : str, int, array (optional)
+        Size of each point. If int - size in pixels. If None - defaults to 2.
+        If str - should be a column name in `points`. If array - size of each
+        point.
+    """
+    if size is None or isinstance(size, (int, np.ndarray)):
+        points["size"] = size
+    elif isinstance(size, str):
+        points = points.rename({size: "size"})
+
+    colors = ["green", "orange", "red", "yellow", "purple"]
     points["color"] = ""
     for color, type_ in zip(colors, points.index.categories):
         points.loc[type_, "color"] = color
-        viewer.add_points(points.loc[type_, "x":"z"], size=2, edge_width=0, face_color=color, name=f"{neuron_name}_{type_}")
+        viewer.add_points(
+            points.loc[type_, "x":"z"],
+            size=points.loc[type_, "size"],
+            edge_width=0,
+            face_color=color,
+            name=f"{neuron_name}_{type_}",
+        )
 
     # colls = points.loc[:, "x":"z"].to_numpy()
     # colls_colors = points.loc[:, "color"].to_numpy().tolist()
@@ -58,7 +79,7 @@ if __name__ == "__main__":
     neuron_names = [
         "AP120410_s1c1",
         "AP120410_s3c1",
-        'AP120412_s3c2',
+        "AP120412_s3c2",
         "AP120416_s3c1",
         "AP120419_s1c1",
         "AP120420_s1c1",
@@ -78,7 +99,7 @@ if __name__ == "__main__":
             fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
             g = CollisionsDistNaive.from_graph(fname, neuron_name)
             g.run()
-            points = g.all_colls.set_index('type')
+            points = g.all_colls.set_index("type")
             show_collisions_with_napari(points, viewer, neuron_name)
             # nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
             # nc_dend = g.parsed_dend.loc[:, ["coll", "x", "y", "z"]]

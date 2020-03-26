@@ -61,7 +61,7 @@ class CollisionNode:
     tree_type = attr.ib(validator=in_(TREETYPE))
     collision_chance = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
     dist_to_body = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
-    alpha = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
+    alpha = attr.ib(default=np.uint16(0), validator=instance_of(np.uint16))
 
     @classmethod
     def from_str(cls, string):
@@ -82,7 +82,7 @@ class CollisionNode:
         tree_type = matches[5]
         collision_chance = np.float64(matches[6])
         dist_to_body = np.float64(matches[7])
-        alpha = np.float64(matches[8])
+        alpha = np.uint16(matches[8])
 
         return cls(
             ord_number,

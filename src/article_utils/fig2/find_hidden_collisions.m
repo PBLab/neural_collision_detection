@@ -4,7 +4,10 @@ function hidden_collisions = find_hidden_collisions(shape, colls)
 %   value, and should find the collisions which do not create the
 %   boundaries of that alpha shape, meaning that they're hidden inside it.
 %   It returns the row numbers of these collisions.
-    hidden_collisions = inShape(shape, colls);
-    
+    boundaries = shape.boundaryFacets;
+    inside = inShape(shape, colls);
+    colls_index = (1:length(colls))';
+    inside = colls_index(inside);
+    hidden_collisions = setdiff(inside, boundaries);    
 end
 

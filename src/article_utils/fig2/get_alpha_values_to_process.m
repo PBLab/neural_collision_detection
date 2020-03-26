@@ -12,4 +12,3 @@ function alphas = get_alpha_values_to_process(shape)
         alphas(i+1) = alphas(i + 1) + 1e-5;
     end
 end
-
