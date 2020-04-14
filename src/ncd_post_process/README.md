@@ -102,10 +102,10 @@ This file explains the pipeline, the usage of each script file in this directory
 
 3. Run aggregator and create aggregator_db.csv:
 	For each desired threshold and max collision count, run (in this example, max 30 collisions and threshold of 2 microns):
-	1. `python run_aggregator.py ../../results/ncd_results/ 30 2 ../../results/agg_results_30_2`
-
-	2. `python gather_agg_results.py ../../results/agg_results_30_2 ../../results/aggregator_db.csv`
-		Note that the results are appended to agregator_db.csv, so it will store all of the results together
+	`python run_aggregator.py ../../results/ncd_results/ 30 2 ../../results/agg_results_30_2`
 
 4. Parse the DB:
-	`python neuron_parser.py ../../results/aggregator_db.csv ../../results/parser_results`
+
+    `python db_to_dataframe.py`
+
+    This will create a `.npz` file containing the parsed collision data.

@@ -100,7 +100,7 @@ class BranchDensityAndCollisions:
         self.counts["collisions"] = 0
         row_idx = 0
         for node in self.graph.nodes():
-            self.counts.iloc[row_idx, -1] = node.collisions
+            self.counts.iloc[row_idx, -1] = node.collision_chance
             row_idx += 1
 
     def _prepare_colls_dens_data(self):
@@ -111,23 +111,17 @@ class BranchDensityAndCollisions:
         axon_idx = self.counts.index.get_level_values("tree") == "Axon"
         axon_df = self.counts.loc[axon_idx]
         dend_df = self.counts.loc[~axon_idx]
-        # Divide by 100k due to total number of locations per point. We want the y-axis
-        # units to be probability. The 100k number stems from the fact that currently
-        # we have 10k points per cortical layer, and we save the 10 best orientations
-        # in that location.
-        normed_axon = axon_df["collisions"] / 100_000
-        normed_dend = dend_df["collisions"] / 100_000
         dens_axon = axon_df[self.r]
         dens_dend = dend_df[self.r]
-        return normed_axon, normed_dend, dens_axon, dens_dend
+        return axon_df["collisions"], dend_df["collisions"], dens_axon, dens_dend
 
     def plot_colls_dens_hist(self, ax=None):
-        normed_axon, normed_dend, dens_axon, dens_dend = self._prepare_colls_dens_data()
+        coll_axon, coll_dend, dens_axon, dens_dend = self._prepare_colls_dens_data()
         if ax is None:
             fig, ax = plt.subplots()
 
-        ax.scatter(dens_axon, normed_axon, c="C2", s=0.2, alpha=0.8, label="Axon")
-        ax.scatter(dens_dend, normed_dend, c="C2", s=0.2, alpha=0.8, label="Dendrite")
+        ax.scatter(dens_axon, coll_axon, c="C2", s=0.2, alpha=0.8, label="Axon")
+        ax.scatter(dens_dend, coll_dend, c="C2", s=0.2, alpha=0.8, label="Dendrite")
         ax.set_xlabel(f"U(r={self.r})")
         ax.set_ylabel("P(collision)")
         ax.legend()
@@ -142,7 +136,7 @@ class BranchDensityAndCollisions:
         point.
         :return:
         """
-        normed_axon, normed_dend, dens_axon, dens_dend = self._prepare_colls_dens_data()
+        coll_axon, coll_dend, dens_axon, dens_dend = self._prepare_colls_dens_data()
         rect_scatter, rect_histx, rect_histy = self._set_fig_limits()
         fig = plt.figure(figsize=(8, 8))
         ax_scatter = fig.add_axes(rect_scatter)
@@ -153,15 +147,15 @@ class BranchDensityAndCollisions:
         ax_histy.tick_params(direction="in", labelleft=False)
 
         ax_scatter.scatter(
-            dens_axon, normed_axon, c="C2", s=0.2, alpha=0.8, label="Axon"
+            dens_axon, coll_axon, c="C2", s=0.2, alpha=0.8, label="Axon"
         )
         ax_scatter.scatter(
-            dens_dend, normed_dend, c="C1", s=0.2, alpha=0.8, label="Dendrite"
+            dens_dend, coll_dend, c="C1", s=0.2, alpha=0.8, label="Dendrite"
         )
 
         ax_histx.hist([dens_axon, dens_dend], color=["C2", "C1"], bins=50)
         ax_histy.hist(
-            [normed_axon, normed_dend],
+            [coll_axon, coll_dend],
             color=["C2", "C1"],
             orientation="horizontal",
             bins=50,
@@ -177,7 +171,7 @@ class BranchDensityAndCollisions:
             f"Collisions as a function of density for a single neuron {neuron_name} with r={self.r} um"
         )
         fig.savefig(
-            f"results/2019_2_10/colls_density_jointplot_r_{self.r}_{neuron_name}.png",
+            f"results/2020_02_14/colls_density_jointplot_r_{self.r}_{neuron_name}.png",
             transparent=True,
             dpi=300,
         )
@@ -219,18 +213,21 @@ class BranchDensityAndDist:
         fig_topodist, ax_topodist = plt.subplots()
         fig_fft, ax_fft = plt.subplots()
         self.topodist_axon, self.topodist_dend = self._get_topodist_from_graph()
-        self.pipeline_for_one(self.topodist_axon, ax_topodist, ax_fft, NeuronType.AXON)
-        self.pipeline_for_one(
-            self.topodist_dend, ax_topodist, ax_fft, NeuronType.DENDRITE
-        )
+        try:
+            self.pipeline_for_one(self.topodist_axon, ax_topodist, ax_fft, NeuronType.AXON)
+            self.pipeline_for_one(
+                self.topodist_dend, ax_topodist, ax_fft, NeuronType.DENDRITE
+            )
+        except IndexError:  # Bad neuron
+            pass
         ax_topodist.legend(["Axon", "Dendrite"])
         ax_fft.legend(["Axon", "Dendrite"])
         fig_topodist.savefig(
-            f"results/2019_2_10/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_02_14/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
         fig_fft.savefig(
-            f"results/2019_2_10/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_02_14/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
 
@@ -412,7 +409,7 @@ class DensityCollisionsDistance:
     def _populate_ur_with_colls(self):
         self.ur["collisions"] = 0
         for row_idx, node in enumerate(self.graph.nodes()):
-            self.ur.iloc[row_idx, -1] = node.collisions
+            self.ur.iloc[row_idx, -1] = node.collision_chance
 
     def _scatter(self):
         """Genereates a 3D scatter plot of the density, collision count and
@@ -446,7 +443,7 @@ class DensityCollisionsDistance:
         )
         ax.legend(["Axon", "Dendrite"])
         fig.savefig(
-            f"results/2019_2_10/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_02_14/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
 
@@ -482,22 +479,6 @@ def run_ur_topodist_multiple_r():
     that same point. Does so for a single neuron over multiple
     r's.
     """
-    neuron_name = "AP120410_s3c1"
-    radii = range(1, 11)
-    for radius in radii:
-        bdens_coll = _instantiate_bdens(
-            neuron_name, branch_class=BranchDensityAndDist, r=radius
-        )
-        if bdens_coll:
-            bdens_coll.main()
-    plt.show(block=False)
-
-
-def run_single_neuron_with_jointplot():
-    """
-    Creates a single collisions-to-density jointplot, i.e. a scatter
-    plot with the histograms of the two axes on its sides.
-    """
     neuron_names = [
         "AP120410_s3c1",
         "AP120412_s3c2",
@@ -512,7 +493,36 @@ def run_single_neuron_with_jointplot():
         "AP120524_s2c1",
         "AP120614_s1c2",
         "AP130312_s1c1",
-        "AP131105_s1c1",
+    ]
+    radii = range(10, 11)
+    for neuron in neuron_names:
+        for radius in radii:
+            bdens_coll = _instantiate_bdens(
+                neuron, branch_class=BranchDensityAndDist, r=radius
+            )
+            if bdens_coll:
+                bdens_coll.main()
+    plt.show(block=False)
+
+
+def run_single_neuron_with_jointplot():
+    """
+    Creates a single collisions-to-density jointplot, i.e. a scatter
+    plot with the histograms of the two axes on its sides.
+    """
+    neuron_names = [
+        "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120410_s1c1",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120510_s1c1",
+        # "AP120522_s3c1",
+        # "AP120524_s2c1",
+        # "AP120614_s1c2",
+        # "AP130312_s1c1",
     ]
     for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name)
@@ -557,7 +567,7 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
     neuron_graph = (
         pathlib.Path('/data/neural_collision_detection')
         / "results"
-        / "2019_2_10"
+        / "2020_02_14"
         / f"graph_{neuron_name}_with_collisions.gml"
     )
     try:
@@ -583,7 +593,6 @@ def run_single_neuron_with_quantile():
         "AP120524_s2c1",
         "AP120614_s1c2",
         "AP130312_s1c1",
-        "AP131105_s1c1"
     ]
     perc = 90
     for neuron_name in neuron_names:
@@ -594,15 +603,15 @@ def run_single_neuron_with_quantile():
         fname = (
             pathlib.Path('/data/neural_collision_detection')
             / "results"
-            / "2019_2_10"
+            / "2020_02_14"
             / f"top_{100-perc}p_likely_colls_{neuron_name}.npy"
         )
         np.save(fname, colls)
 
 
 if __name__ == "__main__":
-    # run_single_neuron_with_jointplot()
-    run_single_neuron_with_quantile()
+    run_single_neuron_with_jointplot()
+    # run_single_neuron_with_quantile()
     # run_ur_topodist()
     # run_ur_topodist_multiple_r()
     # run_collisions_dens_jointplot_multiple_r()

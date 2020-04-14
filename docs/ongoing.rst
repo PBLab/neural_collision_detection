@@ -2,10 +2,25 @@
 Ongoing Work
 ------------
 
+* In preparation for the 23/2/2020 meeting I changed the way we calculate the
+  probabilities as listed below. We decided to also dive a bit deeper to try and
+  find out why the collision probablities of dendrites and axons are so different
+  even when they're nearly co-localized.
+
+* After the latest meeting I re-ran NCD again on the neurons due to a change we
+  did to the binary - we're now only capturing the best orientation in each
+  location, and not the top 10. This was done to improve our calculation for
+  the probability of collision per point. We're also now normalizing the probability
+  by the number of actual locations NCD returns, and not by the theoretical number
+  that NCD tested. Additionally, we've rounded the collision coordinates into the
+  nearest integer, since the added floating point precision is due to computational
+  artifacts. Finally, we've added this new information - better collision coords and
+  the correct collision probability into the graph of every neuron.
+
 * I tried re-running the analysis pipeline on the two layer II/III neurons that
   show a very low number of collisions (507 and 131) and it seems that this
   result stands. Not sure what to make of it.
-  
+
 * In ``show_collisions_dist.py`` I tried to look at the cumulative sum of the collisions,
   to see if I detect any pattern in the distributions of neurons in different
   layers, but I couldn't find such. The average running sum of the neurons in II/III
@@ -26,7 +41,7 @@ Ongoing Work
 
 * I created a mock fig2 file ("fig2mock.svg") that describes the way we want
   to see figure 2 in the article. It's slightly different than the current one,
-  although it uses mostly the same data.
+  although it uses mostly the same data.@
 
 * The script ``for_article/fig1/find_collisions_distribution.py`` generates
   an image of the toy neuron with the probability of collisions overlayed

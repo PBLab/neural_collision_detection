@@ -45,5 +45,8 @@ setup(
                       'black',
                       'mypy',
                       'flake8',
-                      'dask'],
+                      'dask',
+                      'plotly',
+                      'chart-studio',
+                      'plotly-orca'],
 )
