@@ -1,3 +1,6 @@
 [submodule "src/fcl"]
 	path = src/fcl
 	url = https://github.com/flexible-collision-library/fcl
+[submodule "cgal-swig-bindings"]
+	path = cgal-swig-bindings
+	url = https://github.com/CGAL/cgal-swig-bindings.git

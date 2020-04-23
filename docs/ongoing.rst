@@ -1,6 +1,16 @@
 ------------
 Ongoing Work
 ------------
+* The COVID outbreak halted the project for quite some time, and other difficulties
+  also made it slow down. I tried using Alpha shapes in Python and MATLAB but
+  the algorithms there weren't implemented well enough, and I had many curious
+  results which I couldn't explain. Sadly we decided, after an online meeting we
+  had, to use CGAL, which is the state of the art computational geometry toolbox,
+  written in C++ of course. Since there were no available suitable bindings for
+  the CGAL modules that deal with Alpha shapes in 3D, we had to ask Efi Fogel,
+  who works with Dan, to generate these bindings for us. It took some time for both
+  us and him to reach a working prototype - but it finally happened, and now I can
+  import into Python some of the alpha shapes capabilities of CGAL.
 
 * In preparation for the 23/2/2020 meeting I changed the way we calculate the
   probabilities as listed below. We decided to also dive a bit deeper to try and
