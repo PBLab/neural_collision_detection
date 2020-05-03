@@ -1,6 +1,27 @@
 ------------
 Ongoing Work
 ------------
+
+* I created a table for each neuron in `results/for_article_fig2` where each row
+  is a collision point, and each column's header is the alpha shape value that was
+  used to calculate the relation of that point to the alpha shape. The relation
+  values are as follows:
+  ``cls_dict = {
+        "INTERIOR": np.int8(0),
+        "EXTERIOR": np.int8(1),
+        "REGULAR": np.int8(2),
+        "SINGULAR": np.int8(3),
+    }``
+
+
+* How did I compile the Python bindings for CGAL:
+  1. Cloned the repo to ``/data/MatlabCode/PBLabToolkit/External/cgal-python-bindings``.
+  2. ``mkdir build && cd build``
+  3. Used one of the shell scripts in the "scripts_for_cgal" folder here to compile
+     a specific binding.
+  4. Copied the generated ``tri3_epic.so`` to its own folder under ``src/alpha3_bindings``.
+  This file can be imported as a standard Python module.
+
 * The COVID outbreak halted the project for quite some time, and other difficulties
   also made it slow down. I tried using Alpha shapes in Python and MATLAB but
   the algorithms there weren't implemented well enough, and I had many curious
