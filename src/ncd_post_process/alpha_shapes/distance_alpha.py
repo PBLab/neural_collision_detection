@@ -105,7 +105,9 @@ def generate_df_from_neuron(fname: pathlib.Path, neuron_name: str) -> pd.DataFra
     return points, g
 
 
-def calc_alpha_shape_diff_between_near_axdends(closest: pd.DataFrame, alphas: np.ndarray):
+def calc_alpha_shape_diff_between_near_axdends(
+    closest: pd.DataFrame, alphas: np.ndarray
+):
     """Finds the alpha shape value difference between nearby axons and dends which exhibit
     large difference in collision chance.
 
@@ -148,10 +150,10 @@ def find_first_interior_alpha_shape_value(alphas: pd.DataFrame) -> np.ndarray:
         The alpha value for each neural point. NaN if it's never found inside
     """
     interior_alphas = np.where(alphas == 0)
-    first_zeros = pd.DataFrame({'x': interior_alphas[0], 'y': interior_alphas[1]})
-    first_alpha = first_zeros.groupby('x').min()
-    all_rows = np.full((alphas.shape[0], ), np.nan)
-    all_rows[first_alpha.index] = alphas.columns[first_alpha['y']]
+    first_zeros = pd.DataFrame({"x": interior_alphas[0], "y": interior_alphas[1]})
+    first_alpha = first_zeros.groupby("x").min()
+    all_rows = np.full((alphas.shape[0],), np.nan)
+    all_rows[first_alpha.index] = alphas.columns[first_alpha["y"]]
     return all_rows
 
 
@@ -176,27 +178,33 @@ def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray
         Alpha value per point of the neuron
     """
     alphas_fname = alphas_folder / f"{neuron_name}_alpha_distrib.h5"
-    alphas = pd.read_hdf(alphas_fname, 'data')
+    alphas = pd.read_hdf(alphas_fname, "data")
     alpha_per_point = find_first_interior_alpha_shape_value(alphas)
     return alpha_per_point
 
 
-def main_collisions_pipe(neuron_name: str, results_folder: pathlib.Path):
-    """Pipeline for collision data processing
+def main_collisions_pipe(
+    neuron_name: str, results_folder: pathlib.Path
+) -> pd.DataFrame:
+    """Pipeline for collision data processing.
 
-    This pipeline processes the collision data
+    This pipeline processes the collision data by looking at nearby pairs
+    of axons and dendrites. It creates a long-form dataframe that contains
+    a row per axon-dendrite pair, where each axon has ``num`` clode dends
+    to it.
 
     Parameters
     ----------
     neuron_name : str
-        [description]
+        Name of neuron
     results_folder : pathlib.Path
-        [description]
+        Folder with neuronal data
 
     Returns
     -------
-    [type]
-        [description]
+    pd.DataFrame
+        A table of axonal-dendritic pairs with the data about their proximity
+        and collision chances
     """
     collisions_fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
     points, g = generate_df_from_neuron(collisions_fname, neuron_name)
@@ -233,8 +241,11 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
     print(neuron_name)
     alpha_per_point = main_alpha_pipe(neuron_name, alphas_folder)
     closest_dend = main_collisions_pipe(neuron_name, results_folder)
-    top_closest = calc_alpha_shape_diff_between_near_axdends(closest_dend, alpha_per_point)
-    top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", 'data')
+    top_closest = calc_alpha_shape_diff_between_near_axdends(
+        closest_dend, alpha_per_point
+    )
+    top_closest = top_closest.dropna()
+    top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", "data")
 
 
 if __name__ == "__main__":
