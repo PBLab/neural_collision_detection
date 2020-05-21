@@ -155,7 +155,26 @@ def find_first_interior_alpha_shape_value(alphas: pd.DataFrame) -> np.ndarray:
     return all_rows
 
 
-def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path):
+def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray:
+    """Pipeline for alpha values normalization.
+
+    This pipeline grants the alpha value for each of the points
+    composing the neuron which was the first non-zero one, i.e.
+    the lowest alpha value that included the point in the interior
+    side of the shape.
+
+    Parameters
+    ----------
+    neuron_name : str
+        Neuron name
+    alphas_folder : pathlib.Path
+        Location of the alpha shape results
+
+    Returns
+    -------
+    np.ndarray
+        Alpha value per point of the neuron
+    """
     alphas_fname = alphas_folder / f"{neuron_name}_alpha_distrib.h5"
     alphas = pd.read_hdf(alphas_fname, 'data')
     alpha_per_point = find_first_interior_alpha_shape_value(alphas)
@@ -163,6 +182,22 @@ def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path):
 
 
 def main_collisions_pipe(neuron_name: str, results_folder: pathlib.Path):
+    """Pipeline for collision data processing
+
+    This pipeline processes the collision data
+
+    Parameters
+    ----------
+    neuron_name : str
+        [description]
+    results_folder : pathlib.Path
+        [description]
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
     collisions_fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
     points, g = generate_df_from_neuron(collisions_fname, neuron_name)
     all_collisions_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
@@ -184,6 +219,8 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
     For each of these pairs we look at the alpha shape differene and see if the alpha
     shape can explain such behavior.
 
+    The pipeline writes to disk HDF5 dataframes with the data gathered here.
+
     Parameters
     ----------
     neuron_name : str
@@ -198,7 +235,6 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
     closest_dend = main_collisions_pipe(neuron_name, results_folder)
     top_closest = calc_alpha_shape_diff_between_near_axdends(closest_dend, alpha_per_point)
     top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", 'data')
-
 
 
 if __name__ == "__main__":
@@ -222,4 +258,3 @@ if __name__ == "__main__":
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
     with multiprocessing.Pool() as mp:
         mp.starmap(main, args)
-

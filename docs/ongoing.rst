@@ -2,7 +2,14 @@
 Ongoing Work
 ------------
 
-* In ``distance_alpha`` I added code that finds nearby axons and dendrites and compares
+* ``distance_alpha.py`` generate HDF5 files which end with ``*closest_pairs.h5`` and
+  contain a DataFrame with the 20 nearby pairs of axons and dendrites, as well as the
+  distance between them (in um), the collision prob. of each point and the alpha value
+  of each of them. The data actually is only the 99th quantile of the "collision delta",
+  i.e. only the points that were truly close and were truly different in their collision
+  probabilities were checked. We're talking about 1000 points.
+
+* In ``distance_alpha.py`` I added code that finds nearby axons and dendrites and compares
   their collision and alpha shape values. I hope to find nearby axon-dendrite pair with
   a large difference between their collision probabilities - and also a large difference
   in their alpha shape value.
@@ -17,7 +24,6 @@ Ongoing Work
         "REGULAR": np.int8(2),
         "SINGULAR": np.int8(3),
     }``
-
 
 * How did I compile the Python bindings for CGAL:
   1. Cloned the repo to ``/data/MatlabCode/PBLabToolkit/External/cgal-python-bindings``.
