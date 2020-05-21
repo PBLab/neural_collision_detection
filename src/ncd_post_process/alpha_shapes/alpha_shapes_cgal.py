@@ -80,7 +80,7 @@ def process_single_shape(neuron_name):
         all_classifications.append(classified)
     all_classifications = pd.DataFrame(np.vstack(all_classifications).T, columns=alphas)
     all_classifications.attrs = {"neuron_name": neuron_name}
-    all_classifications.to_csv(output_folder / (neuron_name + "_alpha_distrib.csv"))
+    all_classifications.to_hdf(output_folder / (neuron_name + "_alpha_distrib.h5"), key='data', complevel=3)
 
 
 if __name__ == "__main__":
@@ -102,3 +102,5 @@ if __name__ == "__main__":
 
     with multiprocessing.Pool() as mp:
         mp.map(process_single_shape, neuron_names)
+    # for neuron in neuron_names[:1]:
+    #     process_single_shape(neuron)

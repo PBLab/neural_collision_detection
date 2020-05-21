@@ -59,8 +59,8 @@ class CollisionNode:
     ptype = attr.ib(validator=in_(POINTTYPE))
     radius = attr.ib(validator=instance_of(float))
     tree_type = attr.ib(validator=in_(TREETYPE))
-    collision_chance = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
-    dist_to_body = attr.ib(default=np.float64(0), validator=instance_of(np.float64))
+    collision_chance = attr.ib(default=np.float32(0), validator=instance_of(np.float32))
+    dist_to_body = attr.ib(default=np.float32(0), validator=instance_of(np.float32))
     alpha = attr.ib(default=np.uint16(0), validator=instance_of(np.uint16))
 
     @classmethod
@@ -80,8 +80,8 @@ class CollisionNode:
         ptype = matches[3]
         radius = float(matches[4])
         tree_type = matches[5]
-        collision_chance = np.float64(matches[6])
-        dist_to_body = np.float64(matches[7])
+        collision_chance = np.float32(matches[6])
+        dist_to_body = np.float32(matches[7])
         alpha = np.uint16(matches[8])
 
         return cls(
@@ -263,7 +263,7 @@ class NeuronToGraph:
                 collision_chance=collisions[pair_number],
                 radius=tree.rawpoint[0].r,
                 tree_type=tree_type,
-                dist_to_body=np.float64(0),
+                dist_to_body=np.float32(0),
                 alpha=alpha[0],
             )
             new_node = CollisionNode(
@@ -274,7 +274,7 @@ class NeuronToGraph:
                 collision_chance=collisions[1],
                 radius=tree.rawpoint[1].r,
                 tree_type=tree_type,
-                dist_to_body=np.float64(0),
+                dist_to_body=np.float32(0),
                 alpha=alpha[1],
             )
             weight = np.float64(0)

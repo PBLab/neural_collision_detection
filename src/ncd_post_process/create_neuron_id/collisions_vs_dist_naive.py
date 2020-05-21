@@ -74,10 +74,11 @@ class CollisionsDistNaive:
 
     def __attrs_post_init__(self):
         self.num_of_nodes = self.graph.number_of_nodes()
-        coll_ax = np.zeros(self.num_of_nodes, dtype=np.uint64)
-        dist_ax = np.zeros(self.num_of_nodes, dtype=np.float64)
+        idxx = np.zeros(self.num_of_nodes, dtype=np.uint16)
+        dist_ax = np.zeros(self.num_of_nodes, dtype=np.float32)
         df_columns = {
-            "coll": coll_ax,
+            "orig_row": idxx,
+            "coll": dist_ax,
             "dist": dist_ax,
             "x": dist_ax,
             "y": dist_ax,
@@ -117,6 +118,7 @@ class CollisionsDistNaive:
         idx_axon, idx_dend = 0, 0
         for idx, node in enumerate(self.graph.nodes()):
             row_data = (
+                idx,
                 node.collision_chance,
                 node.dist_to_body,
                 node.loc[0],
@@ -133,8 +135,8 @@ class CollisionsDistNaive:
                 self.parsed_dend.loc[idx_dend, :] = row_data[:-1]
                 idx_dend += 1
 
-        self.parsed_axon = self.parsed_axon.loc[:idx_axon, :]
-        self.parsed_dend = self.parsed_dend.loc[:idx_dend, :]
+        self.parsed_axon = self.parsed_axon.loc[:idx_axon - 1, :]
+        self.parsed_dend = self.parsed_dend.loc[:idx_dend - 1, :]
         self.all_colls["type"] = self.all_colls["type"].astype('category')
 
     def _normalize_by_density(self, data):

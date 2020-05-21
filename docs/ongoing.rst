@@ -2,7 +2,12 @@
 Ongoing Work
 ------------
 
-* I created a table for each neuron in `results/for_article_fig2` where each row
+* In ``distance_alpha`` I added code that finds nearby axons and dendrites and compares
+  their collision and alpha shape values. I hope to find nearby axon-dendrite pair with
+  a large difference between their collision probabilities - and also a large difference
+  in their alpha shape value.
+
+* I created a table for each neuron in `results/for_article/fig2` where each row
   is a collision point, and each column's header is the alpha shape value that was
   used to calculate the relation of that point to the alpha shape. The relation
   values are as follows:
