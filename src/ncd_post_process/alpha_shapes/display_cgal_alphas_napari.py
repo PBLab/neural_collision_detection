@@ -3,6 +3,7 @@ import pathlib
 import napari
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 
 def norm(data1: np.ndarray, data2: np.ndarray, range_=(0, 4)):
@@ -83,3 +84,4 @@ for pair, neuron in zip(
             face_color="orange",
             size=normed_dend_size,
         )
+

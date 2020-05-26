@@ -6,6 +6,7 @@ value.
 """
 import pathlib
 import multiprocessing
+from typing import Tuple
 
 import scipy.spatial.distance as scidist
 import pandas as pd
@@ -34,10 +35,37 @@ def distance_between_ax_dend(ax: np.ndarray, dend: np.ndarray) -> np.ndarray:
     return scidist.cdist(ax, dend)
 
 
+def filter_faraway_pairs(
+    dist: np.ndarray, max_dist: int = 50
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Removes remote axon-dendrite pairs from the distance calculation.
+
+    If the closest dendrite to an axon is more than max_dist microns,
+    the axon will not be further processed since all we're after are
+    proximal axon-dendrite pairs
+
+    Parameters
+    ----------
+    dist : np.ndarray
+        Distance matrix from "distance_between_ax_dend"
+    max_dist : int, optional
+        Separation in microns, by default 100
+
+    Returns
+    -------
+    np.ndarray
+        Filtered distance matrix
+    """
+    dist[dist > max_dist] = np.nan
+    all_nan_rows = np.isnan(dist).all(axis=1).nonzero()[0]
+    dist = np.delete(dist, all_nan_rows, axis=0)
+    return dist, all_nan_rows
+
+
 def find_closest_dends_to_ax(
     dist: np.ndarray, ax: pd.DataFrame, dend: pd.DataFrame, num: int = 20
 ) -> pd.DataFrame:
-    """For each axonal points, finds the num closets dendritic points.
+    """For each axonal points, finds the num closest dendritic points.
 
     The input is assumed to be arriving from ``distance_between_ax_dend``, so the axons
     should be in the rows, and the dendrites on the columns.
@@ -60,7 +88,7 @@ def find_closest_dends_to_ax(
     closest_dends = np.argsort(dist, axis=1)[:, :num]
     chosen_dends = dend.iloc[closest_dends.ravel()]
     dists = np.take_along_axis(dist, closest_dends, axis=1).ravel()
-    chosen_axons = np.kron(np.arange(len(ax)), np.ones(num))
+    chosen_axons = np.kron(ax.index, np.ones(num, dtype=np.int64))
     assert len(chosen_axons) == len(chosen_dends)
     df = pd.DataFrame(
         {
@@ -106,7 +134,7 @@ def generate_df_from_neuron(fname: pathlib.Path, neuron_name: str) -> pd.DataFra
 
 
 def calc_alpha_shape_diff_between_near_axdends(
-    closest: pd.DataFrame, alphas: np.ndarray
+    closest: pd.DataFrame, alphas: np.ndarray, q=0.95
 ):
     """Finds the alpha shape value difference between nearby axons and dends which exhibit
     large difference in collision chance.
@@ -123,8 +151,10 @@ def calc_alpha_shape_diff_between_near_axdends(
     alphas : np.ndarray
         For each point in the neuron the table stores the alpha shape value that was the
         earliest "interior" result of that point.
+    q : float
+        Quantile to filter
     """
-    top = closest["collision_delta"].quantile(q=0.99)
+    top = closest["collision_delta"].quantile(q=q)
     top_closest = closest.query("collision_delta > @top")
     top_closest.loc[:, "ax_alpha"] = alphas[top_closest.loc[:, "ax_row"]]
     top_closest.loc[:, "dend_alpha"] = alphas[top_closest.loc[:, "dend_row"]]
@@ -214,7 +244,10 @@ def main_collisions_pipe(
         all_collisions_ax.loc[:, "x":"z"].to_numpy(),
         all_collisions_dend.loc[:, "x":"z"].to_numpy(),
     )
-    closest_dend = find_closest_dends_to_ax(dist, g.parsed_axon, g.parsed_dend)
+    dist, all_nan_rows = filter_faraway_pairs(dist)
+    closest_dend = find_closest_dends_to_ax(
+        dist, g.parsed_axon.drop(all_nan_rows), g.parsed_dend
+    )
     return closest_dend
 
 
@@ -267,5 +300,11 @@ if __name__ == "__main__":
         "AP130312_s1c1",
     ]
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
+
+    # Multi core
     with multiprocessing.Pool() as mp:
         mp.starmap(main, args)
+
+    # Single core
+    # for arg in args:
+    #     main(*arg)

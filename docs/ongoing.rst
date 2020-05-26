@@ -1,6 +1,10 @@
 ------------
 Ongoing Work
 ------------
+* I decided to filter the pairs of axon-dendrites to only ones that are no more than
+  50 um apart in the first place, to avoid looking at very distal parts of the axonal
+  tree which clearly have no proximal dendrites. I also changed the quantile to 0.95
+  due to the previous change.
 
 * ``distance_alpha.py`` generate HDF5 files which end with ``*closest_pairs.h5`` and
   contain a DataFrame with the 20 nearby pairs of axons and dendrites, as well as the
