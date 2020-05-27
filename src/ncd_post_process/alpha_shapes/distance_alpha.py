@@ -214,13 +214,13 @@ def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray
 
 
 def main_collisions_pipe(
-    neuron_name: str, results_folder: pathlib.Path
+    neuron_name: str, results_folder: pathlib.Path, num: int=20
 ) -> pd.DataFrame:
     """Pipeline for collision data processing.
 
     This pipeline processes the collision data by looking at nearby pairs
     of axons and dendrites. It creates a long-form dataframe that contains
-    a row per axon-dendrite pair, where each axon has ``num`` clode dends
+    a row per axon-dendrite pair, where each axon has ``num`` close dends
     to it.
 
     Parameters
@@ -229,6 +229,8 @@ def main_collisions_pipe(
         Name of neuron
     results_folder : pathlib.Path
         Folder with neuronal data
+    num : int
+        Number of close pairs per axon
 
     Returns
     -------
@@ -246,7 +248,7 @@ def main_collisions_pipe(
     )
     dist, all_nan_rows = filter_faraway_pairs(dist)
     closest_dend = find_closest_dends_to_ax(
-        dist, g.parsed_axon.drop(all_nan_rows), g.parsed_dend
+        dist, g.parsed_axon.drop(all_nan_rows), g.parsed_dend, num
     )
     return closest_dend
 
@@ -273,12 +275,13 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
     """
     print(neuron_name)
     alpha_per_point = main_alpha_pipe(neuron_name, alphas_folder)
-    closest_dend = main_collisions_pipe(neuron_name, results_folder)
+    closest_dend = main_collisions_pipe(neuron_name, results_folder, num=1)
     top_closest = calc_alpha_shape_diff_between_near_axdends(
         closest_dend, alpha_per_point
     )
     top_closest = top_closest.dropna()
-    top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", "data")
+    top_closest["alpha_delta"] = np.abs(top_closest["ax_alpha"] - top_closest["dend_alpha"])
+    top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", "data_single_pair")
 
 
 if __name__ == "__main__":

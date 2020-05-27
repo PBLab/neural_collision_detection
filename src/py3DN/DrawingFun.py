@@ -584,7 +584,7 @@ def Draw_Tree_Mesh(neuron, tid, colorcodes, layer ):
     obj.layers = layers
 
 
-    return
+    return tree_verts, tree_faces
 
 
 
