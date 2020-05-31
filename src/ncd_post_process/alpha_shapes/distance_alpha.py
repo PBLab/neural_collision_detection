@@ -15,6 +15,7 @@ import numpy as np
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
 )
+from ncd_post_process.alpha_shapes.alpha_shapes_cgal import find_first_interior_alpha_shape_value
 
 
 def distance_between_ax_dend(ax: np.ndarray, dend: np.ndarray) -> np.ndarray:
@@ -161,32 +162,6 @@ def calc_alpha_shape_diff_between_near_axdends(
     return top_closest
 
 
-def find_first_interior_alpha_shape_value(alphas: pd.DataFrame) -> np.ndarray:
-    """Finds the smallest alpha value that interiorized each point.
-
-    When calculating alpha shapes, each point on the neuron is continuously
-    checked for whether it's inside, on the edge, or outside the shape. The functions'
-    goal is to detect the "transition" of each point from being on the outside of
-    the shape (values of > 0) to being inside (value == 0).
-
-    Parameters
-    ----------
-    alphas : pd.DataFrame
-        Neural points are on the rows and alpha shape values are the columns
-
-    Returns
-    -------
-    np.ndarray
-        The alpha value for each neural point. NaN if it's never found inside
-    """
-    interior_alphas = np.where(alphas == 0)
-    first_zeros = pd.DataFrame({"x": interior_alphas[0], "y": interior_alphas[1]})
-    first_alpha = first_zeros.groupby("x").min()
-    all_rows = np.full((alphas.shape[0],), np.nan)
-    all_rows[first_alpha.index] = alphas.columns[first_alpha["y"]]
-    return all_rows
-
-
 def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray:
     """Pipeline for alpha values normalization.
 
@@ -305,9 +280,10 @@ if __name__ == "__main__":
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
 
     # Multi core
-    with multiprocessing.Pool() as mp:
-        mp.starmap(main, args)
+    # with multiprocessing.Pool() as mp:
+    #     mp.starmap(main, args)
 
     # Single core
-    # for arg in args:
-    #     main(*arg)
+    for arg in args:
+        main(*arg)
+        break

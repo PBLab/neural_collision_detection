@@ -97,14 +97,10 @@ class CollisionsDistNaive:
     @classmethod
     def from_graph(cls, fname: pathlib.Path, neuron: str, **kwargs):
         """Instantiate from an existing graph file by deserializing it."""
-        try:
-            graph = nx.readwrite.gml.read_gml(
-                str(fname), destringizer=CollisionNode.from_str
-            )
-        except FileNotFoundError:
-            raise
-        else:
-            return cls(graph, neuron, **kwargs)
+        graph = nx.readwrite.gml.read_gml(
+            str(fname), destringizer=CollisionNode.from_str
+        )
+        return cls(graph, neuron, **kwargs)
 
     def run(self):
         """Run analysis pipeline."""

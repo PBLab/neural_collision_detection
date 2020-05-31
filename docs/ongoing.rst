@@ -1,11 +1,14 @@
 ------------
 Ongoing Work
 ------------
+* I added the new alpha shape values to the neuronal graphs (made with ``graph_parsing.py``)
+  and also updated some of its code to use float32 instead of 64.
+
 * The package `pywavefront` allows me to read Blender-generated meshes
   easily and reliably, which look much better than the ones we made earlier.
   Use with: ``wf = pywavefront.Wavefront(fname, collect_faces=True)``
 
-* To better understand the distribution and differences between the alpha shape valu
+* To better understand the distribution and differences between the alpha shape value
   and the collision chance, I will use a 3D window function to assess the distribution
   of the two in each of these blocks. The resulting plot is a jointplot where the first
   axis is the coll chance, the second is the alpha value, and the dendrites and axons

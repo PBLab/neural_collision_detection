@@ -83,6 +83,32 @@ def process_single_shape(neuron_name):
     all_classifications.to_hdf(output_folder / (neuron_name + "_alpha_distrib.h5"), key='data', complevel=3)
 
 
+def find_first_interior_alpha_shape_value(alphas: pd.DataFrame) -> np.ndarray:
+    """Finds the smallest alpha value that interiorized each point.
+
+    When calculating alpha shapes, each point on the neuron is continuously
+    checked for whether it's inside, on the edge, or outside the shape. The functions'
+    goal is to detect the "transition" of each point from being on the outside of
+    the shape (values of > 0) to being inside (value == 0).
+
+    Parameters
+    ----------
+    alphas : pd.DataFrame
+        Neural points are on the rows and alpha shape values are the columns
+
+    Returns
+    -------
+    np.ndarray
+        The alpha value for each neural point. NaN if it's never found inside
+    """
+    interior_alphas = np.where(alphas == 0)
+    first_zeros = pd.DataFrame({"x": interior_alphas[0], "y": interior_alphas[1]})
+    first_alpha = first_zeros.groupby("x").min()
+    all_rows = np.full((alphas.shape[0],), np.nan)
+    all_rows[first_alpha.index] = alphas.columns[first_alpha["y"]]
+    return all_rows
+
+
 if __name__ == "__main__":
     neuron_names = [
         "AP120507_s3c1",

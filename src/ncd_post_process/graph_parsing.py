@@ -16,6 +16,10 @@ import matplotlib.pyplot as plt
 import numba as nb
 from scipy.io import loadmat
 
+from ncd_post_process.alpha_shapes.alpha_shapes_cgal import (
+    find_first_interior_alpha_shape_value,
+)
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1] / "py3DN"))
 import mytools
 
@@ -48,9 +52,9 @@ class CollisionNode:
     :param str ptype: Type of point, one of POINTTYPE's values
     :param float radius: Radius of point
     :param str tree_type: Type of tree, one of TREETYPE's values
-    :param np.float64 collision_chance: Probability of collision for the node
-    :param np.float64 dist_to_body: topological distance to the cell body
-    :param np.float64 alpha: Highest alpha value that contains this point
+    :param np.float32 collision_chance: Probability of collision for the node
+    :param np.float32 dist_to_body: topological distance to the cell body
+    :param np.float32 alpha: Highest alpha value that contains this point
     """
 
     ord_number = attr.ib(validator=instance_of(int))
@@ -61,7 +65,7 @@ class CollisionNode:
     tree_type = attr.ib(validator=in_(TREETYPE))
     collision_chance = attr.ib(default=np.float32(0), validator=instance_of(np.float32))
     dist_to_body = attr.ib(default=np.float32(0), validator=instance_of(np.float32))
-    alpha = attr.ib(default=np.uint16(0), validator=instance_of(np.uint16))
+    alpha = attr.ib(default=np.float32(np.nan), validator=instance_of(np.float32))
 
     @classmethod
     def from_str(cls, string):
@@ -82,7 +86,7 @@ class CollisionNode:
         tree_type = matches[5]
         collision_chance = np.float32(matches[6])
         dist_to_body = np.float32(matches[7])
-        alpha = np.uint16(matches[8])
+        alpha = np.float32(matches[8])
 
         return cls(
             ord_number,
@@ -157,21 +161,21 @@ class NeuronToGraph:
             )
             if self.with_collisions:
                 self.collisions = np.load(str(collisions_fname))["unique_coords"]
-                self.coll_prob = np.load(str(collisions_fname))["coll_prob"]
+                self.coll_prob = np.float32(np.load(str(collisions_fname))["coll_prob"])
                 self.closest_coll = connect_collisions_to_neural_points(
                     self.collisions, self.neuronal_points, self.inner_multiprocess
                 )
-                self.alpha = loadmat(
-                    collisions_fname.with_name(
-                        f"{self.neuron_name}_balls_alpha_values.mat"
+                self.alpha = self._get_alpha_vec(
+                    pathlib.Path(
+                        "/data/neural_collision_detection/results/for_article/fig2"
                     )
-                )["first_alpha_per_point"].ravel()
+                )
                 coll_prob = coerce_collisions_to_neural_coords(
                     len(self.neuronal_points), self.closest_coll, self.coll_prob,
                 )
 
             else:
-                coll_prob = np.zeros(self.num_of_nodes, dtype=np.float64)
+                coll_prob = np.zeros(self.num_of_nodes, dtype=np.float32)
             self.collision_df = self._make_collision_df(
                 coll_prob, neuron, self.num_of_nodes, self.alpha
             )
@@ -190,6 +194,19 @@ class NeuronToGraph:
         for tree in neuron.tree:
             num_of_nodes += tree.total_rawpoints
         return num_of_nodes
+
+    def _get_alpha_vec(self, path: pathlib.Path) -> np.ndarray:
+        """Returns the smallest alpha shape per point which englufs it.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            The folder containing all alpha shape data
+        """
+        alphas_fname = path / f"{self.neuron_name}_alpha_distrib.h5"
+        alphas = pd.read_hdf(alphas_fname, "data")
+        alpha_per_point = find_first_interior_alpha_shape_value(alphas).astype(np.float32)
+        return alpha_per_point
 
     def _filename_setup(
         self,
@@ -217,7 +234,7 @@ class NeuronToGraph:
         Parses the neuronal tree, populating an array with the coordinates
         of all the points in that tree (in Euclidean space).
         """
-        neuronal_points = np.zeros((num_of_nodes, 3), dtype=np.float64)
+        neuronal_points = np.zeros((num_of_nodes, 3), dtype=np.float32)
         idx = 0
         for tree in neuron.tree:
             for point in tree.rawpoint:
@@ -264,7 +281,7 @@ class NeuronToGraph:
                 radius=tree.rawpoint[0].r,
                 tree_type=tree_type,
                 dist_to_body=np.float32(0),
-                alpha=alpha[0],
+                alpha=np.float32(alpha[0]),
             )
             new_node = CollisionNode(
                 ord_number=1,
@@ -277,18 +294,18 @@ class NeuronToGraph:
                 dist_to_body=np.float32(0),
                 alpha=alpha[1],
             )
-            weight = np.float64(0)
+            weight = np.float32(0)
             df.iloc[pair_number] = [parent_node, new_node, weight]
             pair_number += 1
             for point in tree.rawpoint[2:]:
                 prev_node = new_node
                 del new_node
                 try:
-                    weight = mytools.Get_FiberDistance_Between_RawPoints(
+                    weight = np.float32(mytools.Get_FiberDistance_Between_RawPoints(
                         tree, 0, point.ppid
-                    )
+                    ))
                 except IndexError:
-                    weight = np.float64(0)
+                    weight = np.float32(0)
                 new_node = CollisionNode(
                     ord_number=pair_number + 1,
                     loc=tuple(point.P),
@@ -393,7 +410,7 @@ class CsvNeuronToGraph:
             self.collisions, self.neuron_coords, multiprocessed=False
         )
         coll_prob = coerce_collisions_to_neural_coords(
-            len(self.neuron_coords), self.coll_prob, closest_coll,
+            len(self.neuron_coords), closest_coll, self.coll_prob
         )
         collisions_df = ntg._make_collision_df(coll_prob)
 
@@ -473,7 +490,7 @@ def coerce_collisions_to_neural_coords(
         An array with the length of num_neuronal_points containing the calculated
         probability of collision for each neural point
     """
-    prob_per_point = np.zeros(num_neuronal_points)
+    prob_per_point = np.zeros(num_neuronal_points, dtype=np.float32)
     for idx, closest_coll in enumerate(closest_coll_idx):
         prob_per_point[idx] = coll_prob[closest_coll]
     return prob_per_point
