@@ -11,7 +11,7 @@
 The script `simulate_alphashape.py` contains the simulations I made to visually verify my understanding of CGAL's results.
 
 It starts by generating the following 3D pyramid:   
-![Alpha pyramid](alpha_shape_sim_pyramid.png)
+![Alpha pyramid](./alpha_shape_sim_pyramid.png)
 
 The pyramid contains points, or `Point_3` objects, which will clearly be on the edge of any alpha shape, regardless of its radius (like the four outer edges on its base) and points which could be either inside or on the edges of the shape, depending on the size of the alpha shape radius. To receive a naive alpha shape object for these points, I simply call `alpha_shape = Alpha_shape_3(points)`.
 
@@ -33,6 +33,4 @@ The table below is a summary of the results for the simulation. You see how, for
 0.25 -0.25 0   EXTERIOR   REGULAR  REGULAR   REGULAR   REGULAR
 -0.25 -0.25 0  EXTERIOR   REGULAR  REGULAR   REGULAR   REGULAR
 ```
-
-
 
