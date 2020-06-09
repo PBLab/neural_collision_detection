@@ -119,36 +119,11 @@ def scatter_3d_points_naive(points: np.ndarray):
     ax.scatter(points[:, 0], points[:, 1], points[:, 2])
 
 
-def plot_classification_per_point_per_alpha(classification: pd.DataFrame):
-    """Plots a figure with the points colored in colors labeling their
-    location with the current alpha shape.
-
-    Parameters
-    ----------
-    classification : pd.DataFrame
-        points x alpha values table of classifications
-    """
-    colors = {
-        Classification_type.EXTERIOR: "C1",
-        Classification_type.INTERIOR: "C0",
-        Classification_type.REGULAR: "C2",
-    }
-
-    figure = plt.figure()
-    num_alphas = classification.shape[1]
-    for idx, (alpha_val, data) in enumerate(classification.iteritems()):
-        ax = figure.add_subplot(f"{num_alphas}1{idx + 1}", projection="3d")
-        ax.scatter(data[:, 0], data[:, 1], data[:, 2])
-        color_per_point = [colors[value] for value in data]
-        ax.set_title(alpha_val)
-    plt.show()
-
-
 def run():
     points, shape = generate_points_and_alpha()
     alphas = find_crit_alpha_values_per_shape(shape)
     classification = classify_points_per_alpha(shape, alphas, points)
-    # scatter_3d_points_naive(cgal_points_to_numpy(points))
+    scatter_3d_points_naive(cgal_points_to_numpy(points))
     return points, shape, alphas, classification
 
 
