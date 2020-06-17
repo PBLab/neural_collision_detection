@@ -5,7 +5,6 @@ import multiprocessing
 
 import numpy as np
 import pandas as pd
-import dask
 import matplotlib.pyplot as plt
 
 
@@ -15,8 +14,6 @@ sys.path.append(
 from tri3_epic import *
 
 sys.path.pop(-1)
-
-dask.config.set(scheduler="processes")
 
 
 def generate_alphashape_from_neuron(neuron_name):

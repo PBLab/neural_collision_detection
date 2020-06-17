@@ -1,16 +1,19 @@
-"""This module deals with dividing each neuron into sub-blocks in 3D space.
+"""This module deals with dividing each neuron into sub-block in 3D space.
 Once the neuron is divided we can calculate properties of that block.
 Properties may include the distribution of alpha shapes, dist. of collisions,
 axon-dendrite relations in the block and more."""
 
 import pathlib
 import multiprocessing
+from typing import Tuple, List
+from collections import defaultdict
+import pickle
 
 import numpy as np
 import pandas as pd
 import scipy.stats
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
@@ -45,7 +48,7 @@ def load_neuronal_points(graph_fname: pathlib.Path, neuron_name: str) -> pd.Data
     return points
 
 
-def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> np.ndarray:
+def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> Tuple[np.ndarray, List[np.ndarray]]:
     """Loads the given neuron into memory and returns a 1D array with the block number
     for each point.
 
@@ -65,6 +68,8 @@ def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> np.nd
     np.ndarray
         1D array of block number per neuron coordinate. The number of unique values
         should equal prod(blocks)
+    List of np.ndarray
+        A list populated with an array of bin edges for each axis
     """
     bounding_box = find_points_bounding_box(points)
     linspace_per_ax = []
@@ -75,13 +80,13 @@ def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> np.nd
         linspace_per_ax.append(bins)
         print(f"The size of this block is {bins[1] - bins[0]} microns.")
     ret = scipy.stats.binned_statistic_dd(
-        points.to_numpy(), np.arange(len(points)), "count",
+        points.to_numpy(), np.arange(len(points)), "count", bins=linspace_per_ax
     )
-    return ret[2]
+    return ret[2], linspace_per_ax
 
 
-def divide_and_plot(all_data: pd.DataFrame):
-    """Divides the given data frame into axonal and dendritic blocks,
+def divide_and_plot(all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str):
+    """Divides the given data frame into axonal and dendritic blocks
     and plots them together on the same JointPlot.
 
     The functions tries to deal with situations where there are only axonal points
@@ -93,7 +98,7 @@ def divide_and_plot(all_data: pd.DataFrame):
         A DF consisting of both axonal and dendritic data with a "type"
         column that separates them.
     """
-    all_data.loc[:, "is_ax"] = all_data["type"].str.contains("Axon")
+    all_data.loc[:, "is_ax"] = all_data.loc[:, "type"].str.contains("Axon")
     axonal = all_data.query("is_ax == True")
     dendritic = all_data.query("is_ax == False")
     both = 0
@@ -108,9 +113,38 @@ def divide_and_plot(all_data: pd.DataFrame):
         both += 1
     if both == 2:
         bb = find_points_bounding_box(all_data.loc[:, "x":"z"])
-        g.fig.suptitle("Alpha Value vs. Collision Chance for Axons (Green) and Dendrites")
-        g.fig.savefig(f'/data/neural_collision_detection/results/for_article/fig2/coll_vs_alpha_{bb}.png', dpi=300, transparent=True)
+        _write_data_and_fig(data_folder, bb, neuron_name, g.fig)
 
+
+def _write_data_and_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: plt.Figure): 
+    """Generates a figure and data for the given neuron name.
+
+    The function appends the bounding box (bb) of the data to the filename of the
+    figure, and also puts in inside a pickle file with the name of the neuron so that
+    it could be used in later post-processing functions.
+
+    Parameters
+    ----------
+    data_folder : pathlib.Path
+        Folder for the figure and pickle
+    bb : 3-tuple of 2-tuple
+        For each axis, start and end of bounding box
+    neuron_name : str
+    fig : plt.Figure
+    """
+    fig.suptitle("Alpha Value vs. Collision Chance for Axons (Green) and Dendrites")
+    fig_fname = f"{neuron_name}_coll_vs_alpha_{bb}.png"
+    fig.savefig(data_folder / fig_fname, dpi=300, transparent=True)
+    pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
+    try:
+        with open(pickle_fname, 'rb') as f:
+            data = pickle.load(f)
+    except FileNotFoundError:
+        data = defaultdict(list, {})
+    data[neuron_name].append(bb)
+    with open(pickle_fname, 'w+b') as f:
+        pickle.dump(data, f)
+     
 
 def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
     """Plots a jointplot of the data.
@@ -141,16 +175,41 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
     return g, {"x": binx, "y": biny}
 
 
-if __name__ == "__main__":
+def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
+    """Main pipeline for this file, handling a single neuron.
+
+    The neuron's graph data is read and then it's divided into blocks and
+    analyzed. Each "interesting" block is saved as a figure and inside a 
+    pickle file which aggregates the coordinates of the interesting blocks
+    of that neuron. These files are written to the "data_folder" location.
+
+    Parameters
+    ----------
+    neuron_name : str
+    data_folder : pathlib.Path
+        The location to which the pickle file and figures will be written to
+    blocks : 3-tuple of 2-tuple
+        Start and end coordinate per axis
+    """
     path = pathlib.Path(
-        "results/2020_02_14/graph_AP120410_s1c1_with_collisions.gml"
-    ).resolve()
-    points = load_neuronal_points(path, "AP120410")
-    indices = divide_neuron_into_blocks(points.loc[:, "x":"z"], (10, 19, 6))
+        f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_s1c1_with_collisions.gml"
+    )
+    points = load_neuronal_points(path, neuron_name)
+    indices, bins = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
     uniques = np.unique(indices)
-    blocks = (points.iloc[indices == unique] for unique in uniques)
+    blocks = ((points.iloc[indices == unique], data_folder, neuron_name) for unique in uniques)
     with multiprocessing.Pool() as mp:
-        mp.map(divide_and_plot, blocks)
+         mp.starmap(divide_and_plot, blocks)
     # for block in blocks:
     #     divide_and_plot(block)
     #     plt.show()
+
+    
+if __name__ == "__main__":
+    path = pathlib.Path(
+        "/data/neural_collision_detection/results/2020_02_14/graph_AP120410_s1c1_with_collisions.gml"
+    ).resolve()
+    data_folder = pathlib.Path("/data/neural_collision_detection/results/for_article/fig2")
+    neuron_name = "AP120410_s1c1"
+    main(neuron_name, data_folder, (10, 19, 6))
+
