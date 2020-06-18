@@ -90,7 +90,7 @@ def divide_and_plot(all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_na
     and plots them together on the same JointPlot.
 
     The functions tries to deal with situations where there are only axonal points
-    and\or dendritic points.
+    and\\or dendritic points.
 
     Parameters
     ----------
@@ -113,15 +113,43 @@ def divide_and_plot(all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_na
         both += 1
     if both == 2:
         bb = find_points_bounding_box(all_data.loc[:, "x":"z"])
-        _write_data_and_fig(data_folder, bb, neuron_name, g.fig)
+        _serialize_data(data_folder, bb, neuron_name)
+        _serialize_fig(data_folder, bb, neuron_name, g.fig)
 
 
-def _write_data_and_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: plt.Figure): 
-    """Generates a figure and data for the given neuron name.
+def _serialize_data(data_folder: pathlib.Path, bb: tuple, neuron_name: str):
+    """Writes the given bounding box data to disk.
+    
+    The data is one of the bounding boxes of the current neuron, and it should
+    be pickled alongside the rest of the bounding boxes of that neuron. This
+    function will create a new pickle file if it doesn't exist, or update
+    the current data if it's not there.
+
+    Parameters
+    ----------
+    data_folder : pathlib.Path
+        Folder to store the pickle file
+    bb : 3-tuple of 2-tuple
+        For each axis, start and end of bounding box
+    neuron_name : str
+    """
+    pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
+    try:
+        with open(pickle_fname, 'rb') as f:
+            data = pickle.load(f)
+    except FileNotFoundError:
+        data = defaultdict(list, {})
+    if data not in data[neuron_name]:
+        data[neuron_name].append(bb)
+    with open(pickle_fname, 'w+b') as f:
+        pickle.dump(data, f)
+ 
+
+def _serialize_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: plt.Figure): 
+    """Serialize the figure for the given neuron name.
 
     The function appends the bounding box (bb) of the data to the filename of the
-    figure, and also puts in inside a pickle file with the name of the neuron so that
-    it could be used in later post-processing functions.
+    figure. 
 
     Parameters
     ----------
@@ -135,16 +163,7 @@ def _write_data_and_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, 
     fig.suptitle("Alpha Value vs. Collision Chance for Axons (Green) and Dendrites")
     fig_fname = f"{neuron_name}_coll_vs_alpha_{bb}.png"
     fig.savefig(data_folder / fig_fname, dpi=300, transparent=True)
-    pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
-    try:
-        with open(pickle_fname, 'rb') as f:
-            data = pickle.load(f)
-    except FileNotFoundError:
-        data = defaultdict(list, {})
-    data[neuron_name].append(bb)
-    with open(pickle_fname, 'w+b') as f:
-        pickle.dump(data, f)
-     
+    
 
 def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
     """Plots a jointplot of the data.
@@ -167,7 +186,10 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
         g = sns.JointGrid(x="coll", y="alpha", data=data)
     if not bins:
         bins = dict(x=None, y=None)
-    g.ax_joint.scatter(data["coll"], data["alpha"], c=color, s=7, alpha=0.6)
+    if len(data) < 5:
+        g.ax_joint.scatter(data["coll"], data["alpha"], c=color, s=7, alpha=0.6)
+    else:
+        sns.regplot(data=data, x='coll', y='alpha', color=color, scatter_kws={'s': 7, 'alpha': 0.6}, ax=g.ax_joint)
     _, binx, _ = g.ax_marg_x.hist(data["coll"], alpha=0.6, color=color, bins=bins["x"])
     _, biny, _ = g.ax_marg_y.hist(
         data["alpha"], alpha=0.6, color=color, orientation="horizontal", bins=bins["y"]
@@ -192,23 +214,20 @@ def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
         Start and end coordinate per axis
     """
     path = pathlib.Path(
-        f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_s1c1_with_collisions.gml"
+        f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_with_collisions.gml"
     )
     points = load_neuronal_points(path, neuron_name)
-    indices, bins = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
+    indices, _ = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
     uniques = np.unique(indices)
     blocks = ((points.iloc[indices == unique], data_folder, neuron_name) for unique in uniques)
     with multiprocessing.Pool() as mp:
          mp.starmap(divide_and_plot, blocks)
     # for block in blocks:
-    #     divide_and_plot(block)
+    #     divide_and_plot(*block)
     #     plt.show()
 
     
 if __name__ == "__main__":
-    path = pathlib.Path(
-        "/data/neural_collision_detection/results/2020_02_14/graph_AP120410_s1c1_with_collisions.gml"
-    ).resolve()
     data_folder = pathlib.Path("/data/neural_collision_detection/results/for_article/fig2")
     neuron_name = "AP120410_s1c1"
     main(neuron_name, data_folder, (10, 19, 6))

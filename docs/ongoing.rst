@@ -1,6 +1,10 @@
 ------------
 Ongoing Work
 ------------
+* I added code that divides the space into blocks and calculates properties of each box
+  separately. I tried visualizing these boxes with blender ``blender/draw_bounding_boxes.py``
+  but it doesn't look too well. I need to draw individual boxes.
+
 * I added the new alpha shape values to the neuronal graphs (made with ``graph_parsing.py``)
   and also updated some of its code to use float32 instead of 64.
 
