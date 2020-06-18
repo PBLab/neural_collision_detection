@@ -14,6 +14,7 @@ import pandas as pd
 import scipy.stats
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.api as sm
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
@@ -48,7 +49,9 @@ def load_neuronal_points(graph_fname: pathlib.Path, neuron_name: str) -> pd.Data
     return points
 
 
-def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> Tuple[np.ndarray, List[np.ndarray]]:
+def divide_neuron_into_blocks(
+    points: pd.DataFrame, blocks=(10, 10, 5)
+) -> Tuple[np.ndarray, List[np.ndarray]]:
     """Loads the given neuron into memory and returns a 1D array with the block number
     for each point.
 
@@ -85,7 +88,9 @@ def divide_neuron_into_blocks(points: pd.DataFrame, blocks=(10, 10, 5)) -> Tuple
     return ret[2], linspace_per_ax
 
 
-def divide_and_plot(all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str):
+def divide_and_plot(
+    all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str
+):
     """Divides the given data frame into axonal and dendritic blocks
     and plots them together on the same JointPlot.
 
@@ -106,7 +111,7 @@ def divide_and_plot(all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_na
         g, bins = plot_distribution(axonal, color="C2")
         both += 1
     else:
-        g = sns.JointGrid(x="coll", y="alpha", data=dendritic)
+        g = sns.JointGrid(x="alpha", y="coll", data=dendritic)
         bins = None
     if not dendritic.empty:
         g, _ = plot_distribution(dendritic, color="C1", g=g, bins=bins)
@@ -135,17 +140,19 @@ def _serialize_data(data_folder: pathlib.Path, bb: tuple, neuron_name: str):
     """
     pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
     try:
-        with open(pickle_fname, 'rb') as f:
+        with open(pickle_fname, "rb") as f:
             data = pickle.load(f)
     except FileNotFoundError:
         data = defaultdict(list, {})
     if data not in data[neuron_name]:
         data[neuron_name].append(bb)
-    with open(pickle_fname, 'w+b') as f:
+    with open(pickle_fname, "w+b") as f:
         pickle.dump(data, f)
- 
 
-def _serialize_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: plt.Figure): 
+
+def _serialize_fig(
+    data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: plt.Figure
+):
     """Serialize the figure for the given neuron name.
 
     The function appends the bounding box (bb) of the data to the filename of the
@@ -160,10 +167,10 @@ def _serialize_fig(data_folder: pathlib.Path, bb: tuple, neuron_name: str, fig: 
     neuron_name : str
     fig : plt.Figure
     """
-    fig.suptitle("Alpha Value vs. Collision Chance for Axons (Green) and Dendrites")
-    fig_fname = f"{neuron_name}_coll_vs_alpha_{bb}.png"
+    fig.suptitle("Collision Chance vs. Alpha Value for Axons (Green) and Dendrites")
+    fig_fname = f"{neuron_name}_alpha_vs_coll_{bb}.png"
     fig.savefig(data_folder / fig_fname, dpi=300, transparent=True)
-    
+
 
 def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
     """Plots a jointplot of the data.
@@ -183,18 +190,60 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None):
         A dictionary with 'x' and 'y' keys containing the bin edges
     """
     if not g:
-        g = sns.JointGrid(x="coll", y="alpha", data=data)
+        g = sns.JointGrid(x="alpha", y="coll", data=data)
     if not bins:
         bins = dict(x=None, y=None)
     if len(data) < 5:
-        g.ax_joint.scatter(data["coll"], data["alpha"], c=color, s=7, alpha=0.6)
+        g.ax_joint.scatter(data["alpha"], data["coll"], c=color, s=7, alpha=0.6)
     else:
-        sns.regplot(data=data, x='coll', y='alpha', color=color, scatter_kws={'s': 7, 'alpha': 0.6}, ax=g.ax_joint)
-    _, binx, _ = g.ax_marg_x.hist(data["coll"], alpha=0.6, color=color, bins=bins["x"])
+        _calc_and_plot_regression(data, color, g.ax_joint)
+    _, binx, _ = g.ax_marg_x.hist(data["alpha"], alpha=0.6, color=color, bins=bins["x"])
     _, biny, _ = g.ax_marg_y.hist(
-        data["alpha"], alpha=0.6, color=color, orientation="horizontal", bins=bins["y"]
+        data["coll"], alpha=0.6, color=color, orientation="horizontal", bins=bins["y"]
     )
     return g, {"x": binx, "y": biny}
+
+
+def _calc_and_plot_regression(data: pd.DataFrame, color: str, ax: plt.Axes):
+    """Plots a regression line with the scattered point for the given data.
+
+    This method assumes that the given data has enough points to be used in a
+    regression analysis.
+    It displays the regression using Seaborn and calculates the actual R2 value
+    using statsmodels, and then shows it on the figure.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data containing the 'alpha' and 'coll' columns
+    color : str
+        Color of the current plotted points
+    ax : plt.Axes
+        Axis to draw on
+    """
+    locations = {"C1": (0.8, 0.9), "C2": (0.8, 0.8)}
+    no_nulls = data.dropna()
+    sns.regplot(
+        data=no_nulls,
+        x="alpha",
+        y="coll",
+        color=color,
+        scatter_kws={"s": 7, "alpha": 0.6},
+        ax=ax,
+    )
+    mod = sm.OLS(no_nulls["coll"], no_nulls["alpha"])  # y then x
+    res = mod.fit()
+    r = res.rsquared
+
+    plt.text(
+        *locations[color],
+        f"$R^2={r:.2f}$",
+        horizontalalignment="center",
+        figure=ax.figure,
+        verticalalignment="center",
+        transform=ax.transAxes,
+        color=color,
+    )
 
 
 def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
@@ -219,16 +268,19 @@ def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
     points = load_neuronal_points(path, neuron_name)
     indices, _ = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
     uniques = np.unique(indices)
-    blocks = ((points.iloc[indices == unique], data_folder, neuron_name) for unique in uniques)
+    blocks = (
+        (points.iloc[indices == unique], data_folder, neuron_name) for unique in uniques
+    )
     with multiprocessing.Pool() as mp:
-         mp.starmap(divide_and_plot, blocks)
+        mp.starmap(divide_and_plot, blocks)
     # for block in blocks:
     #     divide_and_plot(*block)
     #     plt.show()
 
-    
+
 if __name__ == "__main__":
-    data_folder = pathlib.Path("/data/neural_collision_detection/results/for_article/fig2")
+    data_folder = pathlib.Path(
+        "/data/neural_collision_detection/results/for_article/fig2"
+    )
     neuron_name = "AP120410_s1c1"
     main(neuron_name, data_folder, (10, 19, 6))
-
