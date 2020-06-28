@@ -1,6 +1,18 @@
 ------------
 Ongoing Work
 ------------
+* I took from the table of all pairs of proximal axons and dendrites, found in ``distance_
+  alpha.py``, two groups - the mostest closest pairs, and all other pairs, and tried to plot
+  them together to see if the distribution of the mostest closest looks different than the 
+  distribution of the other group. The result was no - there's not visible difference.
+
+* Using ``find_block_properties.py`` in the ``alpha_shapes`` module I was able to divide
+  each neuron into many bounding boxes and visualize their collision and alpha distribution
+  successfully. This didn't reveal too much, since the correlation between the alpha shape
+  and the collision chance isn't quite clear yet. Be that as it may, we're at least able to
+  view these boxes in 3D on top of the neuron in Blender, which is definitely progress.
+  To the rescue came a fixed version of ``draw_bounding_boxes.py``.
+
 * I added code that divides the space into blocks and calculates properties of each box
   separately. I tried visualizing these boxes with blender ``blender/draw_bounding_boxes.py``
   but it doesn't look too well. I need to draw individual boxes.

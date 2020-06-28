@@ -1,11 +1,11 @@
 """This module deals with dividing each neuron into sub-block in 3D space.
 Once the neuron is divided we can calculate properties of that block.
 Properties may include the distribution of alpha shapes, dist. of collisions,
-axon-dendrite relations in the block and more."""
-
+axon-dendrite relations in the block and more.
+"""
 import pathlib
 import multiprocessing
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from collections import namedtuple, defaultdict
 import pickle
 
@@ -21,7 +21,7 @@ from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
 )
 
 
-LMResults = namedtuple('LMResults', 'r2, const, slope')
+LMResults = namedtuple("LMResults", "r2, const, slope")
 
 
 def find_points_bounding_box(points: pd.DataFrame) -> tuple:
@@ -54,7 +54,7 @@ def load_neuronal_points(graph_fname: pathlib.Path, neuron_name: str) -> pd.Data
 
 def divide_neuron_into_blocks(
     points: pd.DataFrame, blocks=(10, 10, 5)
-) -> Tuple[np.ndarray, List[np.ndarray]]:
+) -> Tuple[np.ndarray, List[np.ndarray], str]:
     """Loads the given neuron into memory and returns a 1D array with the block number
     for each point.
 
@@ -76,23 +76,28 @@ def divide_neuron_into_blocks(
         should equal prod(blocks)
     List of np.ndarray
         A list populated with an array of bin edges for each axis
+    block_sizes : str
+        Size of blocks in microns per axis
     """
     bounding_box = find_points_bounding_box(points)
     linspace_per_ax = []
+    block_sizes = []
     for minmax, block in zip(bounding_box, blocks):
         bins = np.linspace(
             minmax[0], minmax[1], block + 1, endpoint=True, dtype=np.int32
         )
         linspace_per_ax.append(bins)
+        block_sizes.append(str(bins[1] - bins[0]))
         print(f"The size of this block is {bins[1] - bins[0]} microns.")
     ret = scipy.stats.binned_statistic_dd(
         points.to_numpy(), np.arange(len(points)), "count", bins=linspace_per_ax
     )
-    return ret[2], linspace_per_ax
+    block_sizes = "-".join(block_sizes)
+    return ret[2], linspace_per_ax, block_sizes
 
 
 def divide_and_plot(
-    all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str
+    all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str, blocksize: str
 ):
     """Divides the given data frame into axonal and dendritic blocks
     and plots them together on the same JointPlot.
@@ -105,6 +110,11 @@ def divide_and_plot(
     all_data : pd.DataFrame
         A DF consisting of both axonal and dendritic data with a "type"
         column that separates them.
+    data_folder : pathlib.Path
+        Folder to write the data into
+    neuron_name : str
+    blocksize : str
+        Size of block in um. Needed for serialization
     """
     all_data.loc[:, "is_ax"] = all_data.loc[:, "type"].str.contains("Axon")
     axonal = all_data.query("is_ax == True")
@@ -116,24 +126,36 @@ def divide_and_plot(
     else:
         g = sns.JointGrid(x="alpha", y="coll", data=dendritic)
         bins = None
+        ax_lmresult = None
     if not dendritic.empty:
         g, _, dend_lmresult = plot_distribution(dendritic, color="C1", g=g, bins=bins)
         both += 1
     if both == 2:
         bb = find_points_bounding_box(all_data.loc[:, "x":"z"])
-        _serialize_data(data_folder, bb, neuron_name, (ax_lmresult, dend_lmresult))
+        _serialize_data(
+            data_folder, bb, neuron_name, (ax_lmresult, dend_lmresult), blocksize
+        )
         _serialize_fig(data_folder, bb, neuron_name, g.fig)
 
 
 def _default_results_dict() -> dict:
     """Callable that returns a specialized 'data structure'
     for safe-keeping the results of this computation"""
-    return {'bounding_boxes': [], 'lmresults': None}
+    return {"bounding_boxes": [], "lmresults": []}
 
 
-def _serialize_data(data_folder: pathlib.Path, bb: tuple, neuron_name: str, lmresults: Tuple[sm.OLSResults]):
+def _serialize_data(
+    data_folder: pathlib.Path,
+    bb: tuple,
+    neuron_name: str,
+    lmresults: Tuple[
+        sm.regression.linear_model.RegressionResultsWrapper,
+        sm.regression.linear_model.RegressionResultsWrapper,
+    ],
+    blocksize: str,
+):
     """Writes the given bounding box data to disk.
-    
+
     The data is one of the bounding boxes of the current neuron, and it should
     be pickled alongside the rest of the bounding boxes of that neuron. This
     function will create a new pickle file if it doesn't exist, or update
@@ -146,21 +168,48 @@ def _serialize_data(data_folder: pathlib.Path, bb: tuple, neuron_name: str, lmre
     bb : 3-tuple of 2-tuple
         For each axis, start and end of bounding box
     neuron_name : str
-    lmresults : 2-tuple of sm.OLSResults
+    lmresults : 2-tuple of sm.regression.linear_model.RegressionResultsWrapper
         Axonal and dendritic results of the linear regression
+    blocksize : str
+        Size of block in um as a str (number per axis)
     """
     pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
     try:
         with open(pickle_fname, "rb") as f:
-            data = pickle.load(f)
+            data_all_neurons = pickle.load(f)
     except FileNotFoundError:
-        data = defaultdict(_default_results_dict, _default_results_dict())
-    if bb not in data[neuron_name]["bounding_boxes"]:
-        data[neuron_name]["bounding_boxes"].append(bb)
-        result = LMResults(lmresults.rsquared, lmresults.params[0], lmresults.params[1])
-        data[neuron_name]["lmresults"] = result
+        data_all_neurons = defaultdict(dict, {})
+    if blocksize not in data_all_neurons[neuron_name]:
+        new_data = _default_results_dict()
+        new_data["bounding_boxes"].append(bb)
+        result_ax = _create_lm_results(lmresults[0])
+        result_dend = _create_lm_results(lmresults[1])
+        new_data["lmresults"].append({"axon": result_ax, "dend": result_dend})
+        data_all_neurons[neuron_name][blocksize] = new_data
+
     with open(pickle_fname, "w+b") as f:
-        pickle.dump(data, f)
+        pickle.dump(data_all_neurons, f)
+
+
+def _create_lm_results(
+    lmresults: sm.regression.linear_model.RegressionResultsWrapper,
+) -> Optional[LMResults]:
+    """Helper function create an LMResults instance from the given data.
+
+    Parameters
+    ----------
+    lmresults : sm.regression.linear_model.RegressionResultsWrapper
+        Results of the linear model
+
+    Returns
+    -------
+    LMResults, optional
+        A picklable format, if indeed there were results. Else None
+    """
+    try:
+        return LMResults(lmresults.rsquared, lmresults.params[0], lmresults.params[1])
+    except AttributeError:
+        return None
 
 
 def _serialize_fig(
@@ -169,7 +218,7 @@ def _serialize_fig(
     """Serialize the figure for the given neuron name.
 
     The function appends the bounding box (bb) of the data to the filename of the
-    figure. 
+    figure.
 
     Parameters
     ----------
@@ -208,7 +257,7 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None) -> Tuple:
         The grid seaborn object we're plotting with
     dict
         A dictionary with the ["x"] and ["y"] bins of the histograms
-    lmresult : sm.OLSResults, optional
+    lmresult : sm.regression.linear_model.RegressionResultsWrapper, optional
         The results of the linear regression
     """
     if not g:
@@ -220,7 +269,7 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None) -> Tuple:
         lmresult = None
     else:
         lmresult = _calc_regression(data)
-        _plot_regression(data, color, g.ax_joint, lmresult)
+        _plot_regression(data, color, g.ax_joint, lmresult.rsquared)
     _, binx, _ = g.ax_marg_x.hist(data["alpha"], alpha=0.6, color=color, bins=bins["x"])
     _, biny, _ = g.ax_marg_y.hist(
         data["coll"], alpha=0.6, color=color, orientation="horizontal", bins=bins["y"]
@@ -228,7 +277,7 @@ def plot_distribution(data: pd.DataFrame, color, g=None, bins=None) -> Tuple:
     return g, {"x": binx, "y": biny}, lmresult
 
 
-def _plot_regression(data: pd.DataFrame, color: str, ax: plt.Axes, result: sm.OLSResults):
+def _plot_regression(data: pd.DataFrame, color: str, ax: plt.Axes, rsquared: float):
     """Plots a regression line with the scattered point for the given data.
 
     This method assumes that statsmodels was already used to calculate the regression
@@ -242,8 +291,8 @@ def _plot_regression(data: pd.DataFrame, color: str, ax: plt.Axes, result: sm.OL
         Color of the current plotted points
     ax : plt.Axes
         Axis to draw on
-    result : sm.OLSResults
-        Results object from statsmodels
+    rsquared : float
+        R^2 value
     """
     locations = {"C1": (0.8, 0.9), "C2": (0.8, 0.8)}
     no_nulls = data.dropna()
@@ -255,23 +304,23 @@ def _plot_regression(data: pd.DataFrame, color: str, ax: plt.Axes, result: sm.OL
         scatter_kws={"s": 7, "alpha": 0.6},
         ax=ax,
     )
-    r = result.rsquared
 
     plt.text(
         *locations[color],
-        f"$R^2={r:.2f}$",
+        f"$R^2={rsquared:.2f}$",
         horizontalalignment="center",
         figure=ax.figure,
         verticalalignment="center",
         transform=ax.transAxes,
         color=color,
     )
-    return res
 
 
-def _calc_regression(data: pd.DataFrame) -> sm.OLSResults:
+def _calc_regression(
+    data: pd.DataFrame,
+) -> sm.regression.linear_model.RegressionResultsWrapper:
     """Calculate an ordinary linear regression for the given data.
-    
+
     Parameters
     ----------
     data : pd.DataFrame
@@ -279,10 +328,12 @@ def _calc_regression(data: pd.DataFrame) -> sm.OLSResults:
 
     Returns
     -------
-    sm.OLSResults
+    sm.regression.linear_model.RegressionResultsWrapper
     """
     no_nulls = data.dropna()
-    mod = sm.OLS(sm.add_constant(no_nulls["coll"]), no_nulls["alpha"])  # y then x
+    mod = sm.OLS(
+        no_nulls["coll"].to_numpy(), sm.add_constant(no_nulls["alpha"].to_numpy())
+    )  # y then x
     res = mod.fit()
     return res
 
@@ -291,7 +342,7 @@ def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
     """Main pipeline for this file, handling a single neuron.
 
     The neuron's graph data is read and then it's divided into blocks and
-    analyzed. Each "interesting" block is saved as a figure and inside a 
+    analyzed. Each "interesting" block is saved as a figure and inside a
     pickle file which aggregates the coordinates of the interesting blocks
     of that neuron. These files are written to the "data_folder" location.
 
@@ -300,17 +351,18 @@ def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
     neuron_name : str
     data_folder : pathlib.Path
         The location to which the pickle file and figures will be written to
-    blocks : 3-tuple of 2-tuple
-        Start and end coordinate per axis
+    blocks : 3-tuple
+        Number of blocks in each direction
     """
     path = pathlib.Path(
         f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_with_collisions.gml"
     )
     points = load_neuronal_points(path, neuron_name)
-    indices, _ = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
-    uniques = np.unique(indices)
+    per_block, _, blocksize = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
+    uniques = np.unique(per_block)
     blocks = (
-        (points.iloc[indices == unique], data_folder, neuron_name) for unique in uniques
+        (points.iloc[per_block == unique], data_folder, neuron_name, blocksize)
+        for unique in uniques
     )
     with multiprocessing.Pool() as mp:
         mp.starmap(divide_and_plot, blocks)
@@ -324,4 +376,4 @@ if __name__ == "__main__":
         "/data/neural_collision_detection/results/for_article/fig2"
     )
     neuron_name = "AP120410_s1c1"
-      sm.OLSResultsm.OLSResultsain(neuron_name, data_folder, (10, 19, 6))
+    main(neuron_name, data_folder, (10, 19, 6))

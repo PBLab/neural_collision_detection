@@ -43,3 +43,4 @@ results/for_article/neuron_id.svg
 *.hdf
 *.hdf5
 *.h5
+.vim/

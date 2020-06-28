@@ -2,7 +2,11 @@
 which belong to either the dendrite or axon, and tries to find
 pairs of nearby axon-dendrite points which are differnet in
 their collision numbers or in their alpha shape maximal
-value.
+value. These results are written to disk to HDF files that have
+the "*closest_pairs.h5" suffix.
+
+This module also contains the "analyze_pairs" function which reads
+these HDF files and analyzes them in a scatterplot.
 """
 import pathlib
 import multiprocessing
@@ -11,11 +15,28 @@ from typing import Tuple
 import scipy.spatial.distance as scidist
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
 )
 from ncd_post_process.alpha_shapes.alpha_shapes_cgal import find_first_interior_alpha_shape_value
+
+
+neuron_names = [
+    "AP120410_s1c1",
+    "AP120410_s3c1",
+    "AP120412_s3c2",
+    "AP120416_s3c1",
+    "AP120419_s1c1",
+    "AP120420_s1c1",
+    "AP120420_s2c1",
+    "AP120510_s1c1",
+    "AP120524_s2c1",
+    "AP120614_s1c2",
+    "AP130312_s1c1",
+]
 
 
 def distance_between_ax_dend(ax: np.ndarray, dend: np.ndarray) -> np.ndarray:
@@ -259,26 +280,32 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
     top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", "data_single_pair")
 
 
+def analyze_pairs(foldername: pathlib.Path):
+    """Aggregates all pairs into one scatterplot"""
+    all_pairs_files = foldername.glob('*closest_pairs.h5')
+    dfs = []
+    for file in all_pairs_files:
+        data = pd.read_hdf(file, key='data_single_pair')
+        relevant_columns = data.loc[:, ['collision_delta', 'alpha_delta']]
+        relevant_columns.loc[:, 'name'] = file.name
+        dfs.append(relevant_columns)
+    dfs = pd.concat(dfs)
+    quant_high = dfs.loc[:, "alpha_delta"].quantile(0.99)
+    dfs = dfs.loc[dfs["alpha_delta"] < quant_high, :]
+    ax = sns.regplot(data=dfs, x='alpha_delta', y='collision_delta')
+    ax.set_xscale('log')
+    return dfs
+
+
 if __name__ == "__main__":
     results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
     alphas_folder = pathlib.Path(
         "/data/neural_collision_detection/results/for_article/fig2"
     )
-    neuron_names = [
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120510_s1c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
-    ]
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
 
+    # df = analyze_pairs(alphas_folder)
+    # plt.show()
     # Multi core
     # with multiprocessing.Pool() as mp:
     #     mp.starmap(main, args)
