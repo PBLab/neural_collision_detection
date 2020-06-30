@@ -297,13 +297,24 @@ def analyze_pairs(foldername: pathlib.Path):
     return dfs
 
 
+def scatter_coll_vs_alpha_for_all_points(alpha_dir: pathlib.Path, neuron_dir: pathlib.Path, neuron_name: str):
+    """Scatters collisions vs alpha value for all points of a given neuron."""
+    print(neuron_name)
+    collisions_fname = neuron_dir / f"graph_{neuron_name}_with_collisions.gml"
+    points, g = generate_df_from_neuron(collisions_fname, neuron_name)
+    ax = sns.relplot(data=points.reset_index(), x='alpha', y='coll', col='type', col_wrap=2, alpha=0.7)
+    [a.set_xscale('log') for a in ax.axes]
+    ax.savefig(alpha_dir / f'{neuron_name}_coll_vs_alpha_all_points.pdf', transparent=True, dpi=300)
+
+
 if __name__ == "__main__":
     results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
     alphas_folder = pathlib.Path(
         "/data/neural_collision_detection/results/for_article/fig2"
     )
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
-
+    for neuron in neuron_names:
+        scatter_coll_vs_alpha_for_all_points(alphas_folder, results_folder, neuron)
     # df = analyze_pairs(alphas_folder)
     # plt.show()
     # Multi core
@@ -311,6 +322,6 @@ if __name__ == "__main__":
     #     mp.starmap(main, args)
 
     # Single core
-    for arg in args:
-        main(*arg)
-        break
+    # for arg in args:
+    #     main(*arg)
+    #     break

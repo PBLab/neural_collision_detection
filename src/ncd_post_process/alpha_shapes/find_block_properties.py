@@ -7,7 +7,6 @@ import pathlib
 import multiprocessing
 from typing import Tuple, List, Optional
 from collections import namedtuple, defaultdict
-import pickle
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,7 @@ import scipy.stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
+import zarr
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
@@ -79,6 +79,7 @@ def divide_neuron_into_blocks(
     block_sizes : str
         Size of blocks in microns per axis
     """
+    print(f"blocks: {blocks}")
     bounding_box = find_points_bounding_box(points)
     linspace_per_ax = []
     block_sizes = []
@@ -97,13 +98,16 @@ def divide_neuron_into_blocks(
 
 
 def divide_and_plot(
-    all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str, blocksize: str
-):
+        all_data: pd.DataFrame, data_folder: pathlib.Path, neuron_name: str, blocksize: str, no_plot: bool = True
+) -> Optional[Tuple[tuple, LMResults, LMResults]]:
     """Divides the given data frame into axonal and dendritic blocks
     and plots them together on the same JointPlot.
 
     The functions tries to deal with situations where there are only axonal points
     and\\or dendritic points.
+
+    It will return a not-None object only if both dendrites and axons
+    were present in the same data block.
 
     Parameters
     ----------
@@ -115,11 +119,25 @@ def divide_and_plot(
     neuron_name : str
     blocksize : str
         Size of block in um. Needed for serialization
+    no_plot : bool
+        Whether to plot the figures and linear models
+
+    Returns
+    -------
+    tuple, optional
+        The bounding box and results for the axon and dendrite of that block
     """
     all_data.loc[:, "is_ax"] = all_data.loc[:, "type"].str.contains("Axon")
     axonal = all_data.query("is_ax == True")
     dendritic = all_data.query("is_ax == False")
     both = 0
+    if no_plot:
+        if axonal.empty and dendritic.empty:
+            return
+        else:
+            bb = find_points_bounding_box(all_data.loc[:, "x":"z"])
+            return bb, (None, None, None), (None, None, None)
+
     if not axonal.empty:
         g, bins, ax_lmresult = plot_distribution(axonal, color="C2")
         both += 1
@@ -132,63 +150,14 @@ def divide_and_plot(
         both += 1
     if both == 2:
         bb = find_points_bounding_box(all_data.loc[:, "x":"z"])
-        _serialize_data(
-            data_folder, bb, neuron_name, (ax_lmresult, dend_lmresult), blocksize
-        )
         _serialize_fig(data_folder, bb, neuron_name, g.fig)
+        return bb, _create_lm_results(ax_lmresult), _create_lm_results(dend_lmresult)
 
 
 def _default_results_dict() -> dict:
     """Callable that returns a specialized 'data structure'
     for safe-keeping the results of this computation"""
     return {"bounding_boxes": [], "lmresults": []}
-
-
-def _serialize_data(
-    data_folder: pathlib.Path,
-    bb: tuple,
-    neuron_name: str,
-    lmresults: Tuple[
-        sm.regression.linear_model.RegressionResultsWrapper,
-        sm.regression.linear_model.RegressionResultsWrapper,
-    ],
-    blocksize: str,
-):
-    """Writes the given bounding box data to disk.
-
-    The data is one of the bounding boxes of the current neuron, and it should
-    be pickled alongside the rest of the bounding boxes of that neuron. This
-    function will create a new pickle file if it doesn't exist, or update
-    the current data if it's not there.
-
-    Parameters
-    ----------
-    data_folder : pathlib.Path
-        Folder to store the pickle file
-    bb : 3-tuple of 2-tuple
-        For each axis, start and end of bounding box
-    neuron_name : str
-    lmresults : 2-tuple of sm.regression.linear_model.RegressionResultsWrapper
-        Axonal and dendritic results of the linear regression
-    blocksize : str
-        Size of block in um as a str (number per axis)
-    """
-    pickle_fname = data_folder / "bb_coord_alpha_coll.pickle"
-    try:
-        with open(pickle_fname, "rb") as f:
-            data_all_neurons = pickle.load(f)
-    except FileNotFoundError:
-        data_all_neurons = defaultdict(dict, {})
-    if blocksize not in data_all_neurons[neuron_name]:
-        new_data = _default_results_dict()
-        new_data["bounding_boxes"].append(bb)
-        result_ax = _create_lm_results(lmresults[0])
-        result_dend = _create_lm_results(lmresults[1])
-        new_data["lmresults"].append({"axon": result_ax, "dend": result_dend})
-        data_all_neurons[neuron_name][blocksize] = new_data
-
-    with open(pickle_fname, "w+b") as f:
-        pickle.dump(data_all_neurons, f)
 
 
 def _create_lm_results(
@@ -338,7 +307,63 @@ def _calc_regression(
     return res
 
 
-def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
+def serialize_data(results, neuron_name, data_folder, blocksize):
+    """Asserts that a dataset with the given parameters indeed exists on disk
+    in the given location.
+
+    Parameters
+    ----------
+    max_nelem : int
+        Number of elements in the array
+    blocksize : str
+        The current blocksize, as a string
+    data_folder : pathlib.Path
+        Place to write the data to
+    neuron_name : str
+    """
+    zarr_fname = data_folder / "bb_coord_alpha_coll.zarr"
+    data = zarr.open(str(zarr_fname), "a")
+    neuron = data.require_group(neuron_name)
+    block = neuron.require_group(blocksize)
+    bounding_box = block.require_dataset(
+        "bounding_boxes", (len(results), 3, 2), dtype=np.float32
+    )
+    bbs = _extract_bounding_boxes(results)
+    bounding_box[:] = bbs
+    _insert_lmresults(results, block)
+
+
+def _extract_bounding_boxes(results):
+    bbs = [res[0] for res in results]
+    bbs = np.asarray(bbs, dtype=np.float32)
+    return bbs
+
+
+def _insert_lmresults(results, block):
+    lmres = block.require_group("lmresults")
+    all_axons = _populate_neurite_array(results, 1)
+    all_dends = _populate_neurite_array(results, 2)
+    for neurite, data in zip(["axon", "dendrite"], [all_axons, all_dends]):
+        group = lmres.require_group(neurite)
+        r2 = group.require_dataset("r2", len(results), dtype=np.float32)
+        r2[:] = data[:, 0]
+        const = group.require_dataset("const", len(results), dtype=np.float32)
+        const[:] = data[:, 1]
+        slope = group.require_dataset("slope", len(results), dtype=np.float32)
+        slope[:] = data[:, 2]
+
+
+def _populate_neurite_array(results, index):
+    resulting_array = np.zeros((len(results), 3), dtype=np.float32)
+    for idx, res in enumerate(results):
+        current_data = res[index]
+        if not current_data:
+            current_data = [np.nan, np.nan, np.nan]
+        resulting_array[idx, :] = current_data[0], current_data[1], current_data[2]
+    return resulting_array
+
+
+def main(neuron_names: List[str], data_folder: pathlib.Path, block_nums: tuple):
     """Main pipeline for this file, handling a single neuron.
 
     The neuron's graph data is read and then it's divided into blocks and
@@ -348,32 +373,54 @@ def main(neuron_name: str, data_folder: pathlib.Path, blocks: tuple):
 
     Parameters
     ----------
-    neuron_name : str
+    neuron_names : List[str]
     data_folder : pathlib.Path
         The location to which the pickle file and figures will be written to
-    blocks : 3-tuple
+    block_nums : 3-tuple
         Number of blocks in each direction
     """
-    path = pathlib.Path(
-        f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_with_collisions.gml"
-    )
-    points = load_neuronal_points(path, neuron_name)
-    per_block, _, blocksize = divide_neuron_into_blocks(points.loc[:, "x":"z"], blocks)
-    uniques = np.unique(per_block)
-    blocks = (
-        (points.iloc[per_block == unique], data_folder, neuron_name, blocksize)
-        for unique in uniques
-    )
-    with multiprocessing.Pool() as mp:
-        mp.starmap(divide_and_plot, blocks)
-    # for block in blocks:
-    #     divide_and_plot(*block)
-    #     plt.show()
+    for neuron_name in neuron_names:
+        print(f"Currently processing neuron {neuron_name}...")
+        path = pathlib.Path(
+            f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_with_collisions.gml"
+        )
+        points = load_neuronal_points(path, neuron_name)
+        per_block, _, blocksize = divide_neuron_into_blocks(
+            points.loc[:, "x":"z"], block_nums
+        )
+        uniques = np.unique(per_block)
+        blocks = (
+            (points.iloc[per_block == unique], data_folder, neuron_name, blocksize)
+            for unique in uniques
+        )
+        with multiprocessing.Pool() as mp:
+            results = mp.starmap(divide_and_plot, blocks)
+        results = [res for res in results if res is not None]
+        # results = []
+        # for block in blocks:
+        #     result = divide_and_plot(*block)
+        #     if result:
+        #         results.append(result)
+        #     # plt.show()
+        serialize_data(results, neuron_name, data_folder, blocksize)
 
 
 if __name__ == "__main__":
     data_folder = pathlib.Path(
         "/data/neural_collision_detection/results/for_article/fig2"
     )
-    neuron_name = "AP120410_s1c1"
-    main(neuron_name, data_folder, (10, 19, 6))
+    neuron_names = [
+        "AP120410_s1c1",
+        "AP120410_s3c1",
+        "AP120412_s3c2",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120510_s1c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130312_s1c1",
+    ]
+    neuron_name = ["AP120410_s3c1"]
+    main(neuron_names, data_folder, (30, 57, 18))  # (10, 19, 6) was ~ 30x30x30, (20, 38, 12) was 15-16-16

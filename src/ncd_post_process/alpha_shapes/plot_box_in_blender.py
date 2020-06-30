@@ -1,5 +1,6 @@
 """This file helps with finding interesting blocks that surround
 some areas of the neuron, and will focus on them alone.
+Should be run under blender.
 """
 import sys
 
