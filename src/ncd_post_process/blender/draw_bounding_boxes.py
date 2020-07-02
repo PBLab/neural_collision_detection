@@ -33,7 +33,7 @@ def draw_boxes(linspace_per_ax: list):
             [3, 2, 6, 7],
             [2, 0, 4, 6],
         ]
-    for coll_start, coll_end in zip(bin_starts, bin_ends):  
+    for coll_start, coll_end in zip(bin_starts, bin_ends):
         voxel_verts = [
                 [*coll_start],
                 [coll_end[0], *coll_start[1:]],
@@ -68,6 +68,10 @@ def draw_boxes(linspace_per_ax: list):
         layers = [False] * 20
         layers[(bpy.context.scene["MyDrawTools_BaseLayer"] + OPS_LAYER) % 20] = True
         obj.layers = layers
+        bpy.context.object.show_transparent = True
+        bpy.context.object.active_material.use_transparency = True
+        obj.show_transparent = True
+        obj.active_material.use_transparency = True
 
 
 if __name__ == '__main__':

@@ -3,16 +3,16 @@ This module contains functions that analyze the results of the alpha shape
 calculations as they were written to disk.
 
 It generated a collision_vs_alpha_linear_fit.csv file that contains the data
-per neuron per type on the offset and slope. The actual generation was done
-in an IPython session, this file generated a pickle with the same name.
+per neuron per type on the offset and slope.
+
 
 This module also contains the "analyze_pairs" function which reads
 these HDF files and analyzes them in a scatterplot.
 """
 import multiprocessing
-import pickle
 import pathlib
 from itertools import chain
+from typing import Iterable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,7 +84,7 @@ def linear_model(x: np.ndarray, a0: float, a1: float):
     a1 : float
         Slope
     """
-    return a0 + a1 * x
+    return a0 + a1 * np.log(x)
 
 
 def fit(x, y):
@@ -144,7 +144,49 @@ def convert_result_to_dataframe(data: dict):
     for key, val in data.items():
         for typ, vals in val.items():
             df.loc[(key, typ), :] = vals
-    df = df.reset_index().melt(id_vars=['neuron', 'type', 'is_axon'], value_vars=['offset', 'slope'], var_name='parameter')
+    return df
+
+
+def add_axon_id_to_results(df: pd.DataFrame) -> pd.DataFrame:
+    """Adds an "is_axon" columns to the DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    df["is_axon"] = False
+    df.loc[pd.IndexSlice[:, "Axon0"], "is_axon"] = True
+    return df
+
+
+def add_normed_values_to_results(df: pd.DataFrame, points_list: Iterable) -> pd.DataFrame:
+    """Adds normed_offset and normed_slope columns to the data.
+
+    The normalization is based on the topological length of each of
+    the neuritic trees.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    points_list : Iterable
+        Points of every neuron sorted by the neurite it belongs to.
+        The entry in each item is the neuron name, the second is a
+        DataFrame with the data.
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    df['normed_offset'] = 0.0
+    df['normed_slope'] = 0.0
+    for name, points in points_list:
+        maxs = points.groupby('type').max()
+        df.loc[name, 'normed_offset'] = (df.loc[name, 'offset'] / maxs['dist']).to_numpy()
+        df.loc[name, 'normed_slope'] = (df.loc[name, 'slope'] / maxs['dist']).to_numpy()
     return df
 
 
@@ -172,7 +214,7 @@ def main(neuron_name: str, neuron_graph_folder: pathlib.Path, save_folder: pathl
     points = points.dropna()
     scatter_coll_vs_alpha_for_all_points(points, save_folder, neuron_name)
     result = fit_subset_of_points(points, neuron_name)
-    return neuron_name, result
+    return neuron_name, result, points
 
 
 if __name__ == '__main__':
@@ -180,15 +222,19 @@ if __name__ == '__main__':
     alphas_folder = pathlib.Path(
         "/data/neural_collision_detection/results/for_article/fig2"
     )
-    data = {}  # will hold curve-fitting results
     args = ((name, results_folder, alphas_folder) for name in neuron_names)
     with multiprocessing.Pool() as mp:
         results = mp.starmap(main, args)
-    for name, res in results:
-        data[name] = res
+    curve_fit_results = {name: res for name, res, _ in results}
     # for neuron in neuron_names:
     #     _, result = main(neuron, results_folder, alphas_folder)
     #     data[neuron] = result
-    data_as_df = convert_result_to_dataframe(data)
-    data_as_df.to_csv(alphas_folder / 'collision_vs_alpha_linear_fit.csv')
-    ax = sns.catplot(data=data_as_df, x='is_axon', y='value', hue="type", col="parameter", sharey=False); ax.axes[0][0].set_yscale('log'); ax.axes[0][1].set_yscale('log'); plt.show()
+    data_as_df = convert_result_to_dataframe(curve_fit_results)
+    data_as_df = add_axon_id_to_results(data_as_df)
+    data_as_df = add_normed_values_to_results(data_as_df, ((res[0], res[2]) for res in results))
+    data_as_df = data_as_df.reset_index().melt(id_vars=['neuron', 'type', 'is_axon'], value_vars=['offset', 'slope', 'normed_offset', 'normed_slope'], var_name='parameter')
+    data_as_df.to_csv(alphas_folder / 'collision_vs_alpha_log_fit.csv')
+    ax = sns.catplot(data=data_as_df, x='is_axon', y='value', hue="type", col="parameter", sharey=False)
+    ax.savefig(alphas_folder / 'collision_vs_alpha_log_fit_result.pdf', transparent=True, dpi=300)
+    plt.show()
+

@@ -1,6 +1,12 @@
 ------------
 Ongoing Work
 ------------
+* We tried to identify the direct connection between collision and alpha values in ``correlate_
+  coll_alpha.py``. We're looking at the entire neuron and plotting the relations of collisions
+  and alpha values per axon\dendrite. We also normalize these aggregated probabilities with
+  the topological length of the neuron. We see that the axons' collision probability remains
+  fixed throughout its length, while dendrites are less fixed and more variable. 
+
 * I took from the table of all pairs of proximal axons and dendrites, found in ``distance_
   alpha.py``, two groups - the mostest closest pairs, and all other pairs, and tried to plot
   them together to see if the distribution of the mostest closest looks different than the 
