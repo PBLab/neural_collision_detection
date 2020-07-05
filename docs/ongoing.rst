@@ -1,6 +1,15 @@
 ------------
 Ongoing Work
 ------------
+* Another "missing" correlation is between U(r) and the alpha value. The results are in ``for_article
+  /fig2`` and show that even for low alpha values the distribution of U(r) is quite large, which
+  is a bit surprising. 
+
+* I added a couple of functions in ``alpha_shapes/alpha_vs_topodist.py`` that plot a scatterplot
+  of alpha values vs topological distance just to see whether there's any correlation. As expected,
+  it's not too strong but there's a slight upwards trend, meaning that the further away you
+  are from the soma the higher you alpha value is.
+
 * We tried to identify the direct connection between collision and alpha values in ``correlate_
   coll_alpha.py``. We're looking at the entire neuron and plotting the relations of collisions
   and alpha values per axon\dendrite. We also normalize these aggregated probabilities with

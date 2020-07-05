@@ -549,7 +549,7 @@ def run_collisions_dens_jointplot_multiple_r():
     plt.show(block=False)
 
 
-def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=10):
+def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=10, graph=None):
     """
     Helper method to instantiate a BranchDensity instance,
     as well as either a BranchDensityAndCollisions instance, a
@@ -570,10 +570,11 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
         / "2020_02_14"
         / f"graph_{neuron_name}_with_collisions.gml"
     )
-    try:
-        graph = CollisionsDistNaive.from_graph(neuron_graph, neuron_name).graph
-    except FileNotFoundError:
-        return
+    if not graph:
+        try:
+            graph = CollisionsDistNaive.from_graph(neuron_graph, neuron_name).graph
+        except FileNotFoundError:
+            return
     bdens_coll = branch_class(bdens, graph, r=r)
     return bdens_coll
 
