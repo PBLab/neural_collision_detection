@@ -12,8 +12,8 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.stats
 import numba
+import seaborn as sns
 
 from ncd_post_process.graph_parsing import CollisionNode
 
@@ -26,14 +26,14 @@ neuron_names = {
     "AP120416_s3c1": "IV",
     "AP120419_s1c1": "VI",
     "AP120420_s1c1": "IV",
-    "AP120420_s2c1": "II/II",
-    "AP120507_s3c1": "II/II",
-    "AP120510_s1c1": "II/II",
-    "AP120522_s3c1": "I",
-    "AP120524_s2c1": "II/II",
+    "AP120420_s2c1": "II/III",
+    "AP120507_s3c1": "II/III",
+    "AP120510_s1c1": "II/III",
+    "AP120522_s3c1": "I",  # ?
+    "AP120524_s2c1": "II/III",
     "AP120614_s1c2": "V",
-    "AP130312_s1c1": "II/II",
-    "AP131105_s1c1": "II/II",
+    "AP130312_s1c1": "II/III",
+    "AP131105_s1c1": "II/III",  # ?
 }
 
 
@@ -104,6 +104,9 @@ class CollisionsDistNaive:
     def run(self):
         """Run analysis pipeline."""
         self._populate_collisions()
+        self.parsed_axon["coll_normed"] = self._normalize_by_density(self.parsed_axon)
+        self.parsed_dend["coll_normed"] = self._normalize_by_density(self.parsed_dend)
+        self.all_colls["coll_normed"] = self._normalize_by_density(self.all_colls)
 
     def _populate_collisions(self):
         """Traverse a specific graph and find the number of
@@ -153,7 +156,7 @@ class CollisionsDistNaive:
             (self.parsed_axon, self.parsed_dend), ("axon", "dend")
         ):
             self._plot_jointplot(data, neurite, with_norm=False)
-            # self._plot_jointplot(data, neurite, with_norm=True)
+            self._plot_jointplot(data, neurite, with_norm=True)
 
     def plot_all_hexbins(self):
         """Small wrapper for plotting the only the hexbin
@@ -195,7 +198,7 @@ class CollisionsDistNaive:
         ax.set_ylabel("P(Collisions)")
         ax.set_xlabel("Topodist [um]")
         ax.figure.savefig(
-            self.results_folder / f"colls_dist{normed}_{self.neuron_name}.png",
+            f"results/for_article/fig2/colls_dist{normed}_{self.neuron_name}.pdf",
             transparent=True,
             dpi=300,
         )
@@ -215,10 +218,10 @@ class CollisionsDistNaive:
         )
         if with_norm:
             y_col = new_ycol_name + " (normalized)"
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_normed_{neurite}.png"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_normed_{neurite}.pdf"
         else:
             y_col = new_ycol_name
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_no_normed_{neurite}.png"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_no_normed_{neurite}.pdf"
 
         ax = sns.jointplot(
             "Length of branch [um]",
@@ -227,6 +230,7 @@ class CollisionsDistNaive:
             kind="hex",
             height=8,
             color=self.labels_and_colors[neurite][0],
+            joint_kws={'gridsize': 60},
         )
         plt.subplots_adjust(left=0.11)
         data_sorted = data.sort_values(["Length of branch [um]"])
@@ -264,15 +268,37 @@ class CollisionsDistNaive:
         h = ax.hexbin(
             x,
             y,
-            gridsize=30,
+            gridsize=120,
             cmap=self.labels_and_colors[neurite][2],
             mincnt=1,
             extent=extent,
         )
         ax.axis("off")
 
-        fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_only_hexbin_{normed}_{neurite}.png"
+        fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_only_hexbin_{normed}_{neurite}.pdf"
         fig.savefig(fname, transparent=True, dpi=300)
+
+
+def _build_running_avg_df(neuron, layer):
+    coll_dist = _neuron_to_obj(neuron)
+    if not coll_dist:
+        return
+    coll_dist.run()
+    all_data = []
+    for df, neurite in zip(
+        (coll_dist.parsed_axon, coll_dist.parsed_dend), ("Axon", "Dendrite")
+    ):
+        df = df.sort_values("dist")
+        df["avg_coll"] = df["coll_normed"].rolling(30).mean()
+        df["cumsum"] = df["coll_normed"].cumsum()
+        df["type"] = neurite
+        df["layer"] = layer
+        df["name"] = neuron
+        df = df.astype(
+            {"type": "category", "layer": "category", "name": "category"}
+        )
+        all_data.append(df)
+    return pd.concat(all_data, ignore_index=True)
 
 
 def plot_running_avg_for_all():
@@ -280,31 +306,14 @@ def plot_running_avg_for_all():
     of its number  of collisions over the distance. The plot dissects axons,
     dendrites, L23 and L5 neurons.
     """
-    l23_neurons, rest_of_neurons = filter_l23_neurons(neuron_names)
-    l23_neurons = ((l23_neuron, "II/III") for l23_neuron in l23_neurons)
-    rest_of_neurons = ((rest, "I/IV/V/VI") for rest in rest_of_neurons)
+    l23_neurons = ((name, val) for name, val in neuron_names.items() if val == "II/III")
+    rest_of_neurons = ((name, "I/IV/V/VI") for name, val in neuron_names.items() if val != "II/III")
     all_neurons = itertools.chain.from_iterable((l23_neurons, rest_of_neurons))
-    analyzed_data = []
-    for neuron, layer in all_neurons:
-        coll_dist = _neuron_to_obj(neuron)
-        if not coll_dist:
-            continue
-        print(neuron)
-        coll_dist.run()
-        for df, neurite in zip(
-            (coll_dist.parsed_axon, coll_dist.parsed_dend), ("Axon", "Dendrite")
-        ):
-            df = df.sort_values("dist")
-            df["avg_coll"] = df["coll_normed"].rolling(30).mean()
-            df["cumsum"] = df["coll_normed"].cumsum()
-            df["type"] = neurite
-            df["layer"] = layer
-            df["name"] = neuron
-            df = df.astype(
-                {"type": "category", "layer": "category", "name": "category"}
-            )
-            analyzed_data.append(df)
-    return analyzed_data
+    with mp.Pool() as pool:
+        analyzed_data = pool.starmap(_build_running_avg_df, all_neurons)
+    analyzed_data = pd.concat(analyzed_data, ignore_index=True)
+    ax = sns.relplot(data=analyzed_data, x='dist', y='cumsum', hue='layer', col='type', kind='line')
+    return ax, analyzed_data
 
 
 @numba.jit(nopython=True, parallel=True)
@@ -319,14 +328,14 @@ def norm_colls(bincounts, distances, collisions):
 
 
 def _name_to_graph_fname(
-    neuron, folder=pathlib.Path("/data/neural_collision_detection/results/2019_2_10")
+    neuron, folder=pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
 ):
     return folder / f"graph_{neuron}_with_collisions.gml"
 
 
 def _neuron_to_obj(
     neuron,
-    results_folder=pathlib.Path("/data/neural_collision_detection/results/2019_2_10"),
+    results_folder=pathlib.Path("/data/neural_collision_detection/results/2020_02_14"),
 ):
     """Parses a filename containing a graph repr of a neuron
     into an CollisionsDistNative object"""
@@ -348,28 +357,21 @@ def mp_main(neuron):
         print(f"Can't find obj for neuron {neuron}")
         return
     coll_dist.run()
-    # coll_dist.plot_all_jointplots()
+    coll_dist.plot_all_jointplots()
     # coll_dist.plot_all_hexbins()
-    coll_dist.scatter()
+    # coll_dist.scatter()
     return coll_dist
-
-
-def filter_l23_neurons(neuron_names):
-    rest_of_neurons = neuron_names.copy()
-    l23_neurons_idx = [-1, -4, 7, 8, 6, -2]
-    l23_neurons = list(rest_of_neurons.pop(idx) for idx in l23_neurons_idx)
-    return l23_neurons, rest_of_neurons
 
 
 if __name__ == "__main__":
     # l23_neurons, rest_of_neurons = filter_l23_neurons(neuron_names)
 
     # multicore exec
-    with mp.Pool() as pool:
-        res = pool.map(mp_main, neuron_names)
+    # with mp.Pool() as pool:
+    #     res = pool.map(mp_main, neuron_names)
 
     # single core
     # _ = [mp_main(neuron) for neuron in neuron_names]
 
-    # plot_running_avg_for_all()
+    ax, df = plot_running_avg_for_all()
     plt.show(block=True)

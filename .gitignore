@@ -45,3 +45,4 @@ results/for_article/neuron_id.svg
 *.h5
 .vim/
 **/*.zarr
+*.blend
