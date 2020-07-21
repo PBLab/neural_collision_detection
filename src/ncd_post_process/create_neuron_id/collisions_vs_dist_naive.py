@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numba
 import seaborn as sns
+import scipy.spatial.distance
 
 from ncd_post_process.graph_parsing import CollisionNode
 
@@ -29,11 +30,11 @@ neuron_names = {
     "AP120420_s2c1": "II/III",
     "AP120507_s3c1": "II/III",
     "AP120510_s1c1": "II/III",
-    "AP120522_s3c1": "I",  # ?
+    # "AP120522_s3c1": "I",  # ?
     "AP120524_s2c1": "II/III",
     "AP120614_s1c2": "V",
     "AP130312_s1c1": "II/III",
-    "AP131105_s1c1": "II/III",  # ?
+    # "AP131105_s1c1": "II/III",  # ?
 }
 
 
@@ -218,10 +219,10 @@ class CollisionsDistNaive:
         )
         if with_norm:
             y_col = new_ycol_name + " (normalized)"
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_normed_{neurite}.pdf"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_normed_{neurite}.png"
         else:
             y_col = new_ycol_name
-            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_no_normed_{neurite}.pdf"
+            fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_jointplot_no_normed_{neurite}.png"
 
         ax = sns.jointplot(
             "Length of branch [um]",
@@ -275,7 +276,7 @@ class CollisionsDistNaive:
         )
         ax.axis("off")
 
-        fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_only_hexbin_{normed}_{neurite}.pdf"
+        fname = f"results/for_article/fig2/{self.neuron_name}_colls_vs_dist_only_hexbin_{normed}_{neurite}.png"
         fig.savefig(fname, transparent=True, dpi=300)
 
 
@@ -312,8 +313,22 @@ def plot_running_avg_for_all():
     with mp.Pool() as pool:
         analyzed_data = pool.starmap(_build_running_avg_df, all_neurons)
     analyzed_data = pd.concat(analyzed_data, ignore_index=True)
-    ax = sns.relplot(data=analyzed_data, x='dist', y='cumsum', hue='layer', col='type', kind='line')
-    return ax, analyzed_data
+    ax_cumsum = sns.relplot(data=analyzed_data, x='dist', y='cumsum', hue='layer', col='type', kind='line')
+    canonical_dists = np.linspace(analyzed_data["dist"].min(), analyzed_data["dist"].max(), 1000)[:, np.newaxis]
+    analyzed_data["dist_norm"] = analyzed_data.groupby('name').transform(_find_closest_dist_point)
+    ax_dist = sns.relplot(data=analyzed_data, x="dist_norm", y="coll_normed", col="layer", hue="type", kind="line", alpha=0.4)
+    return ax_cumsum, ax_dist, analyzed_data
+
+
+def _find_closest_dist_point(x: np.ndarray):
+    """Internal function used to transform a pd.groupby object
+    by normalizing the distance measures into a pre-defined set
+    of locations
+    """
+    x = x[:, np.newaxis]
+    dists = scipy.spatial.distance.cdist(canonical_dists, x)
+    canonized = canonical_dists[dists.argmin(0)]
+    return canonized.ravel()
 
 
 @numba.jit(nopython=True, parallel=True)
@@ -373,5 +388,5 @@ if __name__ == "__main__":
     # single core
     # _ = [mp_main(neuron) for neuron in neuron_names]
 
-    ax, df = plot_running_avg_for_all()
+    ax_cumsum, ax_dist, analyzed_data = plot_running_avg_for_all()
     plt.show(block=True)

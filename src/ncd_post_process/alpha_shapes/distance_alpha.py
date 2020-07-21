@@ -4,9 +4,6 @@ pairs of nearby axon-dendrite points which are differnet in
 their collision numbers or in their alpha shape maximal
 value. These results are written to disk to HDF files that have
 the "*closest_pairs.h5" suffix.
-
-This module also contains the "analyze_pairs" function which reads
-these HDF files and analyzes them in a scatterplot.
 """
 import pathlib
 import multiprocessing
@@ -21,7 +18,9 @@ import matplotlib.pyplot as plt
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     CollisionsDistNaive,
 )
-from ncd_post_process.alpha_shapes.alpha_shapes_cgal import find_first_interior_alpha_shape_value
+from ncd_post_process.alpha_shapes.alpha_shapes_cgal import (
+    find_first_interior_alpha_shape_value,
+)
 
 
 neuron_names = [
@@ -210,7 +209,7 @@ def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray
 
 
 def main_collisions_pipe(
-    neuron_name: str, results_folder: pathlib.Path, num: int=20
+    neuron_name: str, results_folder: pathlib.Path, num: int = 20
 ) -> pd.DataFrame:
     """Pipeline for collision data processing.
 
@@ -276,35 +275,12 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
         closest_dend, alpha_per_point
     )
     top_closest = top_closest.dropna()
-    top_closest["alpha_delta"] = np.abs(top_closest["ax_alpha"] - top_closest["dend_alpha"])
-    top_closest.to_hdf(alphas_folder / f"{neuron_name}_closest_pairs.h5", "data_single_pair")
-
-
-def analyze_pairs(foldername: pathlib.Path):
-    """Aggregates all pairs into one scatterplot"""
-    all_pairs_files = foldername.glob('*closest_pairs.h5')
-    dfs = []
-    for file in all_pairs_files:
-        data = pd.read_hdf(file, key='data_single_pair')
-        relevant_columns = data.loc[:, ['collision_delta', 'alpha_delta']]
-        relevant_columns.loc[:, 'name'] = file.name
-        dfs.append(relevant_columns)
-    dfs = pd.concat(dfs)
-    quant_high = dfs.loc[:, "alpha_delta"].quantile(0.99)
-    dfs = dfs.loc[dfs["alpha_delta"] < quant_high, :]
-    ax = sns.regplot(data=dfs, x='alpha_delta', y='collision_delta')
-    ax.set_xscale('log')
-    return dfs
-
-
-def scatter_coll_vs_alpha_for_all_points(alpha_dir: pathlib.Path, neuron_dir: pathlib.Path, neuron_name: str):
-    """Scatters collisions vs alpha value for all points of a given neuron."""
-    print(neuron_name)
-    collisions_fname = neuron_dir / f"graph_{neuron_name}_with_collisions.gml"
-    points, g = generate_df_from_neuron(collisions_fname, neuron_name)
-    ax = sns.relplot(data=points.reset_index(), x='alpha', y='coll', col='type', col_wrap=2, alpha=0.7)
-    [a.set_xscale('log') for a in ax.axes]
-    ax.savefig(alpha_dir / f'{neuron_name}_coll_vs_alpha_all_points.pdf', transparent=True, dpi=300)
+    top_closest["alpha_delta"] = np.abs(
+        top_closest["ax_alpha"] - top_closest["dend_alpha"]
+    )
+    top_closest.to_hdf(
+        alphas_folder / f"{neuron_name}_closest_pairs.h5", "data_single_pair"
+    )
 
 
 if __name__ == "__main__":
@@ -313,8 +289,6 @@ if __name__ == "__main__":
         "/data/neural_collision_detection/results/for_article/fig2"
     )
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
-    for neuron in neuron_names:
-        scatter_coll_vs_alpha_for_all_points(alphas_folder, results_folder, neuron)
     # df = analyze_pairs(alphas_folder)
     # plt.show()
     # Multi core
