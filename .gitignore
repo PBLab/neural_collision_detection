@@ -46,3 +46,4 @@ results/for_article/neuron_id.svg
 .vim/
 **/*.zarr
 *.blend
+*.pickle

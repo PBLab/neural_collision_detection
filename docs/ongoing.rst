@@ -1,9 +1,19 @@
 ------------
 Ongoing Work
 ------------
+* I found a small miscalculation in the collision normalization step. I fixed
+  it and re-ran all of the normalization and graphing processes again.
+
+* I created figure 2 and added the missing panels to it.
+
+* I improved the layout of result files and divided them into folders.
+
+* I updated the analysis scripts of the collision vs distance jointplots to make them run with the
+  new folder structure and the new ideas we had regarding figure 2.
+
 * Another "missing" correlation is between U(r) and the alpha value. The results are in ``for_article
   /fig2`` and show that even for low alpha values the distribution of U(r) is quite large, which
-  is a bit surprising. 
+  is a bit surprising.
 
 * I added a couple of functions in ``alpha_shapes/alpha_vs_topodist.py`` that plot a scatterplot
   of alpha values vs topological distance just to see whether there's any correlation. As expected,
@@ -14,11 +24,11 @@ Ongoing Work
   coll_alpha.py``. We're looking at the entire neuron and plotting the relations of collisions
   and alpha values per axon\dendrite. We also normalize these aggregated probabilities with
   the topological length of the neuron. We see that the axons' collision probability remains
-  fixed throughout its length, while dendrites are less fixed and more variable. 
+  fixed throughout its length, while dendrites are less fixed and more variable.
 
 * I took from the table of all pairs of proximal axons and dendrites, found in ``distance_
   alpha.py``, two groups - the mostest closest pairs, and all other pairs, and tried to plot
-  them together to see if the distribution of the mostest closest looks different than the 
+  them together to see if the distribution of the mostest closest looks different than the
   distribution of the other group. The result was no - there's not visible difference.
 
 * Using ``find_block_properties.py`` in the ``alpha_shapes`` module I was able to divide
