@@ -167,7 +167,7 @@ class NeuronToGraph:
                 )
                 self.alpha = self._get_alpha_vec(
                     pathlib.Path(
-                        "/data/neural_collision_detection/results/for_article/fig2"
+                        "/data/neural_collision_detection/results/with_alpha"
                     )
                 )
                 coll_prob = coerce_collisions_to_neural_coords(
@@ -540,7 +540,7 @@ if __name__ == "__main__":
         for neuron_name in neuron_names
     ]
     # multicore execution
-    with mp.Pool() as pool:
-        objs = pool.starmap(mp_main, args)
+    # with mp.Pool() as pool:
+    #     objs = pool.starmap(mp_main, args)
 
-    # obj = [mp_main(*arg) for arg in args]  # single core execution
+    obj = [mp_main(*arg) for arg in args]  # single core execution

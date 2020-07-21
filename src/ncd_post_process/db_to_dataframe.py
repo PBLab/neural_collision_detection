@@ -140,7 +140,10 @@ def get_stats(df: pd.DataFrame):
 def find_duplicate_colls(colls: pd.DataFrame):
     """Iterates over the DataFrame and finds locations which were registered
     as having multiple collisions, while in effect they only had one collision,
-    but it was registered as more due to issues with the brute-force calc.
+    but it was registered as more due to issues with the brute-force calc and our
+    actual resolution, which is on the order of 1 um.
+
+    This function will also change the coll_count to match the new value.
 
     Returns a filtered DF not containing these rows.
     """
@@ -148,7 +151,10 @@ def find_duplicate_colls(colls: pd.DataFrame):
     non_dup_df = []
     for ((_, intgroup), (_, realgroup)) in zip(intcol.groupby(['x', 'y', 'z']), colls.groupby(['x', 'y', 'z'])):
         _, index = np.unique(intgroup.to_numpy(), return_index=True, axis=0)
-        non_dup_df.append(realgroup.iloc[index, :])
+        relevant_rows = realgroup.iloc[index, :].reset_index(level='coll_count')
+        relevant_rows.loc[:, 'coll_count'] = len(relevant_rows)
+        relevant_rows = relevant_rows.set_index('coll_count', append=True)
+        non_dup_df.append(relevant_rows)
 
     return pd.concat(non_dup_df)
 
@@ -271,4 +277,4 @@ if __name__ == "__main__":
     ]
     with mp.Pool() as pool:
         colls = pool.starmap(mp_run, all_args)
-    # colls = mp_run(*all_args[0])
+    # colls = mp_run(*all_args[1])
