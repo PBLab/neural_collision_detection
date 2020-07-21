@@ -16,15 +16,15 @@ This file explains the pipeline, the usage of each script file in this directory
 	V
 	Set of locations with zero/very few collisions [1]
 	|
-	| Original data + run_aggregator.py + aggregator.py + gather_agg_results.py
+	| Original data + run_aggregator.py + db_to_dataframe.py
 	|
 	V
 	DB of more accurate collision count, with control of distance threshold [2]
 	|
-	| neuron_parser.py
+	| graph_parsing.py
 	|
 	V
-	Array of overall collision count per voxel (over neurons)
+	Graph-based representation of a neuron with each node containing data from the pipeline
 
 [1] - Good point for visualization, using collisions_to_cubes.py + verify_zeros.py
 
