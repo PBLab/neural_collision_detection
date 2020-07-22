@@ -47,11 +47,13 @@ def find_best_orientation(coll_db: pathlib.Path) -> dict:
 
 
 def rotate_table(data: pd.DataFrame, rotation: np.ndarray) -> pd.DataFrame:
-    pass
+    rotated = (rotation @ data.T).T
+    rotated[0], rotated[1] = rotated[1], rotated[0].copy()
+    return rotated
 
 
 def translate_table(data: pd.DataFrame, translation: np.ndarray) -> pd.DataFrame:
-    pass
+    return data - translation
 
 
 def compare_vasc_neuronal_dist():
@@ -88,15 +90,25 @@ def generate_current_rotation(df: pd.DataFrame) -> np.ndarray:
     return rot_matrix
 
 
-def rotate_and_translate(data: list) -> list:
+def generate_current_translation(df: pd.DataFrame) -> np.ndarray:
+    x = df.index.get_level_values('x')
+    y = df.index.get_level_values('y')
+    z = df.index.get_level_values('z')
+    return np.ndarray([[x, y, z]])
+
+
+def rotate_and_translate(key_table: pd.DataFrame, data: list) -> list:
     """Iterates over the given data items and
-    rotates and translates them.
+    rotates and translates them according to the key.
 
     The items in the given list are assumed to be dataframes.
 
     Parameters
     ----------
-    data: list of pd.DataFrame
+    key_table : pd.DataFrame
+        A table containing the needed translation and rotation information
+        in its index.
+    data : list of pd.DataFrame
         Items to rotate and translate independently
 
     Returns
@@ -105,25 +117,25 @@ def rotate_and_translate(data: list) -> list:
         Same length as input, same shape of item
     """
     result = []
+    rotation = generate_current_rotation(key_table)
+    translation = generate_current_translation(key_table)
     for item in data:
-        rotation = generate_current_rotation(item)
-        translation = generate_current_translation(item)
         rotated = rotate_table(item, rotation)
         translated = translate_table(rotated, translation)
         result.append(translated)
     return result
 
 
-
 if __name__ == '__main__':
-    neuron_name = 'AP120410_s1c1'
-    neurons_folder = '/data/neural_collision_detection/data/neurons/'
-    neuron_fname = neurons_folder + f'{neuron_name}_balls.csv'
-    vascular_fname = '/data/neural_collision_detection/data/vascular/vascular_balls.csv'
-    collisions_fname = '/data/neural_collision_detection/results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv'
+    neuron_name = pathlib.Path('AP120410_s1c1')
+    neurons_folder = pathlib.Path('/data/neural_collision_detection/data/neurons/')
+    neuron_fname = neurons_folder / f'{neuron_name}_balls.csv'
+    vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
+    collisions_fname = pathlib.Path('/data/neural_collision_detection/results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv')
     neuron_data = load_csv_balls(neuron_fname)
     colls = find_best_orientation(collisions_fname)
-    neuron_data, colls = rotate_and_translate([neuron_data, colls])
+    result = rotate_and_translate(colls, [neuron_data, colls])
+    neuron_data, colls = result
     # vascular_data = load_csv_balls(vascular_fname)
     # rotated_neuron = rotate_neuron(neuron_data)
     # translated_neuron = translate_neuron(rotated_neuron)
