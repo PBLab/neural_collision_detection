@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import napari
 
 from ncd_post_process import db_to_dataframe
 
@@ -18,7 +19,7 @@ def load_csv_balls(fname: pathlib.Path) -> pd.DataFrame:
     Since every CSV file we have has its x-y coordinates
     swapped, we always wish to swap the coordinates before 
     returning the data to the user.
-    
+
     Parameters
     ----------
     fname : pathlib.Path
@@ -46,14 +47,13 @@ def find_best_orientation(coll_db: pathlib.Path) -> dict:
     return rows
 
 
-def rotate_table(data: pd.DataFrame, rotation: np.ndarray) -> pd.DataFrame:
+def rotate_table(data: np.ndarray, rotation: np.ndarray) -> np.ndarray:
     rotated = (rotation @ data.T).T
-    rotated[0], rotated[1] = rotated[1], rotated[0].copy()
     return rotated
 
 
-def translate_table(data: pd.DataFrame, translation: np.ndarray) -> pd.DataFrame:
-    return data - translation
+def translate_table(data: np.ndarray, translation: np.ndarray) -> np.ndarray:
+    return data + translation
 
 
 def compare_vasc_neuronal_dist():
@@ -68,6 +68,8 @@ def generate_current_rotation(df: pd.DataFrame) -> np.ndarray:
     """Based on the current orientation of the neuron, generate a rotation
     matrix that will be used to rotate the collisions and neuron itself.
 
+    The actual work of constructing the matrix is done in "make_rotation_matrix".
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -81,20 +83,37 @@ def generate_current_rotation(df: pd.DataFrame) -> np.ndarray:
     roll = df.index.get_level_values('roll')[0]
     pitch = df.index.get_level_values('pitch')[0]
     yaw = df.index.get_level_values('yaw')[0]
-    rot_in_rads = np.radians([roll, pitch, yaw])
+    rot_in_degrees = np.array([roll, pitch, yaw])
+    return make_rotation_matrix(rot_in_degrees)
+
+
+def make_rotation_matrix(rot: np.ndarray) -> np.ndarray:
+    """Construct a standard rotation matrix from the given x-y-z rotation.
+
+    Parameters
+    ----------
+    rot : np.ndarray
+        len == 3 numpy array
+
+    Returns
+    -------
+    np.ndarray
+        3x3 rotation numpy array
+    """
+    rot_in_rads = np.radians(rot.ravel())
     sine, cosine = np.sin(rot_in_rads), np.cos(rot_in_rads)
     m_x = np.array([[1, 0, 0], [0, cosine[0], -sine[0]], [0, sine[0], cosine[0]]])
     m_y = np.array([[cosine[1], 0, sine[1]], [0, 1, 0], [-sine[1], 0, cosine[1]]])
     m_z = np.array([[cosine[2], -sine[2], 0], [sine[2], cosine[2], 0], [0, 0, 1]])
-    rot_matrix = np.linalg.inv(m_x @ m_y @ m_z)
+    rot_matrix = m_x @ m_y @ m_z
     return rot_matrix
 
 
 def generate_current_translation(df: pd.DataFrame) -> np.ndarray:
-    x = df.index.get_level_values('x')
-    y = df.index.get_level_values('y')
-    z = df.index.get_level_values('z')
-    return np.ndarray([[x, y, z]])
+    x = df.index.get_level_values('x')[0]
+    y = df.index.get_level_values('y')[0]
+    z = df.index.get_level_values('z')[0]
+    return np.array([[x, y, z]], dtype=np.float64)
 
 
 def rotate_and_translate(key_table: pd.DataFrame, data: list) -> list:
@@ -120,6 +139,7 @@ def rotate_and_translate(key_table: pd.DataFrame, data: list) -> list:
     rotation = generate_current_rotation(key_table)
     translation = generate_current_translation(key_table)
     for item in data:
+        item = item[:, :3]  # disregard radius
         rotated = rotate_table(item, rotation)
         translated = translate_table(rotated, translation)
         result.append(translated)
@@ -132,11 +152,14 @@ if __name__ == '__main__':
     neuron_fname = neurons_folder / f'{neuron_name}_balls.csv'
     vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
     collisions_fname = pathlib.Path('/data/neural_collision_detection/results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv')
-    neuron_data = load_csv_balls(neuron_fname)
+    neuron_data = load_csv_balls(neuron_fname).iloc[:, :3].to_numpy()
+    neuron_data[:, 0], neuron_data[:, 1] = neuron_data[:, 1], neuron_data[:, 0]
+    # vascular_data = load_csv_balls(vascular_fname).to_numpy()
     colls = find_best_orientation(collisions_fname)
-    result = rotate_and_translate(colls, [neuron_data, colls])
-    neuron_data, colls = result
-    # vascular_data = load_csv_balls(vascular_fname)
-    # rotated_neuron = rotate_neuron(neuron_data)
-    # translated_neuron = translate_neuron(rotated_neuron)
+    result = rotate_and_translate(colls, [neuron_data])
+    neuron_data = result[0]
+    with napari.gui_qt():
+        viewer = napari.view_points(neuron_data, size=3)
+        viewer.add_points(colls, size=3, face_color='g', name="collisions")
+        # viewer.add_points(vascular_data[:, :3], size=vascular_data[:, 3], face_color='magenta', name='vasculature')
 

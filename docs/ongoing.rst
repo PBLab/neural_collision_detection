@@ -1,6 +1,10 @@
 ------------
 Ongoing Work
 ------------
+* I haven't succeeded in rotating and translating the vasculature, a neuron and
+  its collision to the same coordinate system. Thus I started writing proper
+  tests for this part which should help me decompose the issue.
+
 * I found a small miscalculation in the collision normalization step. I fixed
   it and re-ran all of the normalization and graphing processes again.
 
