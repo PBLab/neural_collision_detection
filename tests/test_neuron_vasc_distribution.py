@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from ncd_post_process.neuron_to_vasc_dist_distrib import *
-from ncd_post_process.aggregator import rotate
+from ncd_post_process.aggregator import rotate, translate, swap_x_y
 
 
 
@@ -80,3 +80,35 @@ def test_yoav_rotate_arb():
 def test_rotate_arb(rotation_mat):
     rotated = rotate_table(np.array([[1.0, 0.5, 0.1]]), rotation_mat(ROT_Y_90 + ROT_X_90))
     np.testing.assert_array_almost_equal([[0.1, 1.0, 0.5]], rotated)
+
+
+def test_full_action_yoav_on_zero():
+    neuron = [[0, 0, 0, 1]]
+    swap_x_y(neuron)
+    rotate(neuron, ROT_X_90)
+    translate(neuron, [1, 1, 1])
+    np.testing.assert_array_almost_equal([[1, 1, 1, 1]], neuron)
+
+
+def test_full_action_on_zero(rotation_mat):
+    neuron = pd.DataFrame({'x': [0.0], 'y': [0.0], 'z': [0.0], 'r': [1.0]})
+    swapped = swap_xy(neuron).to_numpy()[:, :3]
+    rotated = rotate_table(swapped, rotation_mat(ROT_X_90))
+    translated = translate_table(rotated, np.array([[1, 1, 1]]))
+    np.testing.assert_array_almost_equal(np.array([[1, 1, 1]]), translated)
+
+
+def test_full_action_yoav_on_something():
+    neuron = [[1, 0.5, 0.1, 1]]
+    swap_x_y(neuron)
+    rotate(neuron, ROT_X_90)
+    translate(neuron, [1, 1, 1])
+    np.testing.assert_array_almost_equal([[1.5, 0.9, 2, 1]], neuron)
+
+
+def test_full_action_on_zero(rotation_mat):
+    neuron = pd.DataFrame({'x': [1.0], 'y': [0.5], 'z': [0.1], 'r': [1.0]})
+    swapped = swap_xy(neuron).to_numpy()[:, :3]
+    rotated = rotate_table(swapped, rotation_mat(ROT_X_90))
+    translated = translate_table(rotated, np.array([[1, 1, 1]]))
+    np.testing.assert_array_almost_equal(np.array([[1.5, 0.9, 2]]), translated)

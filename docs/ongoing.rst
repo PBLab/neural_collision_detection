@@ -1,6 +1,9 @@
 ------------
 Ongoing Work
 ------------
+* I sometimes see a bug where a 3D shape becomes "2D", or flat in 3D. This
+  happens when I switch between columns in an array but don't copy them first.
+
 * I haven't succeeded in rotating and translating the vasculature, a neuron and
   its collision to the same coordinate system. Thus I started writing proper
   tests for this part which should help me decompose the issue.

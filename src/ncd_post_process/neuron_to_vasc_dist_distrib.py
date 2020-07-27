@@ -6,19 +6,13 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import napari
 
 from ncd_post_process import db_to_dataframe
 
 
 def load_csv_balls(fname: pathlib.Path) -> pd.DataFrame:
-    """Loads a CSV file and swaps its x-y columns.
-
-    Since every CSV file we have has its x-y coordinates
-    swapped, we always wish to swap the coordinates before 
-    returning the data to the user.
+    """Loads a CSV file.
 
     Parameters
     ----------
@@ -30,9 +24,13 @@ def load_csv_balls(fname: pathlib.Path) -> pd.DataFrame:
     pd.DataFrame
         Parsed data
     """
-    data = pd.read_csv(fname, header=None, names=['y', 'x', 'z', 'r'])
-    data.columns = ['x', 'y', 'z', 'r']
+    data = pd.read_csv(fname, header=None, names=['x', 'y', 'z', 'r'])
     return data
+
+
+def swap_xy(df: pd.DataFrame):
+    df.columns = ['y', 'x', 'z', 'r']
+    return df.rename(columns={'y': 'x', 'x': 'y'})
 
 
 def find_best_orientation(coll_db: pathlib.Path) -> dict:
@@ -100,7 +98,7 @@ def make_rotation_matrix(rot: np.ndarray) -> np.ndarray:
     np.ndarray
         3x3 rotation numpy array
     """
-    rot_in_rads = np.radians(rot.ravel())
+    rot_in_rads = np.radians(rot)
     sine, cosine = np.sin(rot_in_rads), np.cos(rot_in_rads)
     m_x = np.array([[1, 0, 0], [0, cosine[0], -sine[0]], [0, sine[0], cosine[0]]])
     m_y = np.array([[cosine[1], 0, sine[1]], [0, 1, 0], [-sine[1], 0, cosine[1]]])
@@ -152,14 +150,14 @@ if __name__ == '__main__':
     neuron_fname = neurons_folder / f'{neuron_name}_balls.csv'
     vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
     collisions_fname = pathlib.Path('/data/neural_collision_detection/results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv')
-    neuron_data = load_csv_balls(neuron_fname).iloc[:, :3].to_numpy()
-    neuron_data[:, 0], neuron_data[:, 1] = neuron_data[:, 1], neuron_data[:, 0]
-    # vascular_data = load_csv_balls(vascular_fname).to_numpy()
+    raw_neuron_data = load_csv_balls(neuron_fname)
+    raw_neuron_data = swap_xy(raw_neuron_data).iloc[:, :3].to_numpy()
     colls = find_best_orientation(collisions_fname)
-    result = rotate_and_translate(colls, [neuron_data])
+    result = rotate_and_translate(colls, [raw_neuron_data])
     neuron_data = result[0]
     with napari.gui_qt():
         viewer = napari.view_points(neuron_data, size=3)
         viewer.add_points(colls, size=3, face_color='g', name="collisions")
+        # viewer.add_points(raw_neuron_data, size=3, face_color='y', name="raw_neuron")
         # viewer.add_points(vascular_data[:, :3], size=vascular_data[:, 3], face_color='magenta', name='vasculature')
 
