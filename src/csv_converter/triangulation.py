@@ -29,7 +29,6 @@ class Triangulation(object):
     def list_to_np_array(lst, lst_len, dtype=float):
         np_array = numpy.empty([lst_len, 3], dtype=dtype)
         percent = 0
-        print("%2i%%" % percent + "\r",)
         sys.stdout.flush()
         for i, el in enumerate(lst):
             np_array[i, 0] = el[0]
@@ -37,7 +36,6 @@ class Triangulation(object):
             np_array[i, 2] = el[2]
             if (100 * i) / lst_len > percent:
                 percent = (100 * i) // lst_len
-                print("%2i%%" % percent + "\r")
                 sys.stdout.flush()
 
         return np_array

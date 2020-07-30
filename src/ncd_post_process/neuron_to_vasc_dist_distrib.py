@@ -29,8 +29,13 @@ def load_csv_balls(fname: pathlib.Path) -> pd.DataFrame:
 
 
 def swap_xy(df: pd.DataFrame):
-    df.columns = ['y', 'x', 'z', 'r']
+    df = df.reindex(columns=['y', 'x', 'z', 'r'])
     return df.rename(columns={'y': 'x', 'x': 'y'})
+
+
+def swap_xz(df: pd.DataFrame):
+    df = df.reindex(columns=['z', 'y', 'x', 'r'])
+    return df.rename(columns={'z': 'x', 'x': 'z'})
 
 
 def find_best_orientation(coll_db: pathlib.Path) -> dict:
@@ -145,19 +150,23 @@ def rotate_and_translate(key_table: pd.DataFrame, data: list) -> list:
 
 
 if __name__ == '__main__':
-    neuron_name = pathlib.Path('AP120410_s1c1')
+    neuron_name = 'AP130312_s1c1'
     neurons_folder = pathlib.Path('/data/neural_collision_detection/data/neurons/')
     neuron_fname = neurons_folder / f'{neuron_name}_balls.csv'
     vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
-    collisions_fname = pathlib.Path('/data/neural_collision_detection/results/2020_02_14/agg_results_AP120410_s1c1_thresh_0.csv')
+    collisions_fname = pathlib.Path(f'/data/neural_collision_detection/results/2020_02_14/agg_results_{neuron_name}_thresh_0.csv')
     raw_neuron_data = load_csv_balls(neuron_fname)
-    raw_neuron_data = swap_xy(raw_neuron_data).iloc[:, :3].to_numpy()
+    raw_neuron_data = swap_xy(raw_neuron_data)
+    raw_neuron_data = swap_xz(raw_neuron_data).iloc[:, :3].to_numpy()
     colls = find_best_orientation(collisions_fname)
     result = rotate_and_translate(colls, [raw_neuron_data])
+    vascular_data = load_csv_balls(vascular_fname)
+    vascular_data = swap_xy(vascular_data).to_numpy()
     neuron_data = result[0]
     with napari.gui_qt():
         viewer = napari.view_points(neuron_data, size=3)
         viewer.add_points(colls, size=3, face_color='g', name="collisions")
-        # viewer.add_points(raw_neuron_data, size=3, face_color='y', name="raw_neuron")
-        # viewer.add_points(vascular_data[:, :3], size=vascular_data[:, 3], face_color='magenta', name='vasculature')
+        viewer.add_points(raw_neuron_data, size=3, face_color='y', name="raw_neuron")
+        viewer.add_points(vascular_data[:, :3], size=vascular_data[:, 3], face_color='magenta', name='vasculature')
+
 

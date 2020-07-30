@@ -2,12 +2,16 @@
 %ctp2mesh - generates tirangular mesh representation of center point list where ctpList is x,y,z,r.
 raw_data = load(filename);
 if endsWith(filename, '.mat')
-    ctpList = [neuron.vectorizedStructure.AllVerts ...
-        neuron.vectorizedStructure.AllRadii];
+    ctpList = [raw_data.neuron.vectorizedStructure.AllVerts ...
+        raw_data.neuron.vectorizedStructure.AllRadii];
 elseif endsWith(filename, '.csv')
     ctpList = raw_data;
 end
 
+% flip y-z coordinates and make the new z point to the white matter
+y = ctpList(:, 2) * -1;
+ctpList(:, 2) = ctpList(:, 3);
+ctpList(:, 3) = y;
 
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));

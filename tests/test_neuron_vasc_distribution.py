@@ -112,3 +112,5 @@ def test_full_action_on_zero(rotation_mat):
     rotated = rotate_table(swapped, rotation_mat(ROT_X_90))
     translated = translate_table(rotated, np.array([[1, 1, 1]]))
     np.testing.assert_array_almost_equal(np.array([[1.5, 0.9, 2]]), translated)
+
+
