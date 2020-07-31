@@ -194,7 +194,7 @@ def get_vascular(vascular_filename):
     print("Read vascular data...")
     vascular = read_balls(vascular_filename)
     # translate(vascular, [1, -15, 19])
-    swap_x_y(vascular)
+    #swap_x_y(vascular)
 
     return vascular
 
@@ -211,7 +211,7 @@ def aggregate(vascular_filename, neuron_filename, location, rotation, results_fi
     #print find_bounding_box(neuron)
 
     # print("Swap x y...")
-    swap_x_y(neuron)
+    #swap_x_y(neuron)
     # print("Rotate neuron...")
     rotate(neuron, rotation)
     # print("Translate neuron...")
