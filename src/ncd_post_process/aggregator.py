@@ -24,6 +24,7 @@ def read_balls(fname):
         res.append([x, y, z, r])
     return res
 
+
 def swap_x_y(obj):
     for i in range(len(obj)):
         x, y, z, r = obj[i]
