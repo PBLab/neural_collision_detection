@@ -13,6 +13,10 @@ y = ctpList(:, 2) * -1;
 ctpList(:, 2) = ctpList(:, 3);
 ctpList(:, 3) = y;
 
+% Write as csv to disk
+balls_csv_fname = strcat(filename(1:end-4), '_balls_yz_flipped.csv');
+dlmwrite(balls_csv_fname, ctpList, 'precision', 7);
+
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));
 maxR = max(ctpList(:,4));

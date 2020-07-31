@@ -151,13 +151,13 @@ def rotate_and_translate(key_table: pd.DataFrame, data: list) -> list:
 
 if __name__ == '__main__':
     neuron_name = 'AP130312_s1c1'
-    neurons_folder = pathlib.Path('/data/neural_collision_detection/data/neurons/')
-    neuron_fname = neurons_folder / f'{neuron_name}_balls.csv'
+    neurons_folder = pathlib.Path('/data/neural_collision_detection/src/convert_obj_matlab')
+    neuron_fname = neurons_folder / f'{neuron_name}_balls_yz_flipped.csv'
     vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
     collisions_fname = pathlib.Path(f'/data/neural_collision_detection/results/2020_02_14/agg_results_{neuron_name}_thresh_0.csv')
     raw_neuron_data = load_csv_balls(neuron_fname)
-    raw_neuron_data = swap_xy(raw_neuron_data)
-    raw_neuron_data = swap_xz(raw_neuron_data).iloc[:, :3].to_numpy()
+    # raw_neuron_data = swap_xy(raw_neuron_data)
+    # raw_neuron_data = swap_xz(raw_neuron_data).iloc[:, :3].to_numpy()
     colls = find_best_orientation(collisions_fname)
     result = rotate_and_translate(colls, [raw_neuron_data])
     vascular_data = load_csv_balls(vascular_fname)
