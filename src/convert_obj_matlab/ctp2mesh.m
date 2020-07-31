@@ -50,9 +50,9 @@ for iCTP = 1 : nctps
     if thisR == 0
         thisR = 1;
     end
-    %size(balls(thisR).box);
-    xCoord = round(thisXYX(1) + balls(thisR).linIdx);
-    yCoord = round(thisXYX(2) + balls(thisR).linIdx);
+    % Since isosurface() swaps x and y, we swap it here to make it correct
+    xCoord = round(thisXYX(2) + balls(thisR).linIdx);
+    yCoord = round(thisXYX(1) + balls(thisR).linIdx);
     zCoord = round(thisXYX(3) + balls(thisR).linIdx);
     
     im(xCoord,yCoord,zCoord) = balls(round(thisR)).box;
