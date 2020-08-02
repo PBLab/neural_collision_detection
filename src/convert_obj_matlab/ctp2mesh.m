@@ -17,6 +17,12 @@ ctpList(:, 3) = y;
 balls_csv_fname = strcat(filename(1:end-4), '_balls_yz_flipped.csv');
 dlmwrite(balls_csv_fname, ctpList, 'precision', 7);
 
+% The .obj and .csv files aren't on top of each other unless we flip the x
+% and y axe
+x = ctpList(:, 1);
+ctpList(:, 1) = ctpList(:, 2);
+ctpList(:, 2) = x;
+
 % calculate final mask size
 minXYZ = min(ctpList(:,1:3));
 maxR = max(ctpList(:,4));

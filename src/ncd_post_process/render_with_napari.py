@@ -10,10 +10,13 @@ from vispy.color import ColorArray
 from collections import namedtuple
 from skimage import exposure
 
-from ncd_post_process.graph_parsing import connect_collisions_to_neural_points, NeuronToGraph
+from ncd_post_process.graph_parsing import (
+    connect_collisions_to_neural_points,
+    NeuronToGraph,
+)
 
 
-HistEdges = namedtuple("HistEdges", ['hist', 'edges'])
+HistEdges = namedtuple("HistEdges", ["hist", "edges"])
 HistMetadata = namedtuple("HistMetadata", ["hist", "starts", "ends"])
 PointsColor = namedtuple("PointColor", ["points", "color"])
 
@@ -23,7 +26,9 @@ def create_napari_surface(obj_fname):
     """Loads the given fname, which is assumed to be an .obj file,
     and returns it as a napari-configured Surface that can be easily rendered.
     """
-    obj = pd.read_csv(obj_fname, sep=' ', header=None, index_col=0, names=['h', 'x', 'y', 'z'])
+    obj = pd.read_csv(
+        obj_fname, sep=" ", header=None, index_col=0, names=["h", "x", "y", "z"]
+    )
     # obj = obj.reindex(columns=['h', 'y', 'x', 'z'])
     # obj.columns = ['h', 'x', 'y', 'z']
     vertices = obj.loc["v", :].to_numpy()
@@ -31,7 +36,7 @@ def create_napari_surface(obj_fname):
     vertices[:, 0] = vertices[:, 1]
     vertices[:, 1] = xx
     faces = obj.loc["f", :].to_numpy().astype(np.uint64) - 1
-    values = np.ones((len(vertices), ))
+    values = np.ones((len(vertices),))
     return (vertices, faces, values, len(vertices))
 
 
@@ -101,11 +106,11 @@ def hist_into_points(hist_metadata):
     points_arr = np.zeros((len(starts), 3))
     color_arr = []
     norm = 1.0 / (hist.max())
-    loc = np.array([0., 0., 0.])
+    loc = np.array([0.0, 0.0, 0.0])
     for idx, (val, coll_start, coll_end) in enumerate(zip(hist, starts, ends)):
         loc[:] = (coll_start + coll_end) / 2
         points_arr[idx] = loc
-        color_arr.append((val * norm, 0., 0., 1.))
+        color_arr.append((val * norm, 0.0, 0.0, 1.0))
     return PointsColor(points_arr, ColorArray(color_arr))
 
 
@@ -116,15 +121,15 @@ def add_colls_data_to_surface(surface, neural_collisions):
     return (surface[0].to_numpy(), surface[1], normed)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     client = Client(processes=False)
-    neuron_name = 'AP130312_s1c1'
-    neuron_obj_fname = f'/data/neural_collision_detection/src/convert_obj_matlab/{neuron_name}_yz_flipped.obj'
+    neuron_name = "AP130312_s1c1"
+    neuron_obj_fname = f"/data/neural_collision_detection/src/convert_obj_matlab/{neuron_name}_yz_flipped.obj"
     # neuron_obj_fname = '/data/neural_collision_detection/yoav/artificial_270120/neuron.obj'
     surface = client.submit(create_napari_surface, neuron_obj_fname)
-    colls_fname = '/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz'
-    collisions = client.submit(load_collisions, colls_fname, 1, 'neuron_coords')
-    collisions = client.submit(filter_nans, collisions)
+    # colls_fname = "/data/neural_collision_detection/results/for_article/fig1/normalized_artificial_neuron_results_agg_thresh_0.npz"
+    # collisions = client.submit(load_collisions, colls_fname, 1, "neuron_coords")
+    # collisions = client.submit(filter_nans, collisions)
     surface = surface.result()
     # closest_idx = client.submit(connect_collisions_to_neural_points, collisions, surface[0])
     # neural_collisions = client.submit(NeuronToGraph.coerce_collisions_to_neural_coords, surface[3], closest_idx)
@@ -139,9 +144,14 @@ if __name__ == '__main__':
     # colors[:, 3] = surface_with_collisions[2]
     # colors = ColorArray(colors)
     # colors = [color.rgba.ravel() for color in colors]
-    raw_neuron = pd.read_csv(f'/data/neural_collision_detection/src/convert_obj_matlab/{neuron_name}_balls_yz_flipped.csv', header=None, names=['x', 'y', 'z', 'r'])
+    raw_neuron = pd.read_csv(
+        f"/data/neural_collision_detection/src/convert_obj_matlab/{neuron_name}_balls_yz_flipped.csv",
+        header=None,
+        names=["x", "y", "z", "r"],
+    )
     with napari.gui_qt():
         # viewer = napari.view_points(collisions.result()[::10], size=1, face_color='pink')
-        viewer = napari.view_points(raw_neuron.iloc[:, :3].to_numpy(), size=1, face_color='white')
-        viewer.add_surface(surface, colormap='magenta')
-        viewer.theme = 'light'
+        viewer = napari.view_points(
+            raw_neuron.iloc[:, :3].to_numpy(), size=1, face_color="white"
+        )
+        viewer.add_surface(surface, colormap="magenta")

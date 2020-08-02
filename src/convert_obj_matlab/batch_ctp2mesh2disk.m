@@ -4,7 +4,7 @@ function batch_ctp2mesh2disk(folder)
 folder_with_glob = fullfile(folder, '*.mat');
 files = dir(folder_with_glob);
 
-for filenum = 1:length(files)
+parfor filenum = 1:length(files)
     full_fname = fullfile(files(filenum).folder, files(filenum).name);
     [M_surf,M_caps,offsetXYZ] = ctp2mesh(full_fname);
     new_name = strcat(files(filenum).name(1:end-4), '_yz_flipped.csv');

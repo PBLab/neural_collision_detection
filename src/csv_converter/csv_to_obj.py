@@ -1,9 +1,7 @@
-#!/usr/bin/python
+import pathlib
+import multiprocessing as mp
 
-from utils import Utils
 import argparse
-import time
-import numpy
 from triangulation import Triangulation
 
 
@@ -43,10 +41,23 @@ def main_lib(faces, vertices, output_fname, x_expand=1, y_expand=1, z_expand=1):
     creator.create_obj_file(output_fname, x_expand, y_expand, z_expand)
 
 
+def batch_csv_to_obj(foldername):
+    """ Parse the folder in search of faces and vertices """
+    all_faces = foldername.rglob('faces*flipped.csv')
+    args = []
+    for face in all_faces:
+        fname_face = str(face.name)[6:-4]  # removes "faces_" and ".csv"
+        try:
+            fname_vert = next(face.parent.glob('vert*' + fname_face + '.csv'))
+        except StopIteration:
+            print(f"file {fname_face} doesn't have a vertices counterpart.")
+            continue
+        obj_fname = face.parent / (fname_face + '.obj')
+        args.append((str(face), str(fname_vert), str(obj_fname)))
+
+    with mp.Pool() as pool:
+        pool.starmap(main_lib, args)
+
+
 if __name__ == "__main__":
-    start_time = time.time()
-    main_commandline()
-    end_time = time.time()
-    runtime = end_time - start_time
-    print("\n-------------------------")
-    print("Runtime: %f seconds" % runtime)
+    batch_csv_to_obj(pathlib.Path('/data/neural_collision_detection/src/convert_obj_matlab'))
