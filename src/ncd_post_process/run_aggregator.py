@@ -27,7 +27,7 @@ def process_main(results, output_fname, threshold_distance, vascular):
     for res in results:
         splitted = res.split(",")
 
-        neuron_name = splitted[0].replace(".obj", "_balls.csv")
+        neuron_name = splitted[0].replace("_yz_flipped.obj", "_balls_yz_flipped.csv")
         location = [int(splitted[1]), int(splitted[2]), int(splitted[3])]
         rotation = [int(splitted[4]), int(splitted[5]), int(splitted[6])]
 

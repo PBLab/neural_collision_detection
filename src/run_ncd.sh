@@ -1,4 +1,4 @@
-cd /../data/neural_collision_detection
+cd /data/neural_collision_detection/src
 ../ncd -m batch -V ../data/vascular/vascular.obj -N ../data/neurons/AP120410_s1c1_yz_flipped.obj -o ../results/2020_07_29 -t 8 -c 500 -f ../results/2020_07_29/ncd_results_AP120410_s1c1 -z -i ../data/vascular/centers_layer_FIVE.csv && echo neuron_done >> ../results/2020_07_29/log.txt
 ../ncd -m batch -V ../data/vascular/vascular.obj -N ../data/neurons/AP120410_s3c1_yz_flipped.obj -o ../results/2020_07_29 -t 8 -c 500 -f ../results/2020_07_29/ncd_results_AP120410_s3c1 -z -i ../data/vascular/centers_layer_FIVE.csv && echo neuron_done >> ../results/2020_07_29/log.txt
 ../ncd -m batch -V ../data/vascular/vascular.obj -N ../data/neurons/AP120412_s3c2_yz_flipped.obj -o ../results/2020_07_29 -t 8 -c 500 -f ../results/2020_07_29/ncd_results_AP120412_s3c2 -z -i ../data/vascular/centers_layer_FIVE.csv && echo neuron_done >> ../results/2020_07_29/log.txt

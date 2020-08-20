@@ -32,9 +32,6 @@ def create_napari_surface(obj_fname):
     # obj = obj.reindex(columns=['h', 'y', 'x', 'z'])
     # obj.columns = ['h', 'x', 'y', 'z']
     vertices = obj.loc["v", :].to_numpy()
-    xx = vertices[:, 0].copy()
-    vertices[:, 0] = vertices[:, 1]
-    vertices[:, 1] = xx
     faces = obj.loc["f", :].to_numpy().astype(np.uint64) - 1
     values = np.ones((len(vertices),))
     return (vertices, faces, values, len(vertices))
