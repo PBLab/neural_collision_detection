@@ -1,6 +1,12 @@
 ------------
 Ongoing Work
 ------------
+* What files did I run after the basic pipeline was completed?
+        - collisions_vs_dist_naive
+        - distance_alpha
+        - find_block_properties
+        - correlate_coll_alpha
+        - 
 * I also added to the docs the fact that we need to run the alpha shape pipeline
   in addition to the rest of the functions.
 
