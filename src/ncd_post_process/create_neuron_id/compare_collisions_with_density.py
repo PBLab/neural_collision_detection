@@ -171,7 +171,7 @@ class BranchDensityAndCollisions:
             f"Collisions as a function of density for a single neuron {neuron_name} with r={self.r} um"
         )
         fig.savefig(
-            f"results/2020_02_14/colls_density_jointplot_r_{self.r}_{neuron_name}.png",
+            f"results/2020_07_29/colls_density_jointplot_r_{self.r}_{neuron_name}.png",
             transparent=True,
             dpi=300,
         )
@@ -223,11 +223,11 @@ class BranchDensityAndDist:
         ax_topodist.legend(["Axon", "Dendrite"])
         ax_fft.legend(["Axon", "Dendrite"])
         fig_topodist.savefig(
-            f"results/2020_02_14/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_07_29/density_topodist_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
         fig_fft.savefig(
-            f"results/2020_02_14/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_07_29/density_topodist_fft_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
 
@@ -443,7 +443,7 @@ class DensityCollisionsDistance:
         )
         ax.legend(["Axon", "Dendrite"])
         fig.savefig(
-            f"results/2020_02_14/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
+            f"results/2020_07_29/density_topodist_collisions_r_{self.r}_{self.bdens.neuron_fname.stem}.png",
             transparent=True, dpi=300
         )
 
@@ -567,7 +567,7 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
     neuron_graph = (
         pathlib.Path('/data/neural_collision_detection')
         / "results"
-        / "2020_02_14"
+        / "2020_07_29"
         / f"graph_{neuron_name}_with_collisions.gml"
     )
     if not graph:
@@ -581,9 +581,9 @@ def _instantiate_bdens(neuron_name, branch_class=BranchDensityAndCollisions, r=1
 
 def run_single_neuron_with_quantile():
     neuron_names = [
+        "AP120410_s1c1",
         "AP120410_s3c1",
         "AP120412_s3c2",
-        "AP120410_s1c1",
         "AP120416_s3c1",
         "AP120419_s1c1",
         "AP120420_s1c1",
@@ -591,9 +591,14 @@ def run_single_neuron_with_quantile():
         "AP120507_s3c1",
         "AP120510_s1c1",
         "AP120522_s3c1",
+        "AP120523_s2c1",
         "AP120524_s2c1",
         "AP120614_s1c2",
+        "AP130110_s2c1",
         "AP130312_s1c1",
+        "AP130606_s2c1",
+        "AP131105_s1c1",
+        "MW120607_LH3",
     ]
     perc = 90
     for neuron_name in neuron_names:
@@ -604,7 +609,7 @@ def run_single_neuron_with_quantile():
         fname = (
             pathlib.Path('/data/neural_collision_detection')
             / "results"
-            / "2020_02_14"
+            / "2020_07_29"
             / f"top_{100-perc}p_likely_colls_{neuron_name}.npy"
         )
         np.save(fname, colls)
@@ -612,8 +617,8 @@ def run_single_neuron_with_quantile():
 
 if __name__ == "__main__":
     run_single_neuron_with_jointplot()
-    # run_single_neuron_with_quantile()
-    # run_ur_topodist()
-    # run_ur_topodist_multiple_r()
-    # run_collisions_dens_jointplot_multiple_r()
-    # run_ur_topodist_colls()
+    run_single_neuron_with_quantile()
+    run_ur_topodist()
+    run_ur_topodist_multiple_r()
+    run_collisions_dens_jointplot_multiple_r()
+    run_ur_topodist_colls()
