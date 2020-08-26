@@ -35,6 +35,7 @@ TREETYPE = [
     "Dendrite3",
     "Dendrite4",
     "Dendrite5",
+    "Dendrite6",
 ]
 
 
@@ -525,12 +526,16 @@ if __name__ == "__main__":
         "AP120507_s3c1",
         "AP120510_s1c1",
         "AP120522_s3c1",
+        "AP120523_s2c1",
         "AP120524_s2c1",
         "AP120614_s1c2",
+        "AP130110_s2c1",
         "AP130312_s1c1",
+        "AP130606_s2c1",
         "AP131105_s1c1",
+        "MW120607_LH3",
     ]
-    result_folder = "2020_02_14"
+    result_folder = "2020_07_29"
     thresh = 0
     with_collisions = True
     with_plot = False
