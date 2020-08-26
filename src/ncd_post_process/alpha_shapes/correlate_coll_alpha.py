@@ -4,7 +4,7 @@ calculations as they were written to disk. This is done in the "main_per_neuron"
 function, which runs in parallel over all of them and collects the fitting
 results.
 
-You're then able to use the "aggregate_and_plot_all_results" function to 
+You're then able to use the "aggregate_and_plot_all_results" function to
 generate a collision_vs_alpha_linear(log)_fit.csv file that contains the data
 per neuron per type on the offset and slope, as well as the figure which
 aggregates all of these results into one publishable figure.
@@ -26,6 +26,7 @@ import scipy.optimize
 from ncd_post_process.alpha_shapes.distance_alpha import generate_df_from_neuron
 
 
+
 neuron_names = {
     "AP120410_s1c1": "V",
     "AP120410_s3c1": "V",
@@ -34,13 +35,16 @@ neuron_names = {
     "AP120419_s1c1": "VI",
     "AP120420_s1c1": "IV",
     "AP120420_s2c1": "II/III",
-    # "AP120507_s3c1": "II/III",
+    "AP120507_s3c1": "II/III",
     "AP120510_s1c1": "II/III",
-    # "AP120522_s3c1": "I",  # ?
+    "AP120522_s3c1": "I",  # ?
+    "AP120523_s2c1": "V",
     "AP120524_s2c1": "II/III",
     "AP120614_s1c2": "V",
     "AP130312_s1c1": "II/III",
-    # "AP131105_s1c1": "II/III",  # ?
+    "AP131105_s1c1": "II/III",  # ?
+    "AP130606_s2c1": "II/III",
+    "MW120607_LH3": "IV",
 }
 
 
@@ -263,7 +267,10 @@ def main_per_neuron(
         Name and (offset, slope)
     """
     collisions_fname = neuron_graph_folder / f"graph_{neuron_name}_with_collisions.gml"
-    points, _ = generate_df_from_neuron(collisions_fname, neuron_name)
+    try:
+        points, _ = generate_df_from_neuron(collisions_fname, neuron_name)
+    except FileNotFoundError:
+        return
     points = points.dropna()
     result = fit_subset_of_points(points, neuron_name)
     scatter_coll_vs_alpha_for_all_points(points, save_folder, neuron_name, result)
@@ -286,11 +293,11 @@ def aggregate_and_plot_all_results(results: list, folder: pathlib.Path) -> pd.Da
     data_as_df : pd.DataFrame
         The data in a melted dataframe format
     """
-    curve_fit_results = {name: res for name, res, _ in results}
+    curve_fit_results = {res[0]: res[1] for res in results if res}
     data_as_df = convert_result_to_dataframe(curve_fit_results)
     data_as_df = add_axon_id_to_results(data_as_df)
     data_as_df = add_normed_values_to_results(
-        data_as_df, ((res[0], res[2]) for res in results)
+        data_as_df, ((res[0], res[2]) for res in results if res)
     )
     data_as_df = data_as_df.reset_index().melt(
         id_vars=["neuron", "type", "is_axon"],
@@ -319,9 +326,9 @@ def aggregate_and_plot_all_results(results: list, folder: pathlib.Path) -> pd.Da
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
     alphas_folder = pathlib.Path(
-        "/data/neural_collision_detection/results/for_article/fig2"
+        "/data/neural_collision_detection/results/with_alpha"
     )
     args = ((name, results_folder, alphas_folder) for name in neuron_names)
     with multiprocessing.Pool() as mp:
@@ -329,4 +336,4 @@ if __name__ == "__main__":
     # for neuron in neuron_names:
     #     _, result = main(neuron, results_folder, alphas_folder)
     #     data[neuron] = result
-    # data_as_ df = aggregate_and_plot_all_results(results, alphas_folder)
+    data_as_df = aggregate_and_plot_all_results(results, alphas_folder)
