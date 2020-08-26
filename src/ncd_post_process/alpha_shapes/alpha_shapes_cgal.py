@@ -1,3 +1,7 @@
+"""
+Main script to calculate the alpha values for the geometrical
+shape of a neuron.
+"""
 import pathlib
 import sys
 from itertools import chain
@@ -53,7 +57,7 @@ def sample_alphas(alphas: np.ndarray, factor=10) -> np.ndarray:
 def process_single_shape(neuron_name):
     """General alpha shape processing pipe"""
     foldername = pathlib.Path("/data/neural_collision_detection/data/neurons")
-    ext = "_balls.csv"
+    ext = "_balls_yz_flipped.csv"
     full_neuron_name = foldername / (neuron_name + ext)
     alpha_shape, points = generate_alphashape_from_neuron(full_neuron_name)
     output_folder = pathlib.Path(
@@ -108,19 +112,25 @@ def find_first_interior_alpha_shape_value(alphas: pd.DataFrame) -> np.ndarray:
 
 if __name__ == "__main__":
     neuron_names = [
+        # "AP120507_s3c1",
+        # "AP131105_s1c1",
+        # "AP120410_s1c1",
+        # "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120510_s1c1",
+        # "AP120524_s2c1",
+        # "AP120614_s1c2",
+        # "AP130312_s1c1",
+        # "AP120522_s3c1",
+        # "AP120523_s2c1",
+        # "AP130110_s2c1",
+        # "AP130606_s2c1",
         "AP120507_s3c1",
-        "AP131105_s1c1",
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120510_s1c1",
-        "AP120524_s2c1",
-        "AP120614_s1c2",
-        "AP130312_s1c1",
+        "MW120607_LH3",
     ]
 
     with multiprocessing.Pool() as mp:

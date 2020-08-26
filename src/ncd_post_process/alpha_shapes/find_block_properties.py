@@ -382,9 +382,12 @@ def main(neuron_names: List[str], data_folder: pathlib.Path, block_nums: tuple):
     for neuron_name in neuron_names:
         print(f"Currently processing neuron {neuron_name}...")
         path = pathlib.Path(
-            f"/data/neural_collision_detection/results/2020_02_14/graph_{neuron_name}_with_collisions.gml"
+            data_folder / f"graph_{neuron_name}_with_collisions.gml"
         )
-        points = load_neuronal_points(path, neuron_name)
+        try:
+            points = load_neuronal_points(path, neuron_name)
+        except FileNotFoundError:
+            continue
         per_block, _, blocksize = divide_neuron_into_blocks(
             points.loc[:, "x":"z"], block_nums
         )
@@ -407,20 +410,27 @@ def main(neuron_names: List[str], data_folder: pathlib.Path, block_nums: tuple):
 
 if __name__ == "__main__":
     data_folder = pathlib.Path(
-        "/data/neural_collision_detection/results/for_article/fig2"
+        "/data/neural_collision_detection/results/2020_07_29"
     )
     neuron_names = [
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
-        "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
+        # "AP120410_s1c1",
+        # "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120416_s3c1",
+        # "AP120419_s1c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120507_s3c1",
         "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120523_s2c1",
         "AP120524_s2c1",
         "AP120614_s1c2",
+        "AP130110_s2c1",
         "AP130312_s1c1",
+        "AP130606_s2c1",
+        "AP131105_s1c1",
+        "MW120607_LH3",
     ]
-    neuron_name = ["AP120410_s3c1"]
+    # neuron_name = ["AP120410_s3c1"]
     main(neuron_names, data_folder, (30, 57, 18))  # (10, 19, 6) was ~ 30x30x30, (20, 38, 12) was 15-16-16

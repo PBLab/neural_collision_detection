@@ -31,10 +31,17 @@ neuron_names = [
     "AP120419_s1c1",
     "AP120420_s1c1",
     "AP120420_s2c1",
+    "AP120507_s3c1",
     "AP120510_s1c1",
+    "AP120522_s3c1",
+    "AP120523_s2c1",
     "AP120524_s2c1",
     "AP120614_s1c2",
+    "AP130110_s2c1",
     "AP130312_s1c1",
+    "AP130606_s2c1",
+    "AP131105_s1c1",
+    "MW120607_LH3",
 ]
 
 
@@ -148,7 +155,10 @@ def generate_df_from_neuron(fname: pathlib.Path, neuron_name: str) -> pd.DataFra
     CollisionsDistNaive
         Object containing collisions and graph of neuron
     """
-    g = CollisionsDistNaive.from_graph(fname, neuron_name)
+    try:
+        g = CollisionsDistNaive.from_graph(fname, neuron_name)
+    except FileNotFoundError:
+        raise
     g.run()
     points = g.all_colls.set_index(["type"])
     return points, g
@@ -175,7 +185,7 @@ def calc_alpha_shape_diff_between_near_axdends(
     q : float
         Quantile to filter
     """
-    top = closest["collision_delta"].quantile(q=q)
+    top = closest.loc[:, "collision_delta"].quantile(q=q)
     top_closest = closest.query("collision_delta > @top")
     top_closest.loc[:, "ax_alpha"] = alphas[top_closest.loc[:, "ax_row"]]
     top_closest.loc[:, "dend_alpha"] = alphas[top_closest.loc[:, "dend_row"]]
@@ -203,7 +213,10 @@ def main_alpha_pipe(neuron_name: str, alphas_folder: pathlib.Path) -> np.ndarray
         Alpha value per point of the neuron
     """
     alphas_fname = alphas_folder / f"{neuron_name}_alpha_distrib.h5"
-    alphas = pd.read_hdf(alphas_fname, "data")
+    try:
+        alphas = pd.read_hdf(alphas_fname, "data")
+    except FileNotFoundError:
+        raise
     alpha_per_point = find_first_interior_alpha_shape_value(alphas)
     return alpha_per_point
 
@@ -234,7 +247,10 @@ def main_collisions_pipe(
         and collision chances
     """
     collisions_fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
-    points, g = generate_df_from_neuron(collisions_fname, neuron_name)
+    try:
+        points, g = generate_df_from_neuron(collisions_fname, neuron_name)
+    except FileNotFoundError:
+        raise
     all_collisions_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]
     all_collisions_dend = g.parsed_dend.loc[:, ["coll", "x", "y", "z"]]
     dist = distance_between_ax_dend(
@@ -269,14 +285,17 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
         Path containing alpha shapes results
     """
     print(neuron_name)
-    alpha_per_point = main_alpha_pipe(neuron_name, alphas_folder)
-    closest_dend = main_collisions_pipe(neuron_name, results_folder, num=1)
+    try:
+        alpha_per_point = main_alpha_pipe(neuron_name, alphas_folder)
+        closest_dend = main_collisions_pipe(neuron_name, results_folder, num=1)
+    except FileNotFoundError:
+        return
     top_closest = calc_alpha_shape_diff_between_near_axdends(
         closest_dend, alpha_per_point
     )
     top_closest = top_closest.dropna()
-    top_closest["alpha_delta"] = np.abs(
-        top_closest["ax_alpha"] - top_closest["dend_alpha"]
+    top_closest.loc[:, "alpha_delta"] = np.abs(
+            top_closest.loc[:, "ax_alpha"] - top_closest.loc[:, "dend_alpha"]
     )
     top_closest.to_hdf(
         alphas_folder / f"{neuron_name}_closest_pairs.h5", "data_single_pair"
@@ -284,16 +303,12 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
-    alphas_folder = pathlib.Path(
-        "/data/neural_collision_detection/results/for_article/fig2"
-    )
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+    alphas_folder = pathlib.Path("/data/neural_collision_detection/results/with_alpha")
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
-    # df = analyze_pairs(alphas_folder)
-    # plt.show()
     # Multi core
-    # with multiprocessing.Pool() as mp:
-    #     mp.starmap(main, args)
+    with multiprocessing.Pool() as mp:
+        mp.starmap(main, args)
 
     # Single core
     # for arg in args:
