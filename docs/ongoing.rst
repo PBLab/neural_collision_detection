@@ -1,6 +1,15 @@
 ------------
 Ongoing Work
 ------------
+* I also added to the docs the fact that we need to run the alpha shape pipeline
+  in addition to the rest of the functions.
+
+* After a lot of testing and I discovered a bug with the way the neurons are
+  represented in 3D - the Y and Z axes were flipped, which caused the issues
+  with the display that we had. I had to fix it, together with Yoav, from the
+  "roots" of NCD by changing the MATLAB code that generated the objects NCD was
+  colliding. This took a while to track and a longer while to run.
+
 * I sometimes see a bug where a 3D shape becomes "2D", or flat in 3D. This
   happens when I switch between columns in an array but don't copy them first.
 

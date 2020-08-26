@@ -20,6 +20,11 @@ Please keep in mind that this is the pipeline as it was run with our data and ou
 	| run_aggregator.py + db_to_dataframe.py
 	|
 	V
+    Alpha Shape values
+    |
+    |   alpha_shapes_cgal.py
+    |
+    V
 	DB of more accurate collision count, with control of distance threshold
 	|
 	| graph_parsing.py
