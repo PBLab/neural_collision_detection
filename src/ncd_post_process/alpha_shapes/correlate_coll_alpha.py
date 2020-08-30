@@ -26,7 +26,6 @@ import scipy.optimize
 from ncd_post_process.alpha_shapes.distance_alpha import generate_df_from_neuron
 
 
-
 neuron_names = {
     "AP120410_s1c1": "V",
     "AP120410_s3c1": "V",
@@ -66,7 +65,7 @@ def analyze_pairs(foldername: pathlib.Path):
 
 
 def _apply_layer_to_neuron_name(name):
-    return "II/III" if neuron_names[name] == 'II/III' else "IV-VI"
+    return "II/III" if neuron_names[name] == "II/III" else "IV-VI"
 
 
 def scatter_coll_vs_alpha_for_all_points(
@@ -91,7 +90,7 @@ def scatter_coll_vs_alpha_for_all_points(
     color_palette = ["C2"] + ["C1"] * (
         len(fit_result) - 1
     )  # all dendrites will be orange, the axon is green
-    hue_order = ['Axon0'] + [f'Dendrite{num}' for num in range(1, len(fit_result))]
+    hue_order = ["Axon0"] + [f"Dendrite{num}" for num in range(1, len(fit_result))]
     ax = sns.relplot(
         data=points.reset_index().sample(frac=0.3),
         x="alpha",
@@ -99,7 +98,7 @@ def scatter_coll_vs_alpha_for_all_points(
         col="type",
         hue="type",
         hue_order=hue_order,
-        kind='scatter',
+        kind="scatter",
         col_wrap=2,
         palette=color_palette,
     )
@@ -242,7 +241,7 @@ def add_normed_values_to_results(
             df.loc[name, "offset"] / maxs["dist"]
         ).to_numpy()
         df.loc[name, "normed_slope"] = (df.loc[name, "slope"] / maxs["dist"]).to_numpy()
-    return df
+    return df.drop(["offset, slope"])
 
 
 def main_per_neuron(
@@ -301,10 +300,11 @@ def aggregate_and_plot_all_results(results: list, folder: pathlib.Path) -> pd.Da
     )
     data_as_df = data_as_df.reset_index().melt(
         id_vars=["neuron", "type", "is_axon"],
-        value_vars=["offset", "slope", "normed_offset", "normed_slope"],
+        value_vars=["normed_offset", "normed_slope"],
         var_name="parameter",
     )
-    data_as_df.loc[:, 'layer'] = data_as_df.neuron.apply(_apply_layer_to_neuron_name)
+    data_as_df.loc[:, "value"] = data_as_df.loc[:, "value"].astype("float64")
+    data_as_df.loc[:, "layer"] = data_as_df.neuron.apply(_apply_layer_to_neuron_name)
     data_as_df.to_csv(folder / "collision_vs_alpha_log_fit.csv")
     ax = sns.catplot(
         data=data_as_df,
@@ -313,23 +313,17 @@ def aggregate_and_plot_all_results(results: list, folder: pathlib.Path) -> pd.Da
         hue="is_axon",
         col="parameter",
         sharey=False,
-        size="layer",
-        palette=['C1', 'C2'],
+        palette=["C1", "C2"],
     )
     ax.savefig(
-        folder / "collision_vs_alpha_log_fit_agg_result.pdf",
-        transparent=True,
-        dpi=300,
+        folder / "collision_vs_alpha_log_fit_agg_result.pdf", transparent=True, dpi=300,
     )
-    plt.show()
     return data_as_df
 
 
 if __name__ == "__main__":
     results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
-    alphas_folder = pathlib.Path(
-        "/data/neural_collision_detection/results/with_alpha"
-    )
+    alphas_folder = pathlib.Path("/data/neural_collision_detection/results/with_alpha")
     args = ((name, results_folder, alphas_folder) for name in neuron_names)
     with multiprocessing.Pool() as mp:
         results = mp.starmap(main_per_neuron, args)
@@ -337,3 +331,4 @@ if __name__ == "__main__":
     #     _, result = main(neuron, results_folder, alphas_folder)
     #     data[neuron] = result
     data_as_df = aggregate_and_plot_all_results(results, alphas_folder)
+    plt.show(block=False)
