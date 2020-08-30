@@ -76,19 +76,26 @@ def show_collisions_with_napari(
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_02_14")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
     neuron_names = [
-        # "AP120410_s1c1",
-        # "AP120410_s3c1",
+        "AP120410_s1c1",
+        "AP120410_s3c1",
         "AP120412_s3c2",
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
-        # "AP120510_s1c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
+        "AP120416_s3c1",
+        "AP120419_s1c1",
+        "AP120420_s1c1",
+        "AP120420_s2c1",
+        "AP120507_s3c1",
+        "AP120510_s1c1",
+        "AP120522_s3c1",
+        "AP120523_s2c1",
+        "AP120524_s2c1",
+        "AP120614_s1c2",
+        "AP130110_s2c1",
         "AP130312_s1c1",
+        "AP130606_s2c1",
+        "AP131105_s1c1",
+        "MW120607_LH3",
     ]
     alpha_factor = 0.5
     scale_factor = 7
@@ -98,8 +105,11 @@ if __name__ == "__main__":
         for neuron_name in neuron_names:
             print(neuron_name)
             fname = results_folder / f"graph_{neuron_name}_with_collisions.gml"
-            g = CollisionsDistNaive.from_graph(fname, neuron_name)
-            g.run()
+            try:
+                g = CollisionsDistNaive.from_graph(fname, neuron_name)
+                g.run()
+            except FileNotFoundError:
+                continue
             points = g.all_colls.astype({'type': 'category'}).set_index("type")
             # show_collisions_with_napari(points, viewer, neuron_name, 'coll_normed')
             nc_ax = g.parsed_axon.loc[:, ["coll", "x", "y", "z"]]

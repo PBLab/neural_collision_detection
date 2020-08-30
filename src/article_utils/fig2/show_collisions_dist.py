@@ -8,6 +8,7 @@ The second shows the running average of each neuron's collisions.
 """
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import (
     plot_running_avg_for_all,
@@ -17,7 +18,7 @@ colors = {"II/III": "C0", "I/IV/V/VI": "C1"}
 
 
 def _prep_data():
-    return pd.concat(plot_running_avg_for_all(), ignore_index=True)
+    return plot_running_avg_for_all()[-1]
 
 
 def plot_collisions_cumsum():
@@ -57,3 +58,4 @@ def plot_collisions_rolling_avg():
 
 if __name__ == "__main__":
     plot_collisions_rolling_avg()
+    plt.show()
