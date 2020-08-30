@@ -1,13 +1,21 @@
 ------------
 Ongoing Work
 ------------
+* The MW120607_LH3 neuron is too long to fit into our vasculature so we discard
+  it from our computational pipeline.
+
 * What files did I run after the basic pipeline was completed?
         - collisions_vs_dist_naive
         - distance_alpha
         - find_block_properties
         - correlate_coll_alpha
-        - 
-* I also added to the docs the fact that we need to run the alpha shape pipeline
+        - show_collisions_dist
+        - overlay_collisions_napari
+        - alpha_vs_density
+        - alpha_vs_topodist
+        - collision_distribution
+
+ * I also added to the docs the fact that we need to run the alpha shape pipeline
   in addition to the rest of the functions.
 
 * After a lot of testing and I discovered a bug with the way the neurons are
