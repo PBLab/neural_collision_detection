@@ -12,25 +12,30 @@ import pandas as pd
 import scipy.fftpack
 import scipy.spatial.distance
 
-from ncd_post_process.create_neuron_id.find_branching_density import BranchDensity
+from ncd_post_process.lib.find_branching_density import BranchDensity
 from ncd_post_process.graph_parsing import load_neuron
 from ncd_post_process.create_neuron_id.collisions_vs_dist_naive import CollisionsDistNaive
 
 neuron_names = [
+    "AP120507_s3c1",
+    "AP131105_s1c1",
+    "AP120410_s1c1",
     "AP120410_s3c1",
     "AP120412_s3c2",
-    "AP120410_s1c1",
     "AP120416_s3c1",
     "AP120419_s1c1",
     "AP120420_s1c1",
     "AP120420_s2c1",
-    "AP120507_s3c1",
     "AP120510_s1c1",
-    "AP120522_s3c1",
     "AP120524_s2c1",
     "AP120614_s1c2",
     "AP130312_s1c1",
-    "AP131105_s1c1",
+    "AP120522_s3c1",
+    "AP120523_s2c1",
+    "AP130110_s2c1",
+    "AP130606_s2c1",
+    "AP120507_s3c1",
+    "MW120607_LH3",
 ]
 
 
@@ -510,20 +515,6 @@ def run_single_neuron_with_jointplot():
     Creates a single collisions-to-density jointplot, i.e. a scatter
     plot with the histograms of the two axes on its sides.
     """
-    neuron_names = [
-        "AP120410_s3c1",
-        # "AP120412_s3c2",
-        # "AP120410_s1c1",
-        # "AP120416_s3c1",
-        # "AP120419_s1c1",
-        # "AP120420_s1c1",
-        # "AP120420_s2c1",
-        # "AP120510_s1c1",
-        # "AP120522_s3c1",
-        # "AP120524_s2c1",
-        # "AP120614_s1c2",
-        # "AP130312_s1c1",
-    ]
     for neuron_name in neuron_names:
         bdens_coll = _instantiate_bdens(neuron_name)
         if bdens_coll:
@@ -617,8 +608,8 @@ def run_single_neuron_with_quantile():
 
 if __name__ == "__main__":
     run_single_neuron_with_jointplot()
-    run_single_neuron_with_quantile()
-    run_ur_topodist()
-    run_ur_topodist_multiple_r()
-    run_collisions_dens_jointplot_multiple_r()
-    run_ur_topodist_colls()
+    # run_single_neuron_with_quantile()
+    # run_ur_topodist()
+    # run_ur_topodist_multiple_r()
+    # run_collisions_dens_jointplot_multiple_r()
+    # run_ur_topodist_colls()

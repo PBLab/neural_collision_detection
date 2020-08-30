@@ -21,23 +21,24 @@ from ncd_post_process.graph_parsing import CollisionNode
 
 plt.rcParams.update({"font.size": 22})
 neuron_names = {
-    "AP120410_s1c1": "V",
-    "AP120410_s3c1": "V",
-    "AP120412_s3c2": "V",
-    "AP120416_s3c1": "IV",
-    "AP120419_s1c1": "VI",
-    "AP120420_s1c1": "IV",
-    "AP120420_s2c1": "II/III",
-    "AP120507_s3c1": "II/III",
-    "AP120510_s1c1": "II/III",
-    "AP120522_s3c1": "I",  # ?
-    "AP120523_s2c1": "V",
-    "AP120524_s2c1": "II/III",
-    "AP120614_s1c2": "V",
-    "AP130312_s1c1": "II/III",
-    "AP131105_s1c1": "II/III",  # ?
-    "AP130606_s2c1": "II/III",
-    "MW120607_LH3": "IV",
+    # "AP120410_s1c1": "V",
+    # "AP120410_s3c1": "V",
+    # "AP120412_s3c2": "V",
+    # "AP120416_s3c1": "IV",
+    # "AP120419_s1c1": "VI",
+    # "AP120420_s1c1": "IV",
+    # "AP120420_s2c1": "II/III",
+    # "AP120507_s3c1": "II/III",
+    # "AP120510_s1c1": "II/III",
+    # "AP120522_s3c1": "I",  # ?
+    # "AP120523_s2c1": "V",
+    # "AP120524_s2c1": "II/III",
+    # "AP120614_s1c2": "V",
+    # "AP130312_s1c1": "II/III",
+    # "AP131105_s1c1": "II/III",  # ?
+    # "AP130606_s2c1": "II/III",
+    # "MW120607_LH3": "IV",
+    "AP130110_s2c1": "II/III",
 }
 
 
@@ -201,7 +202,7 @@ class CollisionsDistNaive:
         ax.set_ylabel("P(Collisions)")
         ax.set_xlabel("Topodist [um]")
         ax.figure.savefig(
-            f"results/for_article/fig2/colls_dist{normed}_{self.neuron_name}.pdf",
+            f"results/for_article/fig2/colls_dist{normed}_{self.neuron_name}.png",
             transparent=True,
             dpi=300,
         )
