@@ -47,4 +47,4 @@ setup(
                       'flake8',
                       'dask',
                       ]
-
+)

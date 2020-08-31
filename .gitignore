@@ -47,3 +47,4 @@ results/for_article/neuron_id.svg
 **/*.zarr
 *.blend
 *.pickle
+results/for_article/neuron_id_20200729.svg
