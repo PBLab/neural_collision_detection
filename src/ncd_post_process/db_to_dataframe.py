@@ -90,7 +90,7 @@ def parse_raw_df(df) -> pd.DataFrame:
         try:
             split = data.replace("|", " ").split(" ")
         except AttributeError:  # no collisions
-            arr = pd.array([[pd.NA, pd.NA, pd.NA]], dtype="float64")
+            arr = np.array([[np.nan, np.nan, np.nan]], dtype="float64")
         else:
             assert len(split) % 3 == 0  # x-y-z coords
             arr = np.array(split, dtype="float64").reshape((-1, 3))
@@ -137,7 +137,14 @@ def get_stats(df: pd.DataFrame):
     return chosen_pos, relevant_collisions
 
 
-def find_duplicate_colls(colls: pd.DataFrame):
+def convert_to_int(colls: pd.DataFrame):
+    for column in ['x', 'y', 'z']:
+        as_int = colls.loc[:, f'coll_{column}'].to_numpy().astype('int32', casting='unsafe')
+        colls.loc[:, f'coll_{column}'] = as_int
+    return colls
+
+
+def find_duplicate_colls(intcol: pd.DataFrame, colls: pd.DataFrame):
     """Iterates over the DataFrame and finds locations which were registered
     as having multiple collisions, while in effect they only had one collision,
     but it was registered as more due to issues with the brute-force calc and our
@@ -147,7 +154,6 @@ def find_duplicate_colls(colls: pd.DataFrame):
 
     Returns a filtered DF not containing these rows.
     """
-    intcol = colls.astype({'coll_x': 'int32', 'coll_y': 'int32', 'coll_z': 'int32'})
     non_dup_df = []
     for ((_, intgroup), (_, realgroup)) in zip(intcol.groupby(['x', 'y', 'z']), colls.groupby(['x', 'y', 'z'])):
         _, index = np.unique(intgroup.to_numpy(), return_index=True, axis=0)
@@ -251,7 +257,8 @@ def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
     print(fname)
     raw_df = read_db_into_raw_df(fname)
     cols = parse_raw_df(raw_df)
-    cols = find_duplicate_colls(cols)
+    intcols = convert_to_int(cols)
+    cols = find_duplicate_colls(intcols, cols)
     colls_translated = translate_colls(cols)
     colls_trans_rot = np.asarray(rotate_colls(cols, colls_translated))
     colls_trans_rot = colls_trans_rot.astype('int32')
