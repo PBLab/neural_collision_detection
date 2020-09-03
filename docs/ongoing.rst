@@ -1,6 +1,10 @@
 ------------
 Ongoing Work
 ------------
+* Another bug I witnessed has to do with the locations that NCD decides are the
+  best for each neuron. NCD chooses location right on the edge of the vasculature
+  every time since it has the fewest collisions.
+
 * The MW120607_LH3 neuron is too long to fit into our vasculature so we discard
   it from our computational pipeline.
 
@@ -14,6 +18,7 @@ Ongoing Work
         - alpha_vs_density
         - alpha_vs_topodist
         - collision_distribution
+        - neuron_to_vasc_dist_distrib
 
  * I also added to the docs the fact that we need to run the alpha shape pipeline
   in addition to the rest of the functions.
