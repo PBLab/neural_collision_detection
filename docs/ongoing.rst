@@ -1,6 +1,9 @@
 ------------
 Ongoing Work
 ------------
+* We fixed this issue and re-ran the NCD computation. This data is in the Sep 
+  5th folder.
+
 * Another bug I witnessed has to do with the locations that NCD decides are the
   best for each neuron. NCD chooses location right on the edge of the vasculature
   every time since it has the fewest collisions.

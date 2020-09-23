@@ -277,7 +277,7 @@ def mp_run(parent_folder: pathlib.Path, fname: pathlib.Path):
 
 
 if __name__ == "__main__":
-    parent_folder = pathlib.Path(r"/data/neural_collision_detection/results/2020_07_29")
+    parent_folder = pathlib.Path(r"/data/neural_collision_detection/results/2020_09_05")
     all_args = [
         (parent_folder, file)
         for file in parent_folder.glob("agg_results_*thresh_0.csv")

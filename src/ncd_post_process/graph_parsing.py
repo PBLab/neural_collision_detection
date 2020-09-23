@@ -535,7 +535,7 @@ if __name__ == "__main__":
         "AP131105_s1c1",
         "MW120607_LH3",
     ]
-    result_folder = "2020_07_29"
+    result_folder = "2020_09_05"
     thresh = 0
     with_collisions = True
     with_plot = False

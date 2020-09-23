@@ -303,7 +303,7 @@ def main(neuron_name: str, results_folder: pathlib.Path, alphas_folder: pathlib.
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_09_05")
     alphas_folder = pathlib.Path("/data/neural_collision_detection/results/with_alpha")
     args = ((neuron, results_folder, alphas_folder) for neuron in neuron_names)
     # Multi core

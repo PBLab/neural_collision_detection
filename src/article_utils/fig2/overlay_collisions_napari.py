@@ -78,24 +78,24 @@ def show_collisions_with_napari(
 if __name__ == "__main__":
     results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
     neuron_names = [
-        "AP120410_s1c1",
-        "AP120410_s3c1",
-        "AP120412_s3c2",
-        "AP120416_s3c1",
+        # "AP120410_s1c1",
+        # "AP120410_s3c1",
+        # "AP120412_s3c2",
+        # "AP120416_s3c1",
         "AP120419_s1c1",
-        "AP120420_s1c1",
-        "AP120420_s2c1",
-        "AP120507_s3c1",
-        "AP120510_s1c1",
-        "AP120522_s3c1",
-        "AP120523_s2c1",
+        # "AP120420_s1c1",
+        # "AP120420_s2c1",
+        # "AP120507_s3c1",
+        # "AP120510_s1c1",
+        # "AP120522_s3c1",
+        # "AP120523_s2c1",
         "AP120524_s2c1",
         "AP120614_s1c2",
         "AP130110_s2c1",
         "AP130312_s1c1",
         "AP130606_s2c1",
         "AP131105_s1c1",
-        "MW120607_LH3",
+        # "MW120607_LH3",
     ]
     alpha_factor = 0.5
     scale_factor = 7

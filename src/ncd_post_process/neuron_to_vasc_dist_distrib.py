@@ -5,7 +5,6 @@ of that neuron.
 import pathlib
 import multiprocessing
 
-import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -49,18 +48,18 @@ def load_csv_balls(fname: pathlib.Path) -> pd.DataFrame:
     pd.DataFrame
         Parsed data
     """
-    data = pd.read_csv(fname, header=None, names=['x', 'y', 'z', 'r'])
+    data = pd.read_csv(fname, header=None, names=["x", "y", "z", "r"])
     return data
 
 
 def swap_xy(df: pd.DataFrame):
-    df = df.reindex(columns=['y', 'x', 'z', 'r'])
-    return df.rename(columns={'y': 'x', 'x': 'y'})
+    df = df.reindex(columns=["y", "x", "z", "r"])
+    return df.rename(columns={"y": "x", "x": "y"})
 
 
 def swap_xz(df: pd.DataFrame):
-    df = df.reindex(columns=['z', 'y', 'x', 'r'])
-    return df.rename(columns={'z': 'x', 'x': 'z'})
+    df = df.reindex(columns=["z", "y", "x", "r"])
+    return df.rename(columns={"z": "x", "x": "z"})
 
 
 def find_best_orientation(coll_db: pathlib.Path) -> dict:
@@ -68,7 +67,9 @@ def find_best_orientation(coll_db: pathlib.Path) -> dict:
     colls = db_to_dataframe.parse_raw_df(colls)
     intcolls = db_to_dataframe.convert_to_int(colls)
     colls = db_to_dataframe.find_duplicate_colls(intcolls, colls)
-    minimal_collision_orientation_location = colls.iloc[colls.index.get_level_values('coll_count').argmin()]
+    minimal_collision_orientation_location = colls.iloc[
+        colls.index.get_level_values("coll_count").argmin()
+    ]
     return colls.loc[minimal_collision_orientation_location.name]
 
 
@@ -97,9 +98,9 @@ def generate_current_rotation(df: pd.DataFrame) -> np.ndarray:
     3x3 np.ndarray
         The rotation matrix
     """
-    roll = df.index.get_level_values('roll')[0]
-    pitch = df.index.get_level_values('pitch')[0]
-    yaw = df.index.get_level_values('yaw')[0]
+    roll = df.index.get_level_values("roll")[0]
+    pitch = df.index.get_level_values("pitch")[0]
+    yaw = df.index.get_level_values("yaw")[0]
     rot_in_degrees = np.array([roll, pitch, yaw])
     return make_rotation_matrix(rot_in_degrees)
 
@@ -127,9 +128,9 @@ def make_rotation_matrix(rot: np.ndarray) -> np.ndarray:
 
 
 def generate_current_translation(df: pd.DataFrame) -> np.ndarray:
-    x = df.index.get_level_values('x')[0]
-    y = df.index.get_level_values('y')[0]
-    z = df.index.get_level_values('z')[0]
+    x = df.index.get_level_values("x")[0]
+    y = df.index.get_level_values("y")[0]
+    z = df.index.get_level_values("z")[0]
     return np.array([[x, y, z]], dtype=np.float64)
 
 
@@ -166,35 +167,44 @@ def get_subset_of_vasculature(neuron: np.ndarray, vasc: np.ndarray):
     min_ = len(vasc)
     max_ = 0
     for idx, vasc_coords in enumerate(vasc.T):
-        vasc_coords.compute_chunk_sizes()
         sect = np.logical_and(mins[idx] <= vasc_coords, vasc_coords <= maxs[idx])
         sect = np.where(sect)[0]
-        sect.compute_chunk_sizes()
         if sect[0] < min_:
             min_ = sect[0]
         if sect[-1] > max_:
             max_ = sect[-1]
 
-    return vasc[int(min_):int(max_), :].rechunk((10000, 3))
+    return vasc[int(min_) : int(max_), :]
 
 
-def single_neuron_pipeline(neuron_name: str, vascular_data: da.array):
-    collisions_folder = pathlib.Path('/data/neural_collision_detection/results/2020_07_29/')
-    collisions_fname = collisions_folder / f'agg_results_{neuron_name}_thresh_0.csv'
-    neurons_folder = pathlib.Path('/data/neural_collision_detection/data/neurons')
-    neuron_fname = neurons_folder / f'{neuron_name}_balls_yz_flipped.csv'
+def single_neuron_pipeline(neuron_name: str, vascular_data: np.ndarray):
+    collisions_folder = pathlib.Path(
+        "/data/neural_collision_detection/results/2020_07_29/"
+    )
+    collisions_fname = collisions_folder / f"agg_results_{neuron_name}_thresh_0.csv"
+    neurons_folder = pathlib.Path("/data/neural_collision_detection/data/neurons")
+    neuron_fname = neurons_folder / f"{neuron_name}_balls_yz_flipped.csv"
     raw_neuron_data = load_csv_balls(neuron_fname)
     colls = find_best_orientation(collisions_fname)
-    processed_neuron = rotate_and_translate(colls, raw_neuron_data).to_numpy().astype(np.float32)
+    processed_neuron = (
+        rotate_and_translate(colls, raw_neuron_data).to_numpy().astype(np.float32)
+    )
     vascular_data = get_subset_of_vasculature(processed_neuron, vascular_data).compute()
-    distance_to_closest_vasc = find_closest_vasc_per_neuronal_point(processed_neuron, vascular_data)
+    distance_to_closest_vasc = find_closest_vasc_per_neuronal_point(
+        processed_neuron, vascular_data
+    )
     _, ax = plt.subplots()
     ax.hist(distance_to_closest_vasc, bins=100)
     ax.set_title(neuron_name)
     return distance_to_closest_vasc, colls
 
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit(
+    numba.float32[:](numba.float32[:], numba.float32[:]),
+    nopython=True,
+    parallel=True,
+    nogil=True,
+)
 def find_closest_vasc_per_neuronal_point(processed_neuron, vascular_data):
     final_dists = np.zeros(len(processed_neuron), dtype=np.float32)
     range_on_vasc = range(len(vascular_data))
@@ -210,25 +220,30 @@ def find_closest_vasc_per_neuronal_point(processed_neuron, vascular_data):
 
 def viz_neurons_and_vasc(neuron_and_colls, vascular_data):
     with napari.gui_qt():
-        viewer = napari.view_points(vascular_data[:, :3], size=vascular_data[:, 3], face_color='magenta', name='vasculature')
+        viewer = napari.view_points(
+            vascular_data[:, :3],
+            size=vascular_data[:, 3],
+            face_color="magenta",
+            name="vasculature",
+        )
         for (neuron, coll), neuron_name in zip(neuron_and_colls, neuron_names):
-            viewer.add_points(neuron.to_numpy(), size=3, name=f'{neuron_name}')
-            viewer.add_points(coll.to_numpy(), size=3, face_color='g', name=f"{len(coll)} collisions ({neuron_name})")
+            viewer.add_points(neuron.to_numpy(), size=3, name=f"{neuron_name}")
+            viewer.add_points(
+                coll.to_numpy(),
+                size=3,
+                face_color="g",
+                name=f"{len(coll)} collisions ({neuron_name})",
+            )
 
 
-def plot_distance_distribution(neuron_and_colls, vascular_data):
-    for (neuron, _), neuron_name in zip(neuron_and_colls, neuron_names):
-        neuron = da.from_array(neuron.to_numpy().astype(np.float32), chunks='auto')
-        dists = da.map_blocks(scipy.spatial.distance.cdist, neuron, vascular_data).compute()
-        distance_to_closest_vasc = dists.min(axis=1)
-        _, ax = plt.subplots()
-        ax.hist(distance_to_closest_vasc, bins=100)
-        ax.set_title(neuron_name)
-
-
-if __name__ == '__main__':
-    vascular_fname = pathlib.Path('/data/neural_collision_detection/data/vascular/vascular_balls.csv')
-    vascular_data = da.from_array(load_csv_balls(vascular_fname).to_numpy().astype(np.float32)[:, :3], chunks='auto')
-    neuron_and_colls = [single_neuron_pipeline(neuron_name, vascular_data) for neuron_name in neuron_names]
+if __name__ == "__main__":
+    vascular_fname = pathlib.Path(
+        "/data/neural_collision_detection/data/vascular/vascular_balls.csv"
+    )
+    vascular_data = load_csv_balls(vascular_fname).to_numpy().astype(np.float32)[:, :3]
+    neuron_and_colls = [
+        single_neuron_pipeline(neuron_name, vascular_data)
+        for neuron_name in neuron_names
+    ]
     viz_neurons_and_vasc(neuron_and_colls, vascular_data)
     plt.show(block=False)
