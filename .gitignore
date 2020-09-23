@@ -14,7 +14,6 @@ output
 *.PNG
 *.svg
 *.SVG
-Eigen
 *.obj
 .mypy_cache/
 .pytest_cache/
