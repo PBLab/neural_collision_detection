@@ -2,6 +2,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wignored-attributes"
 #include "fcl/geometry/bvh/BVH_model.h"
 #include "fcl/math/bv/OBBRSS.h"
 #include "fcl/math/bv/AABB.h"
