@@ -4,6 +4,7 @@ import shutil
 import hashlib
 import inspect
 
+#######################   consts   ###########################
 
 TESTS_BASE_DIR = "_test_dir"
 VASCULAR_PATH = "~/vascular/vascular_reduced_0.005.obj"

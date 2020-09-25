@@ -351,5 +351,6 @@ Model Model::get_sub_model(const BoundingBox& bb) const
 		res.add_triangle(new_a, new_b, new_c);
 	}
 
+	delete[] new_indices;
 	return res;
 }

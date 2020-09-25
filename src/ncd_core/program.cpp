@@ -264,7 +264,7 @@ void Program::print_usage()
 	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
 	printf("\t-s, --output-collisions\tOutput files containing the collision points [Regular/Batch mode] [default - don't output]\n");
-	printf("\t-n, --no-rotation\t Don't rotate the neuron [default - rotate]\n");
+	printf("\t-n, --no-rotation\tDon't rotate the neuron [default - rotate]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 }
