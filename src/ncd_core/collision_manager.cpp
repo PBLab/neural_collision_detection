@@ -2,6 +2,7 @@
 #include "collision.hpp"
 #include "trace.hpp"
 #include <pthread.h>
+#include <memory>
 
 static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
@@ -33,8 +34,6 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 
 CollisionManager::~CollisionManager()
 {
-	delete _fm1;
-	delete _fm2;
 }
 
 
@@ -75,9 +74,9 @@ static void* thread_main_impl(thread_params_t* params)
 {
 	LOG_TRACE("Thread main #%i! min_x -> max_x: %i -> %i. Creating models...\n",
 					params->thread_id, params->min_x, params->max_x);
-	const FclModel * fm1 = params->fm1;
+	FclModelCPtr fm1 = params->fm1;
 	const BoundingBox * fm1_bounding_box = params->fm1_bounding_box;
-	const FclModel * fm2 = params->fm2;
+	FclModelCPtr fm2 = params->fm2;
 	const Cube * fm2_cube = params->fm2_cube;
 	int id = params->thread_id;
 	
@@ -245,10 +244,10 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z, _should_rotate);
 	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z, x_pos, y_pos, z_pos);
 
-	pthread_t * thread_ids = new pthread_t[_num_of_threads];
+	auto thread_ids = std::vector<pthread_t>(_num_of_threads);
+	auto all_params = std::vector<thread_params>(_num_of_threads);
 	int z_range = max_z - min_z + 1;
 	int next_z = min_z;
-	thread_params_t * all_params = new thread_params[_num_of_threads];
 	for (int i = 0; i < _num_of_threads; ++i)
 	{
 		LOG_TRACE("Preparing thread #%i\n", i);
@@ -315,8 +314,6 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 	res.for_each_result(single_result_callback, (void*)this);
 
 	res.write_to_file(output_filename, _neuron_filename, _minimal_only);
-	delete[] thread_ids;
-	delete[] all_params;
 }
 
 

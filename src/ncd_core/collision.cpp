@@ -3,7 +3,7 @@
 
 
 
-int Collision::check_a_collision(const FclModel* fm1, const FclModel* fm2, int x_translation, int y_translation, int z_translation, int x_rot, int y_rot, int z_rot, int num_of_col, PointsVector *collisions)
+int Collision::check_a_collision(FclModelCPtr fm1, FclModelCPtr fm2, int x_translation, int y_translation, int z_translation, int x_rot, int y_rot, int z_rot, int num_of_col, PointsVector *collisions)
 {
 	Transform3f tf1 = Transform3<float>::Identity();
 	Transform3f tf2 = Transform3<float>::Identity();
@@ -17,7 +17,7 @@ int Collision::check_a_collision(const FclModel* fm1, const FclModel* fm2, int x
 	CollisionRequest<float> req(num_of_col, should_get_collisions);
 	CollisionResult<float> res;
 
-	int num_contacts = collide(fm1, tf1, fm2, tf2, req, res);
+	int num_contacts = collide(&*fm1, tf1, &*fm2, tf2, req, res);
 	if (!should_get_collisions)
 		return num_contacts;
 

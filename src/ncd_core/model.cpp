@@ -35,9 +35,9 @@ Model::~Model()
 {
 }
 
-FclModel* Model::fcl_model() const
+FclModelCPtr Model::fcl_model() const
 {
-	FclModel* m = new FclModel();
+	auto m = std::shared_ptr<FclModel>(new FclModel());
 
 	// add the mesh data into the BVHFclModel structure
 	m->beginModel();
@@ -321,7 +321,7 @@ Model Model::get_sub_model(const BoundingBox& bb) const
 {
 	Model res;
 	int next_idx = 0;
-	int *new_indices = new int[_vertices.size()];
+	auto new_indices = vector<int>(_vertices.size());
 	for(int i = 0; i < _vertices.size(); ++i)
 	{
 		float x = _vertices[i](0);
@@ -351,6 +351,5 @@ Model Model::get_sub_model(const BoundingBox& bb) const
 		res.add_triangle(new_a, new_b, new_c);
 	}
 
-	delete[] new_indices;
 	return res;
 }

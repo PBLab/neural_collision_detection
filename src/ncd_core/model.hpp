@@ -4,6 +4,8 @@
 #include "fcl.hpp"
 #include "bounding_box.hpp"
 
+typedef std::shared_ptr<const FclModel> FclModelCPtr;
+
 class Model
 {
 public:
@@ -13,7 +15,7 @@ public:
 	Model(const Model& other);
 	~Model();
 
-	FclModel* fcl_model() const;
+	FclModelCPtr fcl_model() const;
 	void dump_to_file(const std::string& output_filename) const;
 	void print_stats() const;
 	void adjust_all(float x, float y, float z);

@@ -27,9 +27,9 @@ private:
 	const Model * _m1;
 	const Model * _m2;
 
-	const FclModel * _fm1; // Vascular
+	FclModelCPtr _fm1; // Vascular
 	BoundingBox _fm1_bounding_box;
-	const FclModel * _fm2; // Neuron
+	FclModelCPtr _fm2; // Neuron
 	Cube _fm2_cube;
 	std::string _neuron_filename;
 	std::string _output_directory;;
@@ -46,9 +46,9 @@ typedef struct thread_params
 {
 	ResultObject* result_object;
 	CollisionManager* collision_manager;
-	const FclModel* fm1; // Vascular
+	FclModelCPtr fm1; // Vascular
 	const BoundingBox* fm1_bounding_box;
-	const FclModel* fm2; // Neuron
+	FclModelCPtr fm2; // Neuron
 	const Cube * fm2_cube;
 	int x_pos;
 	int y_pos;
