@@ -47,40 +47,8 @@ FclModelCPtr Model::fcl_model() const
 	return m;
 }
 
-void Model::adjust_all()
-{
-	int i = 0;
-	int max_x = 0;
-	int max_y = 0;
-	int max_z = 0;
-	int min_x = 100000;
-	int min_y = 100000;
-	int min_z = 100000;
-	for(i = 0; i < _vertices.size(); ++i)
-	{
-		if (_vertices[i](0) > max_x)
-			max_x = _vertices[i](0);
-		if (_vertices[i](1) > max_y)
-			max_y = _vertices[i](1);
-		if (_vertices[i](2) > max_z)
-			max_z = _vertices[i](2);
 
-		if (_vertices[i](0) < min_x)
-			min_x = _vertices[i](0);
-		if (_vertices[i](1) < min_y)
-			min_y = _vertices[i](1);
-		if (_vertices[i](2) < min_z)
-			min_z = _vertices[i](2);
-	}
-
-	int adj_x = -1 * (max_x + min_x) / 2;
-	int adj_y = -1 * (max_y + min_y) / 2;
-	int adj_z = -1 * (max_z + min_z) / 2;
-
-	adjust_all(adj_x, adj_y, adj_z);
-}
-
-void Model::adjust_all(float x, float y, float z)
+void Model::translate(float x, float y, float z)
 {
 	for(int i = 0; i < _vertices.size(); ++i)
 	{
@@ -171,9 +139,6 @@ void Model::read_from_file(const std::string& vertices_filename, const std::stri
 		if (ret <= 0)
 			break;
 		add_triangle(x, y, z);
-		//static const int LIMIT = 5 * 10 * 1000;
-		//if (i > LIMIT)
-		//	break;
 	}
 	fclose(t_f);
 }
@@ -273,7 +238,6 @@ void Model::rotate(const NativeMatrix& mat)
 		double new_z = mat.values[2][0] * vertex[0] + 
 				       mat.values[2][1] * vertex[1] + 
 				       mat.values[2][2] * vertex[2];
-		//LOG_INFO("x y z = %f %f %f\n", new_x, new_y, new_z);
 		vertex[0] = new_x;
 		vertex[1] = new_y;
 		vertex[2] = new_z;

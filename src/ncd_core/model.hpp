@@ -18,8 +18,7 @@ public:
 	FclModelCPtr fcl_model() const;
 	void dump_to_file(const std::string& output_filename) const;
 	void print_stats() const;
-	void adjust_all(float x, float y, float z);
-	void adjust_all();
+	void translate(float x, float y, float z);
 	char get_longest_axis() const;
 	void rotate(const NativeMatrix& mat);
 	BoundingBox get_bounding_box() const;

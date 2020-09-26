@@ -43,9 +43,6 @@ void Program::logic()
 	vascular_model = create_obj_model(_vascular_path);
 	neural_model = create_obj_model(_neural_path);
 
-	//neural_model->adjust_all();
-	//neural_model.adjust_all(-1 * _x, -1 * _y, -1 * _z);
-
 	vascular_model->print_stats();
 	neural_model->print_stats();
 
@@ -120,12 +117,8 @@ void Program::verify_args()
 	if (strlen(_output_directory) == 0)
 		throw Exception("Output dir path must be set");
 
-
 	if (_num_of_threads <= 0 or _num_of_threads > 360)
 		throw Exception("Num of threads must be between 1 and 360");
-
-	//if (_num_of_collisions <= 0)
-		//throw Exception("Num of collisions must be positive");
 
 	if (_main_axis != 'x' && _main_axis != 'y' && _main_axis != 'z')
 		throw Exception("Main axis must be one of x, y, z");
@@ -204,7 +197,6 @@ void Program::parse_args(int argc, char** argv)
 			parse_triplet(optarg, &_r_x, &_r_y, &_r_z);
 			break;
 		case 'o':
-			//_verify_mode = true;
 			strncpy(_output_directory, optarg, PATH_MAX);
 			break;
 		case 'z':

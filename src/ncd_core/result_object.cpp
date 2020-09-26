@@ -54,9 +54,10 @@ void ResultObject::add_result(int x, int y, int z, int res)
 {
 	if (x < _x_min || y < _y_min || z < _z_min || x > _x_max || y > _y_max || z > _z_max)
 	{
-		LOG_ERROR("x = %i, y = %i, z = %i\n", x, y, z);		
-		LOG_ERROR("min_x = %i, min_y = %i, min_z = %i\n", _x_min, _y_min, _z_min);		
-		LOG_ERROR("max_x = %i, max_y = %i, max_z = %i\n", _x_max, _y_max, _z_max);		
+		LOG_DEBUG("x = %i, y = %i, z = %i\n"
+				  "min_x = %i, min_y = %i, min_z = %i\n"
+				  "max_x = %i, max_y = %i, max_z = %i\n",
+				  x, y, z, _x_min, _y_min, _z_min, _x_max, _y_max, _z_max);
 		throw Exception("add_result got wrong indices");
 	}
 	_result_array[x - _x_min][y - _y_min][z - _z_min].num_of_collisions = res;

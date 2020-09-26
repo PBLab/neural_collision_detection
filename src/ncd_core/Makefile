@@ -11,8 +11,8 @@ all: $(OBJS)
 	strip ncd
 clean:
 	rm -f ncd *.o
-run:
-	./base_run.sh
+test:
+	cd tests && ~/pytest && cd -
 
 %.o : %.cpp
 	@date

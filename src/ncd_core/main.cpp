@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 	}
 	catch(...)
 	{
-		LOG_ERROR("Error running program. Exiting...\n");
+		LOG_ERROR("Unknown error running program. Exiting...\n");
 		return 1;
 	}
 
