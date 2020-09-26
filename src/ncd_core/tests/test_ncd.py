@@ -120,7 +120,6 @@ def test_regular():
 	_verify_md5s(test_dir, cmd, files_to_verify)
 
 
-
 def test_batch():
 	test_dir = os.path.join(TESTS_BASE_DIR, inspect.currentframe().f_code.co_name) 
 	test_file = "output.txt"

@@ -72,15 +72,6 @@ void ResultObject::write_to_file(const std::string& filename, const std::string&
 		throw Exception("Failed opening output file");
 	}
 
-	/*
-	if (title.length() != 0)
-	{
-		char str[1024];
-		snprintf(str, 1024, "========== %s ==========\n", title.c_str());
-		fwrite(str, strlen(str), 1, f);
-	}
-	*/
-
 	for(int x = _x_min; x <= _x_max; ++x)
 	{
 		for(int y = _y_min; y <= _y_max; ++y)
@@ -139,13 +130,15 @@ bool ResultObject::mark_min(int max_col)
 	return false;
 }
 
-void ResultObject::mark_mins(int amount, int max_col)
+
+int ResultObject::mark_mins(int amount, int max_col)
 {
 	for(int i = 0; i < amount; ++i)
 	{
 		if (!mark_min(max_col))
-			break;
+			return i;
 	}
+	return amount;
 }
 
 void ResultObject::for_each_result(result_callback_t callback, void* arg)
@@ -170,4 +163,33 @@ void ResultObject::for_each_result(result_callback_t callback, void* arg)
 			}
 		}
 	}
+}
+
+void ResultObject::get_statistics(int max_col, int& total_results, int& oob_res,
+							int& too_many_collisions_res, int& valid_res)
+{
+	total_results = 0;
+	oob_res = 0;
+	too_many_collisions_res = 0;
+	valid_res = 0;
+	for(int x = _x_min; x <= _x_max; ++x)
+	{
+		for(int y = _y_min; y <= _y_max; ++y)
+		{
+			for(int z = _z_min; z <= _z_max; ++z)
+			{
+				SingleResult* cur_result = &_result_array[x - _x_min][y - _y_min][z - _z_min];
+				int col_num = cur_result->num_of_collisions;
+				if (col_num < max_col)
+					valid_res++;
+				else if (col_num == max_col)
+					too_many_collisions_res++;
+				else
+					oob_res++;
+				total_results++;
+			}
+		}
+	}
+
+
 }

@@ -64,9 +64,9 @@ static void report_progress(ResultObject* res)
 	}
 
 	if (cur_percentage % 10 == 0)
-		LOG_INFO("Completed %i%\n", cur_percentage);
+		LOG_INFO("\tCompleted %i%\n", cur_percentage);
 	else
-		LOG_TRACE("Completed %i%\n", cur_percentage);
+		LOG_TRACE("\tCompleted %i%\n", cur_percentage);
 	last_percentage = cur_percentage;
 }
 
@@ -181,7 +181,7 @@ void write_collisions_to_file(const std::string& filename, const PointsVector& r
 
 void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r)
 {
-	LOG_INFO("Checking single collision...\n");
+	LOG_TRACE("Checking single collision\n");
 	output_collision_points_single_collision(x_pos, y_pos, z_pos, x_r, y_r, z_r);
 
 	Model neuron = *_m2;
@@ -214,7 +214,8 @@ std::string CollisionManager::output_collision_points_single_collision(int x_pos
 	std::ostringstream oss;
 	oss << x_pos << "_" << y_pos << "_" << z_pos << "__" << x_r << "_" << y_r << "_" << z_r;
 	std::string location_description = oss.str();
-	std::string output_collision_points = _output_directory + "/" + _neuron_filename + "_" + location_description + "_collision.txt";
+	std::string output_collision_points =
+				_output_directory + "/" + _neuron_filename + "_" + location_description + "_collision.txt";
 	write_collisions_to_file(output_collision_points, res, num_of_collisions);
 
 	return output_collision_points;
@@ -233,7 +234,8 @@ void single_result_callback(void* arg, SingleResultCallbackParam * params)
 		return;
 	}
 
-	std::string filename = cm->output_collision_points_single_collision(params->x, params->y, params->z, params->r_x, params->r_y, params->r_z);
+	std::string filename =
+			cm->output_collision_points_single_collision(params->x, params->y, params->z, params->r_x, params->r_y, params->r_z);
 	strncpy(params->single_result->output_filename, filename.c_str(), OUTPUT_FILENAME_LENGTH);
 }
 
@@ -308,7 +310,16 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		LOG_TRACE("pthread_join #%i returned\n", i);
 	}
 
-	res.mark_mins(10, _max_num_of_collisions);
+	int min_results = res.mark_mins(10, _max_num_of_collisions);
+
+	int total_results = 0, oob_results = 0, too_many_collisions_results = 0, valid_results = 0;
+	res.get_statistics(_max_num_of_collisions, total_results, oob_results,
+											   too_many_collisions_results, valid_results);
+	LOG_INFO("> Summary for location (%i,%i,%i)\n", x_pos, y_pos, z_pos);
+	LOG_INFO("\tTotal of %i positions were tested\n", total_results);
+	LOG_INFO("\t%i positions were discarded due to out of bound checks\n", oob_results);
+	LOG_INFO("\t%i positions were discarded due to too many collisions\n", too_many_collisions_results);
+	LOG_INFO("\t%i positions were valid, %i of them marked as minimal\n", valid_results, min_results);
 
 	res.for_each_result(single_result_callback, (void*)this);
 
@@ -337,14 +348,11 @@ void CollisionManager::check_all_collisions(const std::string& locations_filenam
 		check_all_collisions_at_location(x, y, z, main_axis, output_filename);
 	}
 	fclose(f);
-	LOG_INFO("Done!\n");
 }
 
 void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename)
 {
-	LOG_INFO("Creating model1...\n");
 	check_all_collisions_at_location(x_pos, y_pos, z_pos, main_axis, output_filename);
-	LOG_INFO("Done!\n");
 }
 
 

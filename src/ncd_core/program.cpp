@@ -55,7 +55,6 @@ void Program::logic()
 	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks, _should_output_collisions, _should_rotate);
 	if (_mode == MODE__VERIFY)
 	{
-		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
 		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z);
 	}
 	else
