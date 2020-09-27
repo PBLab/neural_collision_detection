@@ -1,13 +1,15 @@
 #include "program.hpp"
 #include "exception.hpp"
 #include "trace.hpp"
+#include "version.hpp"
 #include <stdio.h>
 
 
 
 int main(int argc, char* argv[])
 {
-	LOG_INFO("====  ncd start  ====\n");
+	LOG_INFO("====   ncd start   ====\n");
+	LOG_INFO("====  version %s ====\n", NCD_VERSION);
 
 	try
 	{
