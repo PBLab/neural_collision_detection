@@ -4,6 +4,7 @@ import napari
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 
 from ncd_post_process.render_with_napari import create_napari_surface
@@ -59,22 +60,25 @@ full_neuron_names_surf = [
 # r = Rotation.from_euler('xzy', [[-90, -90, -90]], degrees=True)
 with napari.gui_qt():
     viewer = napari.Viewer(ndisplay=3)
-
+    all_alphas = []
     for pair, neuron, surf, orig_name in zip(
-        full_neuron_names_pairs[2:4],
-        full_neuron_names_neurons[2:4],
-        full_neuron_names_surf[2:4],
-        neuron_names[2:4],
+        full_neuron_names_pairs,
+        full_neuron_names_neurons,
+        full_neuron_names_surf,
+        neuron_names,
     ):
         pairs = pd.read_hdf(pair, "data_single_pair")
         points = pd.read_csv(neuron, header=None, names=["y", "x", "z", "r"])
         alphas = distance_alpha.main_alpha_pipe(orig_name, foldername_alpha)
         pairs = pairs.loc[pairs.loc[:, "alpha_delta"] > 100, :]
-        normed_ax_size, normed_dend_size = norm(
-            pairs.loc[:, "ax_alpha"].to_numpy().copy(),
-            pairs.loc[:, "dend_alpha"].to_numpy().copy(),
-            (1, 5),
-        )
+        try:
+            normed_ax_size, normed_dend_size = norm(
+                pairs.loc[:, "ax_alpha"].to_numpy().copy(),
+                pairs.loc[:, "dend_alpha"].to_numpy().copy(),
+                (1, 5),
+            )
+        except ValueError:
+            continue
         normed_ax_size[normed_ax_size > 10] = 0
         normed_dend_size[normed_dend_size > 10] = 0
         surface = create_napari_surface(surf)
@@ -113,3 +117,8 @@ with napari.gui_qt():
             size=np.log(alphas + 1),
             opacity=0.4,
         )
+        all_alphas.append(alphas)
+        _, ax = plt.subplots()
+        ax.hist(np.log(alphas + 1), bins=100)
+        ax.set_title(orig_name)
+    plt.show()

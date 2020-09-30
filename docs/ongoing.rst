@@ -1,6 +1,13 @@
 ------------
 Ongoing Work
 ------------
+* The rest of the figure is made out of previous scripts - alpha vs dist, alpha
+  vs collisions.
+
+* I added a ``fig_alpha`` folder under the ``for_article`` folder which
+  contains the code for this figure. The first file there is a file that
+  shows the distribution of the alpha shape values for each neuron.
+
 * We fixed this issue and re-ran the NCD computation. This data is in the Sep 
   5th folder.
 
