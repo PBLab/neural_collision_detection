@@ -43,9 +43,6 @@ void Program::logic()
 	vascular_model = create_obj_model(_vascular_path);
 	neural_model = create_obj_model(_neural_path);
 
-	//neural_model->adjust_all();
-	//neural_model.adjust_all(-1 * _x, -1 * _y, -1 * _z);
-
 	vascular_model->print_stats();
 	neural_model->print_stats();
 
@@ -58,7 +55,6 @@ void Program::logic()
 	CollisionManager collision_manager(&*vascular_model, &*neural_model, get_file_name_from_path(_neural_path), _num_of_threads, _num_of_collisions, _output_directory, _minimal_only, _bound_checks, _should_output_collisions, _should_rotate);
 	if (_mode == MODE__VERIFY)
 	{
-		LOG_INFO("Verify mode - using rotation (%i, %i, %i)\n", _r_x, _r_y, _r_z);
 		collision_manager.check_single_collision(_x, _y, _z, _r_x, _r_y, _r_z);
 	}
 	else
@@ -120,12 +116,8 @@ void Program::verify_args()
 	if (strlen(_output_directory) == 0)
 		throw Exception("Output dir path must be set");
 
-
 	if (_num_of_threads <= 0 or _num_of_threads > 360)
 		throw Exception("Num of threads must be between 1 and 360");
-
-	//if (_num_of_collisions <= 0)
-		//throw Exception("Num of collisions must be positive");
 
 	if (_main_axis != 'x' && _main_axis != 'y' && _main_axis != 'z')
 		throw Exception("Main axis must be one of x, y, z");
@@ -204,7 +196,6 @@ void Program::parse_args(int argc, char** argv)
 			parse_triplet(optarg, &_r_x, &_r_y, &_r_z);
 			break;
 		case 'o':
-			//_verify_mode = true;
 			strncpy(_output_directory, optarg, PATH_MAX);
 			break;
 		case 'z':
@@ -264,7 +255,7 @@ void Program::print_usage()
 	printf("\t-z, --minimal-only\tStore only minimal rotations in output file [Regular/Batch mode]\n");
 	printf("\t-b, --bound-checks\tDon't eliminate results with bounds violation [Regular/Batch mode] [default - eliminate]\n");
 	printf("\t-s, --output-collisions\tOutput files containing the collision points [Regular/Batch mode] [default - don't output]\n");
-	printf("\t-n, --no-rotation\t Don't rotate the neuron [default - rotate]\n");
+	printf("\t-n, --no-rotation\tDon't rotate the neuron [default - rotate]\n");
 	printf("\t-v\t\t\tverbose (can use multiple times)\n");
 	printf("\t-q\t\t\tquiet\n");
 }

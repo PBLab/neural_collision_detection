@@ -3,28 +3,25 @@
 
 
 
-int Collision::check_a_collision(const FclModel* fm1, const FclModel* fm2, int x_translation, int y_translation, int z_translation, int x_rot, int y_rot, int z_rot, int num_of_col, PointsVector *collisions)
+int Collision::check_a_collision(FclModelCPtr fm1, FclModelCPtr fm2, int x_translation, int y_translation, int z_translation, int x_rot, int y_rot, int z_rot, int num_of_col, PointsVector *collisions)
 {
 	Transform3f tf1 = Transform3<float>::Identity();
 	Transform3f tf2 = Transform3<float>::Identity();
 	Matrix3f m = calc_matrix(x_rot, y_rot, z_rot);
 	tf2.linear() = m;
-	//tf2.linear().setIdentity();
 	tf2.translation() = Vec3f(x_translation, y_translation, z_translation);
 
-	//static const bool REPORT_COLLISION_LOCATIONS = true;
 	bool should_get_collisions = (collisions != NULL);
 	CollisionRequest<float> req(num_of_col, should_get_collisions);
 	CollisionResult<float> res;
 
-	int num_contacts = collide(fm1, tf1, fm2, tf2, req, res);
+	int num_contacts = collide(&*fm1, tf1, &*fm2, tf2, req, res);
 	if (!should_get_collisions)
 		return num_contacts;
 
 	for(int i = 0; i < num_contacts; ++i)
 	{
 		Contact<float> c = res.getContact(i);
-		//printf("Contact #%i: (%f, %f, %f)\n", i, c.pos[0], c.pos[1], c.pos[2]);
 		collisions->push_back(c.pos);
 	}
 
@@ -86,24 +83,6 @@ Matrix3f Collision::calc_matrix(double x_rot, double y_rot, double z_rot)
 		   0, 0, 1;
 
 	Matrix3f m = m_x * m_y * m_z;;
-	//m << 1, 0, 0, 0, 1, 0, 0, 0, 1;
 
 	return m;
 }
-
-// void print_contact(Contact<float>& contact, int idx)
-// {
-// 	LOG_DEBUG("Contact #%i: (%f, %f, %f), b1 = %i, b2 = %i, depth: %f\n", idx, contact.pos[0], contact.pos[1], contact.pos[2], contact.b1, contact.b2, contact.penetration_depth);
-// }
-// 
-// void parse_contacts(CollisionResult<float>& res, int num_contacts)
-// {
-// 	std::vector<Contact<float>> contacts;
-// 	res.getContacts(contacts);
-// 
-// 	for (int i = 0; i < num_contacts; ++i)
-// 	{
-// 		print_contact(contacts[i], i);
-// 	}
-// 
-// }

@@ -2,6 +2,7 @@
 #include "collision.hpp"
 #include "trace.hpp"
 #include <pthread.h>
+#include <memory>
 
 static void* thread_main_impl(thread_params_t* params);
 static void* thread_main(void* arg);
@@ -33,8 +34,6 @@ CollisionManager::CollisionManager(const Model* m1, const Model* m2, const std::
 
 CollisionManager::~CollisionManager()
 {
-	delete _fm1;
-	delete _fm2;
 }
 
 
@@ -65,9 +64,9 @@ static void report_progress(ResultObject* res)
 	}
 
 	if (cur_percentage % 10 == 0)
-		LOG_INFO("Completed %i%\n", cur_percentage);
+		LOG_INFO("\tCompleted %i%\n", cur_percentage);
 	else
-		LOG_TRACE("Completed %i%\n", cur_percentage);
+		LOG_TRACE("\tCompleted %i%\n", cur_percentage);
 	last_percentage = cur_percentage;
 }
 
@@ -75,9 +74,9 @@ static void* thread_main_impl(thread_params_t* params)
 {
 	LOG_TRACE("Thread main #%i! min_x -> max_x: %i -> %i. Creating models...\n",
 					params->thread_id, params->min_x, params->max_x);
-	const FclModel * fm1 = params->fm1;
+	FclModelCPtr fm1 = params->fm1;
 	const BoundingBox * fm1_bounding_box = params->fm1_bounding_box;
-	const FclModel * fm2 = params->fm2;
+	FclModelCPtr fm2 = params->fm2;
 	const Cube * fm2_cube = params->fm2_cube;
 	int id = params->thread_id;
 	
@@ -182,13 +181,13 @@ void write_collisions_to_file(const std::string& filename, const PointsVector& r
 
 void CollisionManager::check_single_collision(int x_pos, int y_pos, int z_pos, int x_r, int y_r, int z_r)
 {
-	LOG_INFO("Checking single collision...\n");
+	LOG_TRACE("Checking single collision\n");
 	output_collision_points_single_collision(x_pos, y_pos, z_pos, x_r, y_r, z_r);
 
 	Model neuron = *_m2;
 	NativeMatrix mat = Collision::calc_native_matrix(x_r, y_r, z_r);
 	neuron.rotate(mat);
-	neuron.adjust_all(x_pos, y_pos, z_pos);
+	neuron.translate(x_pos, y_pos, z_pos);
 	std::string output_rotated_neuron = _output_directory + "/" + _neuron_filename + "_rotated_neuron.obj";
 	neuron.dump_to_file(output_rotated_neuron);
 
@@ -215,7 +214,8 @@ std::string CollisionManager::output_collision_points_single_collision(int x_pos
 	std::ostringstream oss;
 	oss << x_pos << "_" << y_pos << "_" << z_pos << "__" << x_r << "_" << y_r << "_" << z_r;
 	std::string location_description = oss.str();
-	std::string output_collision_points = _output_directory + "/" + _neuron_filename + "_" + location_description + "_collision.txt";
+	std::string output_collision_points =
+				_output_directory + "/" + _neuron_filename + "_" + location_description + "_collision.txt";
 	write_collisions_to_file(output_collision_points, res, num_of_collisions);
 
 	return output_collision_points;
@@ -234,7 +234,8 @@ void single_result_callback(void* arg, SingleResultCallbackParam * params)
 		return;
 	}
 
-	std::string filename = cm->output_collision_points_single_collision(params->x, params->y, params->z, params->r_x, params->r_y, params->r_z);
+	std::string filename =
+			cm->output_collision_points_single_collision(params->x, params->y, params->z, params->r_x, params->r_y, params->r_z);
 	strncpy(params->single_result->output_filename, filename.c_str(), OUTPUT_FILENAME_LENGTH);
 }
 
@@ -245,17 +246,16 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 	calc_ranges(main_axis, &min_x, &max_x, &min_y, &max_y, &min_z, &max_z, _should_rotate);
 	ResultObject res(min_x, max_x, min_y, max_y, min_z, max_z, x_pos, y_pos, z_pos);
 
-	pthread_t * thread_ids = new pthread_t[_num_of_threads];
+	auto thread_ids = std::vector<pthread_t>(_num_of_threads);
+	auto all_params = std::vector<thread_params>(_num_of_threads);
 	int z_range = max_z - min_z + 1;
 	int next_z = min_z;
-	thread_params_t * all_params = new thread_params[_num_of_threads];
 	for (int i = 0; i < _num_of_threads; ++i)
 	{
 		LOG_TRACE("Preparing thread #%i\n", i);
 		thread_params_t* params = &all_params[i];
 		params->thread_id = i;
 		params->result_object = &res;
-		//params->collision_manager = this;
 		params->fm1 = _fm1;
 		params->fm2 = _fm2;
 		if (_bound_checks)
@@ -310,13 +310,20 @@ void CollisionManager::check_all_collisions_at_location(int x_pos, int y_pos, in
 		LOG_TRACE("pthread_join #%i returned\n", i);
 	}
 
-	res.mark_mins(10, _max_num_of_collisions);
+	int min_results = res.mark_mins(10, _max_num_of_collisions);
+
+	int total_results = 0, oob_results = 0, too_many_collisions_results = 0, valid_results = 0;
+	res.get_statistics(_max_num_of_collisions, total_results, oob_results,
+											   too_many_collisions_results, valid_results);
+	LOG_INFO("> Summary for location (%i,%i,%i)\n", x_pos, y_pos, z_pos);
+	LOG_INFO("\tTotal of %i positions were tested\n", total_results);
+	LOG_INFO("\t%i positions were discarded due to out of bound checks\n", oob_results);
+	LOG_INFO("\t%i positions were discarded due to too many collisions\n", too_many_collisions_results);
+	LOG_INFO("\t%i positions were valid, %i of them marked as minimal\n", valid_results, min_results);
 
 	res.for_each_result(single_result_callback, (void*)this);
 
 	res.write_to_file(output_filename, _neuron_filename, _minimal_only);
-	delete[] thread_ids;
-	delete[] all_params;
 }
 
 
@@ -341,14 +348,11 @@ void CollisionManager::check_all_collisions(const std::string& locations_filenam
 		check_all_collisions_at_location(x, y, z, main_axis, output_filename);
 	}
 	fclose(f);
-	LOG_INFO("Done!\n");
 }
 
 void CollisionManager::check_all_collisions(int x_pos, int y_pos, int z_pos, char main_axis, const std::string& output_filename)
 {
-	LOG_INFO("Creating model1...\n");
 	check_all_collisions_at_location(x_pos, y_pos, z_pos, main_axis, output_filename);
-	LOG_INFO("Done!\n");
 }
 
 

@@ -14,11 +14,11 @@ output
 *.PNG
 *.svg
 *.SVG
-Eigen
 *.obj
 .mypy_cache/
 .pytest_cache/
 __pycache__/
+.cache
 *.npy
 *.npz
 *.json
