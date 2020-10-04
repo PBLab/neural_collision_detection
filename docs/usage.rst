@@ -202,8 +202,25 @@ Blender:
     draw_collisions_on_tree.py
         Assigns each collision detected through NCD to the neuronal tree it belongs to and renders it in 3D.
 
+Alpha Shapes:
+=============
+
+The alpha shape algorithms are based on CGAL's work and thus are a thin wrapper over the functionality of that
+library. We provide here a built copy of CGAL, but it's possible that you'll have to re-build it on your station.
+Doing so is quite simple (assuming you have ``cmake``):
+
+
+1. ``cd`` to the folder where you wish to build the library.
+2. Run ``cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true <source-directory>``
+where the source directory is the full path to the ``cgal-python-bindings`` folder.
+3. Run ``make -j4``.
+
+You're done! Now you have to point your Python interpreter to the folder containing the built libraries. To see
+an example you can check out ``src/ncd_post_process/alpha_shapes/alpha_shapes_cgal``.
+
+
 Other:
------
+======
 ::
 	plotter.py
 		Plots a general 2D array, using matplotlib. Not really needed right now.
