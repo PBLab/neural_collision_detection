@@ -4,7 +4,6 @@ shape of a neuron.
 """
 import pathlib
 import sys
-from itertools import chain
 import multiprocessing
 
 import numpy as np
@@ -13,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 sys.path.append(
-    "/data/MatlabCode/PBLabToolkit/External/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
+    "../../cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
 )
 from tri3_epic import *
 
