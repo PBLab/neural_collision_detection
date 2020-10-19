@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 sys.path.append(
-    "../../cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
+    "src/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
 )
 from tri3_epic import *
 
