@@ -21,22 +21,22 @@ from ncd_post_process.graph_parsing import CollisionNode
 
 plt.rcParams.update({"font.size": 22})
 neuron_names = {
-    # "AP120410_s1c1": "V",
-    # "AP120410_s3c1": "V",
-    # "AP120412_s3c2": "V",
-    # "AP120416_s3c1": "IV",
-    # "AP120419_s1c1": "VI",
-    # "AP120420_s1c1": "IV",
-    # "AP120420_s2c1": "II/III",
-    # "AP120507_s3c1": "II/III",
-    # "AP120510_s1c1": "II/III",
-    # "AP120522_s3c1": "I",  # ?
-    # "AP120523_s2c1": "V",
-    # "AP120524_s2c1": "II/III",
-    # "AP120614_s1c2": "V",
-    # "AP130312_s1c1": "II/III",
-    # "AP131105_s1c1": "II/III",  # ?
-    # "AP130606_s2c1": "II/III",
+    "AP120410_s1c1": "V",
+    "AP120410_s3c1": "V",
+    "AP120412_s3c2": "V",
+    "AP120416_s3c1": "IV",
+    "AP120419_s1c1": "VI",
+    "AP120420_s1c1": "IV",
+    "AP120420_s2c1": "II/III",
+    "AP120507_s3c1": "II/III",
+    "AP120510_s1c1": "II/III",
+    "AP120522_s3c1": "I",  # ?
+    "AP120523_s2c1": "V",
+    "AP120524_s2c1": "II/III",
+    "AP120614_s1c2": "V",
+    "AP130312_s1c1": "II/III",
+    "AP131105_s1c1": "II/III",  # ?
+    "AP130606_s2c1": "II/III",
     # "MW120607_LH3": "IV",
     "AP130110_s2c1": "II/III",
 }
@@ -67,7 +67,7 @@ class CollisionsDistNaive:
     neuron_name = attr.ib(default="neuron", validator=instance_of(str))
     normalize_collisions_by = attr.ib(default=100_000, validator=instance_of(int))
     results_folder = attr.ib(
-        default=pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+        default=pathlib.Path("/data/neural_collision_detection/results/2020_09_05")
     )
     num_of_nodes = attr.ib(init=False)
     parsed_axon = attr.ib(init=False)
@@ -316,11 +316,22 @@ def plot_running_avg_for_all():
     with mp.Pool() as pool:
         analyzed_data = pool.starmap(_build_running_avg_df, all_neurons)
     analyzed_data = pd.concat(analyzed_data, ignore_index=True)
-    ax_cumsum = sns.relplot(data=analyzed_data, x='dist', y='cumsum', hue='layer', col='type', kind='line')
-    # canonical_dists = np.linspace(analyzed_data["dist"].min(), analyzed_data["dist"].max(), 1000)[:, np.newaxis]
-    # analyzed_data["dist_norm"] = analyzed_data.groupby('name').transform(_find_closest_dist_point, canonical_dists)
-    # ax_dist = sns.relplot(data=analyzed_data, x="dist_norm", y="coll_normed", col="layer", hue="type", kind="line", alpha=0.4)
-    return ax_cumsum, 0, analyzed_data
+    # ax_cumsum = sns.relplot(data=analyzed_data, x='dist', y='cumsum', hue='layer', col='type', kind='line')
+    canonical_dists = np.linspace(analyzed_data["dist"].min(), analyzed_data["dist"].max(), 1000)
+    analyzed_data["dist_norm"] = canonize_dists(analyzed_data.loc[:, "dist"].to_numpy(), canonical_dists)
+    ax_dist = sns.relplot(data=analyzed_data, x="dist_norm", y="coll_normed", col="layer", hue="type", kind="line", alpha=0.4, hue_order=['Axon', 'Dendrite'], palette=['C2', 'C1'])
+    return ax_dist, 0, analyzed_data
+
+
+def canonize_dists(current: np.ndarray, new: np.ndarray):
+    """Find the closest canonized distance for each real one.
+
+    We canonize the distances to make sure that the averaged plot will have a correct
+    x axis, so we have to transform the real distance into a canonized one.
+    """
+    dists = scipy.spatial.distance.cdist(new[:, np.newaxis], current[:, np.newaxis])
+    closest = dists.argmin(0)
+    return new[closest]
 
 
 def _find_closest_dist_point(x: np.ndarray, canonical_dists: np.ndarray) -> np.ndarray:
@@ -346,14 +357,14 @@ def norm_colls(bincounts, distances, collisions):
 
 
 def _name_to_graph_fname(
-    neuron, folder=pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+    neuron, folder=pathlib.Path("/data/neural_collision_detection/results/2020_09_05")
 ):
     return folder / f"graph_{neuron}_with_collisions.gml"
 
 
 def _neuron_to_obj(
     neuron,
-    results_folder=pathlib.Path("/data/neural_collision_detection/results/2020_07_29"),
+    results_folder=pathlib.Path("/data/neural_collision_detection/results/2020_09_05"),
 ):
     """Parses a filename containing a graph repr of a neuron
     into an CollisionsDistNative object"""
@@ -369,7 +380,7 @@ def _neuron_to_obj(
 
 def mp_main(neuron):
     """Run all functions in a parallel manner."""
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_09_05")
     coll_dist = _neuron_to_obj(neuron, results_folder)
     if not coll_dist:
         print(f"Can't find obj for neuron {neuron}")
@@ -387,9 +398,8 @@ if __name__ == "__main__":
     # multicore exec
     # with mp.Pool() as pool:
     #     res = pool.map(mp_main, neuron_names)
-    #
     # single core
-    _ = [mp_main(neuron) for neuron in neuron_names]
+    # _ = [mp_main(neuron) for neuron in neuron_names]
 
     ax_cumsum, ax_dist, analyzed_data = plot_running_avg_for_all()
     plt.show(block=False)

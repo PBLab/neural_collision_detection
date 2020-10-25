@@ -1,6 +1,9 @@
 ------------
 Ongoing Work
 ------------
+* I divided the collision figure into two parts - 3D Viz and aggregation.
+  They're now in their own folders under ``article_utils``.
+
 * The rest of the figure is made out of previous scripts - alpha vs dist, alpha
   vs collisions.
 
