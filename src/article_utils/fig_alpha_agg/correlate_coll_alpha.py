@@ -30,20 +30,20 @@ neuron_names = {
     "AP120410_s1c1": "V",
     "AP120410_s3c1": "V",
     "AP120412_s3c2": "V",
-    "AP120416_s3c1": "IV",
+    # "AP120416_s3c1": "IV",
     "AP120419_s1c1": "VI",
-    "AP120420_s1c1": "IV",
+    # "AP120420_s1c1": "IV",
     "AP120420_s2c1": "II/III",
-    "AP120507_s3c1": "II/III",
-    "AP120510_s1c1": "II/III",
-    "AP120522_s3c1": "I",  # ?
+    # "AP120507_s3c1": "II/III",
+    # "AP120510_s1c1": "II/III",
+    # "AP120522_s3c1": "I",  # ?
     "AP120523_s2c1": "V",
     "AP120524_s2c1": "II/III",
     "AP120614_s1c2": "V",
     "AP130312_s1c1": "II/III",
-    "AP131105_s1c1": "II/III",  # ?
-    "AP130606_s2c1": "II/III",
-    "MW120607_LH3": "IV",
+    # "AP131105_s1c1": "II/III",  # ?
+    # "AP130606_s2c1": "II/III",
+    # "MW120607_LH3": "IV",
 }
 
 
@@ -91,8 +91,10 @@ def scatter_coll_vs_alpha_for_all_points(
         len(fit_result) - 1
     )  # all dendrites will be orange, the axon is green
     hue_order = ["Axon0"] + [f"Dendrite{num}" for num in range(1, len(fit_result))]
+    data = points.reset_index()
+    data.loc[:, 'alpha'] = np.log(data.loc[:, 'alpha'] + 1)
     ax = sns.relplot(
-        data=points.reset_index().sample(frac=0.3),
+        data=data.sample(frac=0.3),
         x="alpha",
         y="coll",
         col="type",
@@ -101,15 +103,17 @@ def scatter_coll_vs_alpha_for_all_points(
         kind="scatter",
         col_wrap=2,
         palette=color_palette,
+        legend=False,
     )
     for a, neurite_name in zip(ax.axes, fit_result):
-        a.set_xscale("log")
-        x = points.query("type == @neurite_name").loc[:, "alpha"].to_numpy()
+        # a.set_xscale("log")
+        x = data.query("type == @neurite_name").loc[:, "alpha"].to_numpy()
         a.plot(
             x,
             linear_model(x, fit_result[neurite_name][0], fit_result[neurite_name][1]),
             "k-.",
         )
+        a.set_ylim(0, 0.011)
 
     ax.savefig(
         results_dir / f"{neuron_name}_coll_vs_alpha_all_points.pdf",
@@ -171,7 +175,7 @@ def fit_subset_of_points(points: pd.DataFrame, neuron_name: str) -> dict:
     """
     neuronal_fitting_data = {}
     for label, data in points.groupby("type"):
-        x = data.loc[:, "alpha"].to_numpy()
+        x = np.log(data.loc[:, "alpha"].to_numpy() + 1)
         y = data.loc[:, "coll"].to_numpy()
         result = fit(x, y)
         neuronal_fitting_data[label] = result
@@ -241,7 +245,11 @@ def add_normed_values_to_results(
             df.loc[name, "offset"] / maxs["dist"]
         ).to_numpy()
         df.loc[name, "normed_slope"] = (df.loc[name, "slope"] / maxs["dist"]).to_numpy()
-    return df.drop(["offset, slope"])
+    if "offset" in df.columns:
+        df = df.drop("offset", axis=1)
+    if "slope" in df.columns:
+        df = df.drop("slope", axis=1)
+    return df
 
 
 def main_per_neuron(
@@ -262,8 +270,8 @@ def main_per_neuron(
 
     Returns
     -------
-    2-tuple
-        Name and (offset, slope)
+    3-tuple
+        Name, (offset, slope), and the neuronal points DF
     """
     collisions_fname = neuron_graph_folder / f"graph_{neuron_name}_with_collisions.gml"
     try:
@@ -322,13 +330,14 @@ def aggregate_and_plot_all_results(results: list, folder: pathlib.Path) -> pd.Da
 
 
 if __name__ == "__main__":
-    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_07_29")
+    results_folder = pathlib.Path("/data/neural_collision_detection/results/2020_09_05")
     alphas_folder = pathlib.Path("/data/neural_collision_detection/results/with_alpha")
+    save_plot_to = pathlib.Path('results/for_article/fig_alpha_agg')
     args = ((name, results_folder, alphas_folder) for name in neuron_names)
     with multiprocessing.Pool() as mp:
         results = mp.starmap(main_per_neuron, args)
+    # results = []
     # for neuron in neuron_names:
-    #     _, result = main(neuron, results_folder, alphas_folder)
-    #     data[neuron] = result
-    data_as_df = aggregate_and_plot_all_results(results, alphas_folder)
+    #     results.append(main_per_neuron(neuron, results_folder, alphas_folder))
+    data_as_df = aggregate_and_plot_all_results(results, save_plot_to)
     plt.show(block=False)
