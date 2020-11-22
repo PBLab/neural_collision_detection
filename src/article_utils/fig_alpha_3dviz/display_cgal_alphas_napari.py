@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from ncd_post_process.render_with_napari import create_napari_surface
 from ncd_post_process.alpha_shapes import distance_alpha
 
+MAX_ALLOWED_ALPHA = 3163
+
 
 def norm(data1: np.ndarray, data2: np.ndarray, range_=(0, 15)):
     data1 = np.nan_to_num(data1)
@@ -84,8 +86,8 @@ def show_ax_dend(v: napari.Viewer, ax: pd.DataFrame, dend: pd.DataFrame, name: s
             edge_width=0,
             name=f"{name}_{meta[1]}",
             face_color=f"{meta[0]}",
-            size=np.log2(data.loc[::10, 'alpha'] + 1),
-            opacity=0.4,
+            size=data.loc[::10, 'alpha'],
+            opacity=0.2,
         )
 
 
@@ -104,6 +106,24 @@ def load_complete_neuronal_data(neuron_name: str, graph_folder: pathlib.Path):
     return points, g
 
 
+def show_pairs(viewer: napari.Viewer, data: pd.DataFrame):
+    """Highlights interesting pairs from the axonal and dendritic trees."""
+    viewer.add_points(
+            data.loc[:, 'ax_x':'ax_z'],
+            edge_width=0,
+            name='ax',
+            face_color='green',
+            size=data.loc[:, 'ax_alpha'],
+    )
+    viewer.add_points(
+            data.loc[:, 'dend_x':'dend_z'],
+            edge_width=0,
+            name='dend',
+            face_color='orange',
+            size=data.loc[:, 'dend_alpha'],
+    )
+
+
 def main():
     with napari.gui_qt():
         viewer = napari.Viewer(ndisplay=3)
@@ -118,6 +138,9 @@ def main():
             pairs = pairs.loc[pairs.loc[:, "alpha_delta"] > 100, :]
             # alphas = distance_alpha.main_alpha_pipe(orig_name, foldername_alpha)
             points, graph = load_complete_neuronal_data(orig_name, pathlib.Path('results/2020_09_05'))
+            points.loc[:, 'alpha'] = ((points.alpha / MAX_ALLOWED_ALPHA) * 2).clip(upper=20)
+            pairs.loc[:, 'ax_alpha'] = ((pairs.ax_alpha / MAX_ALLOWED_ALPHA) * 2).clip(upper=20)
+            pairs.loc[:, 'dend_alpha'] = ((pairs.dend_alpha / MAX_ALLOWED_ALPHA) * 2).clip(upper=20)
             ax, dend = separate_ax_dend(points)
             # try:
             #     normed_ax_size, normed_dend_size = norm(
@@ -135,6 +158,7 @@ def main():
             # )
             # show_all_equal_size(viewer, points, orig_name)
             show_ax_dend(viewer, ax, dend, orig_name)
+            show_pairs(viewer, pairs)
             # all_alphas.append(alphas)
         plt.show(block=False)
     return points, orig_name

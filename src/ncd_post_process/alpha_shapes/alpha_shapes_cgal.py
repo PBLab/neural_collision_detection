@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 sys.path.append(
-    "src/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
+    "./src/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
 )
 from tri3_epic import *
 
@@ -128,8 +128,8 @@ if __name__ == "__main__":
         # "AP120523_s2c1",
         # "AP130110_s2c1",
         # "AP130606_s2c1",
-        "AP120507_s3c1",
-        "MW120607_LH3",
+        # "AP120507_s3c1",
+        # "MW120607_LH3",
     ]
 
     with multiprocessing.Pool() as mp:

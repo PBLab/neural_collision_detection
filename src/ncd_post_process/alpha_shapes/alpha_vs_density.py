@@ -34,6 +34,8 @@ neuron_names = [
 
 
 def plot_alpha_vs_density(points, name):
+    """Shows a scatterplot of the alpha value vs. the
+    neuronal density."""
     ax = sns.scatterplot(data=points.reset_index(), x='alpha', y='U(r=10)', hue='type', alpha=0.3)
     ax.set_xscale('log')
     plt.show(block=False)

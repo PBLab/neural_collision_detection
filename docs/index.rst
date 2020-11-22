@@ -10,7 +10,7 @@ Welcome to neural_collision_detection's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   ongoing
+   usage
    ncd
 
 Indices and tables
