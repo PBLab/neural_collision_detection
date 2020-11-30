@@ -3,23 +3,9 @@ NCD API
 -----------
 
 
-Alpha Shapes
-============
-.. automodule:: ncd_post_process.alpha_shapes.alpha_shapes_cgal
-     :show-inheritance:
-     :members:
-
-.. automodule:: ncd_post_process.alpha_shapes.alpha_vs_density
-     :show-inheritance:
-     :members:
-
-.. automodule:: ncd_post_process.alpha_shapes.alpha_vs_topodist
-     :show-inheritance:
-     :members:
-
 Create Neuron ID
 ================
-.. automodule:: ncd_post_process.create_neuron_id
+.. automodule:: ncd_post_process.create_neuron_id.compare_collisions_with_density
      :show-inheritance:
      :members:
 

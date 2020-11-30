@@ -1,13 +1,16 @@
 import sys
+import pathlib
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
 import pandas as pd
 import numpy as np
 
 sys.path.append(
-    "/data/MatlabCode/PBLabToolkit/External/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release"
+    str((pathlib.Path() / "src/cgal-python-bindings/src/alpha3_bindings/delaunay_fast_location_release").resolve())
 )
 from tri3_epic import *
+
 sys.path.pop(-1)
 
 
@@ -100,7 +103,7 @@ def classify_points_per_alpha(
     pd.DataFrame
         A table where the columns are alpha values, and the rows are the points
     """
-    columns = ['coord'] + list(alphas)
+    columns = ["coord"] + list(alphas)
     classification = pd.DataFrame(
         np.empty((len(points), len(columns)), dtype=np.object), columns=columns
     )
@@ -108,7 +111,7 @@ def classify_points_per_alpha(
         shp.set_alpha(alpha)
         classification.loc[:, alpha] = [str(shp.classify(point)) for point in points]
 
-    classification.loc[:, 'coord'] = points
+    classification.loc[:, "coord"] = points
     return classification
 
 
@@ -129,3 +132,4 @@ def run():
 
 if __name__ == "__main__":
     points, shape, alphas, classification = run()
+    plt.show()
