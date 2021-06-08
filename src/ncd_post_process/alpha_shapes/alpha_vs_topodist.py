@@ -36,7 +36,8 @@ def plot_alpha_vs_dist(points, name):
     data.loc[:, 'alpha'] = np.log(data.loc[:, 'alpha'] + 1)
     palette = ['C2', 'C1', 'C0', 'C3', 'C4', 'C5', 'C6']
     num_colors = len(data.loc[:, 'type'].unique())
-    ax = sns.scatterplot(data=data, x='alpha', y='dist', hue='type', alpha=0.3, palette=palette[:num_colors], legend=False)
+    g = sns.lmplot(data=data, x='alpha', y='dist', hue='type', palette=palette[:num_colors], legend=False, scatter_kws={'alpha': 0.2},)
+    ax = g.ax
     ax.axvline(np.log(MAX_ALLOWED_ALPHA + 1), 0, 500, color='red')
     sns.despine(ax=ax, trim=True)
     ax.set_xlabel('')
