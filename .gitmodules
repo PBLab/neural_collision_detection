@@ -2,5 +2,5 @@
 	path = src/fcl
 	url = https://github.com/flexible-collision-library/fcl
 [submodule "cgal-swig-bindings"]
-	path = cgal-swig-bindings
+	path = src/cgal-python-bindings
 	url = https://github.com/CGAL/cgal-swig-bindings.git
