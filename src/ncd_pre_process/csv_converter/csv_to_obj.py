@@ -41,9 +41,9 @@ def main_lib(faces, vertices, output_fname, x_expand=1, y_expand=1, z_expand=1):
     creator.create_obj_file(output_fname, x_expand, y_expand, z_expand)
 
 
-def batch_csv_to_obj(foldername):
+def batch_csv_to_obj(foldername, globstr='faces*flipped.csv'):
     """ Parse the folder in search of faces and vertices """
-    all_faces = foldername.rglob('faces*flipped.csv')
+    all_faces = foldername.rglob(globstr)
     args = []
     for face in all_faces:
         fname_face = str(face.name)[6:-4]  # removes "faces_" and ".csv"
